@@ -1,0 +1,8 @@
+api ：
+assets ：存储静态固定资源
+components ：组件
+container ：容器
+router ：路由
+styles ：样式
+utils ： 单元代码
+views ： 展示的主组件

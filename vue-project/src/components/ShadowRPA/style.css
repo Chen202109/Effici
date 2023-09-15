@@ -1,0 +1,27 @@
+ 
+/**
+改变边框颜色
+ */
+ .el-table--border, .el-table--group {
+    border: 2px solid #ddd!important;
+}
+/**
+改变表格内竖线颜色
+ */
+.el-table--border  td, .el-table--border th, .el-table__body-wrapper .el-table--border.is-scrolling-left~.el-table__fixed {
+    border-right: 1px solid #ddd!important;
+}
+/**
+改变表格内行线颜色
+ */
+.el-table  td, .el-table th.is-leaf  {
+    border-bottom: 1px solid #ddd!important;
+}
+ 
+.el-table thead tr th{
+    border-color: #8c939d;
+}
+/* g改变表头字体颜色 */
+.el-table thead {
+    color: black;
+}
