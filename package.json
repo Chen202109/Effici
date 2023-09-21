@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "vue-router": "^4.2.4"
+  },
+  "devDependencies": {
+    "node-sass": "^9.0.0"
+  }
+}
