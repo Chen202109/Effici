@@ -21,7 +21,7 @@ export default new Router({
     },
     {
       path: '/',
-      redirect: '/CMC/login',
+      redirect: '/CMC/login', 
       name: 'Container',
       component: Container, /* 使用component配置的组件Container, 进入的时候重定向到 redirect配置的 '/login' 地址 */
 	  meta:{ needLogin:true},

@@ -139,6 +139,7 @@ def analysisselect(request):
         realdate_begin = datetime.strptime(beginData, '%Y-%m-%d')
         realdate_end = datetime.strptime(endData, '%Y-%m-%d') + timedelta(days=1)
 
+
         sql = f'SELECT A.resourcepool, upgradetype,SUM(A.升级次数) as 升级次数, ' \
               f'SUM(IF(LOCATE("bug", A.questiontype) > 0, A.数量, 0)) AS 缺陷, ' \
               f'SUM(IF(LOCATE("需求", A.questiontype) > 0, A.数量, 0)) AS 需求, ' \
@@ -146,14 +147,14 @@ def analysisselect(request):
               f' FROM ' \
               f' (SELECT resourcepool, upgradetype,COUNT(*) AS 升级次数, "" AS questiontype, 0 AS 数量 ' \
               f' FROM upgradeplan_2023 ' \
-              f' WHERE realdate >= "{beginData}" AND realdate <= "{endData}" ' \
+              f' WHERE realdate >= "{realdate_begin}" AND realdate < "{realdate_end}" ' \
               f' GROUP BY resourcepool,upgradetype ' \
               f' UNION ALL ' \
               f' SELECT B.resourcepool,upgradetype, 0 AS 升级次数, B.questiontype, B.数量 ' \
               f' FROM ' \
               f' (SELECT resourcepool, upgradetype,questiontype, COUNT(*) AS 数量 ' \
               f' FROM upgradeplan_2023 ' \
-              f' WHERE realdate >= "{beginData}" AND realdate <= "{endData}" ' \
+              f' WHERE realdate >= "{realdate_begin}" AND realdate < "{realdate_end}" ' \
               f' GROUP BY resourcepool,upgradetype, questiontype ' \
               f' ) B ' \
               f') A ' \

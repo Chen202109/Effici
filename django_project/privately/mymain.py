@@ -37,20 +37,20 @@ if __name__ == '__main__':
     #     print(f'插入第{i+1}行数据，返回 {result}')
 
     # # 导入license 数据的 excel
-    # file_path = f'C:\\Users\\Administrator\\Downloads\\license数据导入文件.xlsx'
-    # sql_key_str,sql_value_list = license_import(file_path)
-    # db = mysql_base.Db()
-    # for i in range(len(sql_value_list)):
-    #     result = db.insert('license_2023',sql_key_str,sql_value_list[i])
-    #     print(f'插入第{i}次数据，返回 {result}')
-
-    # # 导入升级计划 数据的 excel
-    file_path = f'C:\\Users\\Administrator\\Downloads\\升级计划导入文件.xlsx'
-    sql_key_str,sql_value_list = upgrade_import(file_path)
+    file_path = f'C:\\Users\\Administrator\\Downloads\\license数据导入文件.xlsx'
+    sql_key_str,sql_value_list = license_import(file_path)
     db = mysql_base.Db()
     for i in range(len(sql_value_list)):
-        result = db.insert('upgradeplan_2023',sql_key_str,sql_value_list[i])
+        result = db.insert('license_2023',sql_key_str,sql_value_list[i])
         print(f'插入第{i}次数据，返回 {result}')
+
+    # # 导入升级计划 数据的 excel
+    # file_path = f'C:\\Users\\Administrator\\Downloads\\升级计划导入文件.xlsx'
+    # sql_key_str,sql_value_list = upgrade_import(file_path)
+    # db = mysql_base.Db()
+    # for i in range(len(sql_value_list)):
+    #     result = db.insert('upgradeplan_2023',sql_key_str,sql_value_list[i])
+    #     print(f'插入第{i}次数据，返回 {result}')
 
     # 查询受理数据的部分
     # db = mysql_base.Db()
