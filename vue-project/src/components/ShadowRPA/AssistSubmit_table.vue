@@ -1,7 +1,7 @@
 <template>
   <div class="report-table">
     <el-table :data="tableData" border style="width: 100%" highlight-current-row: true>
-      <el-table-column type="expand" width="30px">
+      <el-table-column type="expand" label="详情" width="50px">
         <template slot-scope="sprop">
           <el-form label-position="left" inline class="demo-table-expand">
             <el-form-item label="解决方案: ">
