@@ -1,6 +1,6 @@
 <template>
     <el-row class="tac">
-        <el-col :span="12">
+        <el-col :span="24">
             <el-menu
                 default-active="2"
                 class="el-menu-vertical-demo"
@@ -9,10 +9,10 @@
                 background-color="#545c64"
                 text-color="#fff"
                 active-text-color="#ffd04b"
-                style="height: 100vh;"
+                style="height: 100vh; font-size: 11px"
                 @select="handleClick"
             >
-                <h5>默认颜色</h5>
+                <h2>菜单栏</h2>
 
                 <el-menu-item index="/user_management/index">
                     <i class="el-icon-user-solid"></i>
@@ -47,6 +47,16 @@
         </el-col>
     </el-row>
 </template>
+
+<style scope>
+    /* .el-menu-item{
+        padding-left: 10px !important;
+    }
+
+    .el-submenu .el-menu-item {
+        padding-left: 40px !important;
+    }  */
+</style>
   
 <script>
 export default {

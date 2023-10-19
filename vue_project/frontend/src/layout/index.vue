@@ -14,12 +14,11 @@
                             style="margin-right: 15px"
                         ></i>
                         <el-dropdown-menu slot="dropdown">
-                            <el-dropdown-item>查看</el-dropdown-item>
-                            <el-dropdown-item>新增</el-dropdown-item>
-                            <el-dropdown-item>删除</el-dropdown-item>
+                            <el-dropdown-item>退出登录</el-dropdown-item>
                         </el-dropdown-menu>
                     </el-dropdown>
                     <span>GGBond</span>
+                    
                 </el-header>
 
                 <el-main>
@@ -45,6 +44,7 @@
   
 <script>
 import LeftNavBarComponent from '@/components/side_bar/left_nav_bar.vue';
+// import SidebarItem from '@/layout/component/Sidebar/SidebarItem.vue'
 
 export default {
     components: { LeftNavBarComponent },
