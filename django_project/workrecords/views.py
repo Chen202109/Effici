@@ -115,6 +115,18 @@ def analysisselect(request):
             myChart_xAxis.append(tableData[i]['softversion']) #数组，前端myChart 组件的xAxis 中data数据
             myChart_series.append(tableData[i]['total']) #数组，前端myChart 组件的series 中data数据
 
+        # 给tableData最后一行加上合计
+        func_list = ["softversion", "total", "report", "openbill", "licenseReset", "added", "collection", "exchange", "writeoff", 
+                     "billManagement", "security", "print", "datasync", "inverse", "opening", "softbug", "sspz", "ycsjcl"]
+        summary = {}
+        summary["softversion"] = "合计"
+        for i in range(1,len(func_list)):
+            val = 0
+            for item in tableData:
+                val += item[func_list[i]]
+            summary[func_list[i]] = val        
+        tableData.append(summary)
+
         analysisData['tableData'] = tableData  # 添加数组元素 【数据汇报】--->受理问题的内容
         analysisData['myChart_xAxis'] = myChart_xAxis  # 添加数组元素 【数据汇报】--->受理问题的柱形图x轴数据
         analysisData['myChart_series'] = myChart_series  # 添加数组元素 【数据汇报】--->受理问题的柱形图中柱形上显示的数量

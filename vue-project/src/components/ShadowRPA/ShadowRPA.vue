@@ -17,7 +17,7 @@
 
       <el-main>
         <!-- 放入动态选项卡tagsView -->
-        <el-tabs type="border-card" closable @tab-remove="removeTab">
+        <el-tabs type="border-card" closable @tab-remove="removeTab" class="main-el-tab-pane">
           <el-tab-pane>
             <span slot="label"><i class="el-icon-date"></i>受理明细</span>
             <template>
@@ -30,9 +30,10 @@
             </template>
           </el-tab-pane>
 
-          <el-tab-pane label="数据汇报" overflow-y: auto>
+          <el-tab-pane label="数据汇报" overflow-y: auto class="main-el-tab-pane">
             <template>
               <AnalysisData></AnalysisData>
+              
             </template>
           </el-tab-pane>
         </el-tabs>
@@ -46,6 +47,7 @@ import LeftMenu from "@/components/ShadowRPA/LeftMenu.vue"
 import RPAHeader from "@/components/ShadowRPA/RPAHeader.vue"
 import AssistSubmit from "@/components/ShadowRPA/AssistSubmit.vue"
 import AnalysisData from "@/components/ShadowRPA/AnalysisData.vue"
+import AnalysisDataTest from "./AnalysisDataTest.vue"
 
 export default {
   data() {
@@ -71,7 +73,7 @@ export default {
     },
   },
 
-  components: { LeftMenu, RPAHeader, AssistSubmit,AnalysisData },
+  components: { LeftMenu, RPAHeader, AssistSubmit, AnalysisData, AnalysisDataTest },
 };
 </script>
 
@@ -84,5 +86,9 @@ export default {
 .el-tab-pane {
   height: calc(100vh - 190px);
   overflow-y: auto;
+}
+
+.main-el-tab-pane{
+    padding-right: 10px;
 }
 </style>
