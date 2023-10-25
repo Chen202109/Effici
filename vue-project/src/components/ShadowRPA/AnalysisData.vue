@@ -1,74 +1,72 @@
 <template>
   <!-- 所有的内容要被根节点包含起来-->
   <div id="news">
-    <div style="margin: 10px 0">
-        <template>
-          <div class="block">
-            <span class="demonstration">分析范围： </span>
-            <el-date-picker
-              v-model="dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-            >
-            </el-date-picker>
-            <el-button type="primary" @click="search">查询</el-button>
-          </div>
-        </template>
-      </div>
-      
-      <div style="margin: 10px 0">
-        <!-- 临时放入table 组件 style="font-size: 10px; width: 100%"-->
-        <template>
-          <!-- 周末要发的受理信息数据-->
-          <div>
-            受理问题总共 <span style="color: red;">{{all_total}}次</span>，其中bug数量为：<span style="color: red;">{{all_softbug}}个</span>，
-            实施配置：<span style="color: red;">{{all_sspz}}个</span>，异常数据处理：<span style="color: red;">{{all_ycsjcl}}次</span> 
-          </div>
-          <div>
-            <el-table
-              :data="analysisData['tableData']" 
-              :row-style="{ height: '30px' }" 
-              :header-cell-style="{fontSize:'14px',background:'#DDDDDD',color:'#696969', }"
-              style="font-size: 14px; width: 100%; " 
-              Boolean border
-              :cell-style="cellStyle" >
-              <el-table-column prop="softversion" label="程序版本" width="80" align="center" > </el-table-column>
-              <el-table-column v-for="(item, index) in tableTitle" :key="index" :prop="item.prop" :label="item.label" width="78" align="center"> </el-table-column>
-            </el-table>
-          </div>
-        </template>
-      </div>
-
-    <div style="margin: 10px 0, display: block">
-      <!-- 放入Echarts 可视化图形 组件 -->
-      <div class="myChart" id="myChart" :style="{ width: '550px', height: '350px'}"></div>
-      <div class="annularChart" id="annularChart" :style="{ width: '600px', height: '350px'}"></div>
-      <div class="saasProblemPieChart" id="saasProblemPieChart" :style="{ width: '600px', height: '400px'}"></div>
+    <div style="margin: 15px 0">
+      <template>
+        <div class="block">
+          <span class="demonstration">分析范围： </span>
+          <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
+            end-placeholder="结束日期">
+          </el-date-picker>
+          <el-button type="primary" @click="search">查询</el-button>
+        </div>
+      </template>
     </div>
 
+    <div style="margin: 15px 0">
+      <!-- 临时放入table 组件 style="font-size: 10px; width: 100%"-->
+      <template>
+        <!-- 周末要发的受理信息数据-->
+        <div>
+          受理问题总共 <span style="color: red;">{{ all_total }}次</span>，其中bug数量为：<span
+            style="color: red;">{{ all_softbug }}个</span>，
+          实施配置：<span style="color: red;">{{ all_sspz }}个</span>，异常数据处理：<span style="color: red;">{{ all_ycsjcl }}次</span>
+        </div>
+        <div>
+          <el-table :data="analysisData['tableData']" :row-style="{ height: '30px' }"
+            :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
+            style="font-size: 14px; width: 100%; " Boolean border :cell-style="saasTableCellStyle">
+            <el-table-column prop="softversion" label="程序版本" width="80" align="center"> </el-table-column>
+            <el-table-column v-for="(item, index) in tableTitle" :key="index" :prop="item.prop" :label="item.label"
+              width="78" align="center"> </el-table-column>
+          </el-table>
+        </div>
+      </template>
+    </div>
 
+    <div style="height: 20px;"></div>
+
+    <div style="margin: 15px 0, display: block">
+      <!-- 放入Echarts 可视化图形 组件 -->
+      <div class="myChart" id="myChart" :style="{ width: '600px', height: '400px' }"></div>
+      <div class="saasProblemPieChart" id="saasProblemPieChart" :style="{ width: '600px', height: '400px' }"></div>
+      <div class="annularChart" id="annularChart" :style="{ width: '600px', height: '0' }"></div>
+    </div>
+
+    <div class="clearFloat"></div>
+
+    <div style="height: 20px;"></div>
 
     <!-- 放入license的数据组件 -->
-    <div style="margin: 10px 0">
-      <license :licenseData="analysisData['licenseData']"></license>      
+    <div style="margin: 15px 0">
+      <license :licenseData="analysisData['licenseData']"></license>
     </div>
 
     <!-- 放入upgrade 资源池升级数据组件 -->
-    <div style="float: left; margin: 10px 20px 10px 0;">
+    <div style="float: left; margin: 15px 20px 15px 0;">
       <upgrade :upgradeData="analysisData['upgradeData']"></upgrade>
     </div>
 
-    <div style="float: left;">
+    <div style="float: left; margin: 15px 20px 15px 0;">
       <el-button v-if="showForm != true" type="primary" @click="showForm = true">查看问题分类统计</el-button>
-      <el-table  v-if="showForm" :data="analysisData['tableData']" :header-cell-style="{ background:'#DDDDDD',color:'#000'}" 
-        :row-style="{ height: '25px' }" :cell-style="{padding:'0px'}" border style="width: 100%" show-summary>
-        <el-table-column prop="softversion" label="程序版本" width="100" align="center" > </el-table-column>
-        <el-table-column prop="softbug" label="产品bug" width="80" align="center" > </el-table-column>
-        <el-table-column prop="sspz" label="实施配置" width="80" align="center" > </el-table-column>   
-        <el-table-column prop="ycsjcl" label="异常数据处理" width="110" align="center" > </el-table-column>   
-      </el-table>  
+      <el-table v-if="showForm" :data="analysisData['tableData']"
+        :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
+        :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%">
+        <el-table-column prop="softversion" label="程序版本" width="100" align="center"> </el-table-column>
+        <el-table-column prop="softbug" label="产品bug" width="80" align="center"> </el-table-column>
+        <el-table-column prop="sspz" label="实施配置" width="80" align="center"> </el-table-column>
+        <el-table-column prop="ycsjcl" label="异常数据处理" width="110" align="center"> </el-table-column>
+      </el-table>
     </div>
   </div>
 </template>
@@ -151,7 +149,6 @@ export default {
         // licenseData license表格的数据
         licenseData: [
           {
-            省份: '申请单位数',
             北京: 999,
             山西: 99,
             内蒙古: 99,
@@ -185,7 +182,7 @@ export default {
   },
   // 计算合计属性
   computed: {
-    data() {},
+    data() { },
   },
   // 在初始化页面完成后,再对dom节点上图形进行相关绘制
   mounted() {
@@ -209,7 +206,7 @@ export default {
           left: 'left',
           top: '1%',
           textStyle: {
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: 'normal',
             fontStyle: 'normal',
             color: '#3398DB',
@@ -237,6 +234,7 @@ export default {
           {
             name: '数量',
             type: 'bar',
+            top: '3%',
             data: [5, 20, 36, 10, 10, 20],
             // label 是说是否显示柱形图上的数值，position 表示数值的位置
             label: {
@@ -249,60 +247,71 @@ export default {
         ],
       }),
 
-      // 绘制饼状的图形
-      annularChart.setOption({
-        tooltip: { trigger: 'item' },
-        legend: {
-          top: '2%',
-          left: 'center',
-        },
-        series: [
-          {
-            name: '受理数量',
-            type: 'pie',
-            radius: ['30%', '70%'],
-            avoidLabelOverlap: false,
-            itemStyle: {
-              borderRadius: 10,
-              borderColor: '#fff',
-              borderWidth: 2,
-            },
-            label: {
-              show: true, // 是否显示标签
-              formatter: '{b} : {d}%', // 格式化标签内容
-              position: 'inside', // 设置标签位置为内部
-              fontSize: 12, // 设置标签字体大小为14px
-            },
-            emphasis: {
-              label: {
-                show: true,
-                fontSize: 40,
-                fontWeight: 'bold',
-              },
-            },
-            labelLine: {
-              show: false,
-            },
-            data: [
-              { value: 1048, name: '报表功能' },
-              { value: 735, name: '开票功能' },
-              { value: 580, name: 'license重置' },
-              { value: 484, name: '增值服务' },
-              { value: 300, name: '收缴业务' },
-              { value: 1048, name: '通知交互' },
-              { value: 735, name: '核销功能' },
-              { value: 580, name: '票据管理' },
-              { value: 484, name: '安全漏洞' },
-              { value: 300, name: '打印功能' },
-              { value: 484, name: '数据同步' },
-              { value: 300, name: '反算功能' },
-              { value: 300, name: '单位开通' },
-            ],
+        // 绘制饼状的图形
+        annularChart.setOption({
+          tooltip: { trigger: 'item' },
+          legend: {
+            top: '2%',
+            left: 'center',
           },
-        ],
-      })
+          series: [
+            {
+              name: '受理数量',
+              type: 'pie',
+              radius: ['30%', '70%'],
+              avoidLabelOverlap: false,
+              itemStyle: {
+                borderRadius: 10,
+                borderColor: '#fff',
+                borderWidth: 2,
+              },
+              label: {
+                show: true, // 是否显示标签
+                formatter: '{b} : {d}%', // 格式化标签内容
+                position: 'inside', // 设置标签位置为内部
+                fontSize: 12, // 设置标签字体大小为14px
+              },
+              emphasis: {
+                label: {
+                  show: true,
+                  fontSize: 40,
+                  fontWeight: 'bold',
+                },
+              },
+              labelLine: {
+                show: false,
+              },
+              data: [
+                { value: 1048, name: '报表功能' },
+                { value: 735, name: '开票功能' },
+                { value: 580, name: 'license重置' },
+                { value: 484, name: '增值服务' },
+                { value: 300, name: '收缴业务' },
+                { value: 1048, name: '通知交互' },
+                { value: 735, name: '核销功能' },
+                { value: 580, name: '票据管理' },
+                { value: 484, name: '安全漏洞' },
+                { value: 300, name: '打印功能' },
+                { value: 484, name: '数据同步' },
+                { value: 300, name: '反算功能' },
+                { value: 300, name: '单位开通' },
+              ],
+            },
+          ],
+        })
 
       saasProblemPieChart.setOption({
+        title: {
+          text: 'SaaS受理问题分类',
+          left: 'left',
+          top: '1%',
+          textStyle: {
+            fontSize: 18,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            color: '#3398DB',
+          },
+        },
         tooltip: {
           trigger: 'item',
           formatter: '{a} <br/>{b}: {c} ({d}%)'
@@ -314,9 +323,10 @@ export default {
             type: 'pie',
             selectedMode: 'single',
             radius: [0, '35%'],
+            top: "6%",
             label: {
               show: true, // 是否显示标签
-              formatter: '{b} \n {d}%', // 格式化标签内容
+              formatter: '{b}\n{c}次 \n {d}%',
               position: 'inside', // 设置标签位置为内部
               fontSize: 12, // 设置标签字体大小为14px
             },
@@ -333,6 +343,7 @@ export default {
             name: 'Access From',
             type: 'pie',
             radius: ['45%', '60%'],
+            top: "6%",
             left: 'center',
             width: 600,
             labelLine: {
@@ -392,22 +403,35 @@ export default {
       })
     },
 
-    cellStyle(row){//根据情况显示背景色
-        let style = ''
-        if (row.rowIndex === this.analysisData["tableData"].length-1){
-          style = 'background: rgb(253 238 32 / 20%);'
-        }
-        if(row.column.label==="程序版本"){
-          style =  'background: rgb(64 158 255 / 50%);'
-        }else if(row.column.label==="受理合计"){
-          style =  'background: rgb(253 238 32 / 20%); color: red; '
-        }else if(row.column.label==="缺陷合计"){
-          style = 'background: rgba(245, 108, 108, 0.41); color: blue; '
-        }
-        
-        return style
-      },
-    // 结束echarts图形绘制
+    saasTableCellStyle(row) {//根据情况显示背景色
+      let style = ''
+      if (row.rowIndex === this.analysisData["tableData"].length - 1) {
+        style = 'background: rgb(253 238 32 / 20%);'
+      }
+      if (row.column.label === "程序版本") {
+        style = 'background: rgb(64 158 255 / 50%);'
+      } else if (row.column.label === "受理合计") {
+        style = 'background: rgb(253 238 32 / 20%); color: red; '
+      } else if (row.column.label === "缺陷合计") {
+        style = 'background: rgba(245, 108, 108, 0.41); color: blue; '
+      }
+      style += 'font-size: 14px; '
+      return style
+    },
+
+
+    saasProblemTypeInVersionTableCellStyle(row) {
+      let style = ''
+      if (row.rowIndex === this.analysisData["tableData"].length - 1) {
+        style = 'background: rgb(253 238 32 / 20%); color: red; '
+      }
+      if (row.column.label === "程序版本") {
+        style = 'background: rgb(64 158 255 / 50%);'
+      }
+      style += 'font-size: 14px; '
+      return style
+    },
+
 
     // 进行 查询 事件,因为axios是异步的请求，所以会先处理数据，空闲了才处理异步数据
     async search() {
@@ -434,9 +458,9 @@ export default {
       try {
         const response = await this.$http.get(
           '/api/CMC/workrecords/analysisselect?beginData=' +
-            searchValue['beginData'] +
-            '&endData=' +
-            searchValue['endData']
+          searchValue['beginData'] +
+          '&endData=' +
+          searchValue['endData']
         )
         //this.templates= response.data.data;
         console.log('获得this.analysisData为', response.data.data)
@@ -445,7 +469,7 @@ export default {
           '获得this.analysisData["annularChart_data"]为',
           this.analysisData['annularChart_data']
         )
-        this.analysisData['licenseData'][0]['省份'] = '申请单位数' // 字典里面插入 省份这个列
+
         //for循环计算license申请的 合计数
         let license_total = 0
         for (const dict of this.analysisData['licenseData']) {
@@ -458,6 +482,24 @@ export default {
           }
         }
         this.analysisData['licenseData'][0]['合计'] = license_total //字典加入合计数
+
+        let upgrade_total = {
+                "resourcepool": "合计",
+                "upgradetype": "",
+                "升级次数": 0,
+                "缺陷": 0,
+                "需求": 0,
+                "优化": 0
+            }
+        
+        for( const item in this.analysisData["upgradeData"]){
+          upgrade_total["升级次数"] += parseInt(this.analysisData["upgradeData"][item]["升级次数"])
+          upgrade_total["缺陷"] += parseInt(this.analysisData["upgradeData"][item]["缺陷"])
+          upgrade_total["需求"] += parseInt(this.analysisData["upgradeData"][item]["需求"])
+          upgrade_total["优化"] += parseInt(this.analysisData["upgradeData"][item]["优化"])
+        }
+        this.analysisData["upgradeData"].push(upgrade_total)
+
       } catch (error) {
         console.log(error)
         this.$message.error('错了哦，仔细看错误信息弹窗')
@@ -487,9 +529,7 @@ export default {
       console.log('总和', this.analysisData['myChart_series'])
 
       // 构造柱形图的 series 数据
-      let seriesData = this.analysisData['myChart_series'].map(function (
-        value
-      ) {
+      let seriesData = this.analysisData['myChart_series'].map(function (value) {
         let percentage = ((value / total) * 100).toFixed(2) // 计算百分比
         //弹出提示
         console.log('数值', value, total)
@@ -499,7 +539,21 @@ export default {
             // 设置柱形图的数值
             show: true,
             position: 'top',
-            formatter: '{b}\n{c}次 ({d}%)'.replace('{d}', percentage),
+            align: 'center',
+            // formatter: '{b|{b}}\n{c}次\n({d}%)'.replace('{d}', percentage),
+            formatter: '{c|{c}}次\n({d|{d}%})'.replace('{d}', percentage),
+            rich: {
+              c: {
+                color: '#4C5058',
+                fontSize: 14,
+              },
+              d: {
+                color: '#4C5058',
+                fontSize: 14,
+                fontWeight: 'bold',
+              }
+            }
+
           },
         }
       })
@@ -547,10 +601,10 @@ export default {
         "sspz": "实施配置",
         "ycsjcl": "异常数据处理"
       }
-      
-      let summaryRow = this.analysisData['tableData'].length-1
+
+      let summaryRow = this.analysisData['tableData'].length - 1
       let summaryData = []
-      for(let key in this.analysisData['tableData'][summaryRow]){ 
+      for (let key in this.analysisData['tableData'][summaryRow]) {
         summaryData.push({ value: this.analysisData['tableData'][summaryRow][key], name: problemDict[key] })
       }
       let saasProblemPieChart = echarts.getInstanceByDom(
@@ -559,28 +613,18 @@ export default {
       if (saasProblemPieChart) {
         // 修改annularChart的data参数
         saasProblemPieChart.setOption({
-          series : [
+          series: [
             {
-              data : summaryData.slice(summaryData.length-4,summaryData.length-1)
+              data: summaryData.slice(summaryData.length - 4, summaryData.length - 1)
             },
             {
-              data : summaryData.slice(2,summaryData.length-4)
+              data: summaryData.slice(2, summaryData.length - 4)
             }
           ]
         })
       } //结束if判断
 
       // 计算描述内容上的各种合计数
-      // this.all_total = 0 // 初始化清零
-      // this.all_softbug = 0 // 初始化清零
-      // this.all_sspz = 0 // 初始化清零
-      // this.all_ycsjcl = 0 // 初始化清零
-      // for (var i = 0; i < this.analysisData['tableData'].length-1; i++) {
-      //   this.all_total += parseInt(this.analysisData['tableData'][i].total)
-      //   this.all_softbug += parseInt(this.analysisData['tableData'][i].softbug)
-      //   this.all_sspz += parseInt(this.analysisData['tableData'][i].sspz)
-      //   this.all_ycsjcl += parseInt(this.analysisData['tableData'][i].ycsjcl)
-      // }
       this.all_total = this.analysisData['tableData'][summaryRow].total
       this.all_softbug = this.analysisData['tableData'][summaryRow].softbug
       this.all_sspz = this.analysisData['tableData'][summaryRow].sspz
@@ -592,24 +636,27 @@ export default {
 </script>
 
 <style scoped lang="scss">
- ::v-deep .el-table .el-table__footer-wrapper{
+::v-deep .el-table .el-table__footer-wrapper {
   background-color: rebeccapurple;
 }
 </style>
 
 <style>
-
 /* 通过设置div class对应的float方向，可以让两个div在同一行 */
 .myChart {
   float: left;
 }
+
 .annularChart {
   float: right;
 }
 
-.saasProblemPieChart{
+.saasProblemPieChart {
   float: right;
 }
 
+.clearFloat {
+  clear: both;
+}
 </style>
 
