@@ -38,8 +38,6 @@
     methods: {
       upgradeTableCellStyle(row){
         let style = ''
-        console.log(11111)
-        console.log(this.upgradeData)
         if (row.rowIndex === this.upgradeData.length - 1) {
           style = 'background: rgb(253 238 32 / 20%);'
         }

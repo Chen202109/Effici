@@ -8,7 +8,7 @@
     <el-table-column prop="省份" label="省份"  width="100" align="center"> 
       <el-table-row>单位申请数</el-table-row>
     </el-table-column>
-    <el-table-column v-for="(value, key) in licenseData[0]" :key="key" :prop="key" :label="key" :width="columnWdith(key)" align="center"> </el-table-column>
+    <el-table-column v-for="(value, key) in licenseData[0]" :key="key" :prop="key" :label="key" :width="columnWidth(key)" align="center"> </el-table-column>
   </el-table>
 </template>
 
@@ -30,11 +30,11 @@
       }
     },
     mounted() {
-        console.log('北京',this.licenseData[0]['北京'],'上海',this.licenseData[0]['上海'])
+      
     },
 
     methods: {
-      columnWdith(key) {
+      columnWidth(key) {
         let width
         if (key.length === 2){
           width = 50

@@ -27,8 +27,7 @@
             :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
             style="font-size: 14px; width: 100%; " Boolean border :cell-style="saasTableCellStyle">
             <el-table-column prop="softversion" label="程序版本" width="80" align="center"> </el-table-column>
-            <el-table-column v-for="(item, index) in tableTitle" :key="index" :prop="item.prop" :label="item.label"
-              width="78" align="center"> </el-table-column>
+            <el-table-column v-for="(item, index) in tableTitle" :key="index" :prop="item.prop" :label="item.label" width="78" align="center"> </el-table-column>
           </el-table>
         </div>
       </template>
@@ -47,27 +46,35 @@
 
     <div style="height: 20px;"></div>
 
+    <p class="saasAnalysisTitle"> SaaS各版本处理汇总</p>
+    <div style="margin: 15px 20px 15px 0;">
+      <el-table :data="saasProblemTypeInVersions"
+        :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
+        :row-style="{ height: '25px' }" 
+        :cell-style="saasProblemTypeInVersionTableCellStyle" 
+        border 
+        style="width: 100%">
+        <el-table-column v-for="(value, key) in saasProblemTypeInVersions[0]" :key="key" :prop="key" :label="key.replace(/\_/g,'.')" :width="saasProblemTypeInVersionTableColumnWidth(key)" align="center"> </el-table-column>
+      </el-table>
+    </div>
+
+    <div style="height: 20px;"></div>
+
+    <p class="saasAnalysisTitle"> license受理数据</p>
     <!-- 放入license的数据组件 -->
     <div style="margin: 15px 0">
       <license :licenseData="analysisData['licenseData']"></license>
     </div>
 
+    <div style="height: 20px;"></div>
+
+    <p class="saasAnalysisTitle"> 升级数据</p>
     <!-- 放入upgrade 资源池升级数据组件 -->
-    <div style="float: left; margin: 15px 20px 15px 0;">
+    <div style="margin: 15px 20px 15px 0;">
       <upgrade :upgradeData="analysisData['upgradeData']"></upgrade>
     </div>
 
-    <div style="float: left; margin: 15px 20px 15px 0;">
-      <el-button v-if="showForm != true" type="primary" @click="showForm = true">查看问题分类统计</el-button>
-      <el-table v-if="showForm" :data="analysisData['tableData']"
-        :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
-        :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%">
-        <el-table-column prop="softversion" label="程序版本" width="100" align="center"> </el-table-column>
-        <el-table-column prop="softbug" label="产品bug" width="80" align="center"> </el-table-column>
-        <el-table-column prop="sspz" label="实施配置" width="80" align="center"> </el-table-column>
-        <el-table-column prop="ycsjcl" label="异常数据处理" width="110" align="center"> </el-table-column>
-      </el-table>
-    </div>
+
   </div>
 </template>
 
@@ -90,7 +97,6 @@ export default {
   },
   data() {
     return {
-      showForm: false, // 控制显示隐藏问题分类的图表
       all_total: 0,
       all_softbug: 0,
       all_sspz: 0,
@@ -111,6 +117,17 @@ export default {
         { prop: 'inverse', label: '反算功能' },
         { prop: 'opening', label: '单位开通' },
         { prop: 'softbug', label: '缺陷合计' },
+      ],
+      saasProblemTypeInVersions: [
+        {
+          "问题分类":"产品bug",
+        },
+        {
+          "问题分类":"实施配置",
+        },
+        {
+          "问题分类":"异常数据处理",
+        },
       ],
       //查询日期
       dateRange: [
@@ -422,15 +439,23 @@ export default {
 
     saasProblemTypeInVersionTableCellStyle(row) {
       let style = ''
-      if (row.rowIndex === this.analysisData["tableData"].length - 1) {
+      if (row.column.label === "合计") {
         style = 'background: rgb(253 238 32 / 20%); color: red; '
-      }
-      if (row.column.label === "程序版本") {
-        style = 'background: rgb(64 158 255 / 50%);'
       }
       style += 'font-size: 14px; '
       return style
     },
+
+    saasProblemTypeInVersionTableColumnWidth(key) {
+        let width
+        if (key=== "问题分类"){
+          width = 110
+        }else{
+          width = 80
+        }
+        return width
+      },
+
 
 
     // 进行 查询 事件,因为axios是异步的请求，所以会先处理数据，空闲了才处理异步数据
@@ -462,13 +487,17 @@ export default {
           '&endData=' +
           searchValue['endData']
         )
-        //this.templates= response.data.data;
         console.log('获得this.analysisData为', response.data.data)
         this.analysisData = response.data.data // 这里不能将整个data赋过去，会造成其他数据被覆盖
-        console.log(
-          '获得this.analysisData["annularChart_data"]为',
-          this.analysisData['annularChart_data']
-        )
+
+        for (const item of this.analysisData['tableData']){
+          this.saasProblemTypeInVersions[0][item['softversion'].replace(/\./g,'_')] = item['softbug']
+          this.saasProblemTypeInVersions[1][item['softversion'].replace(/\./g,'_')] = item['sspz']
+          this.saasProblemTypeInVersions[2][item['softversion'].replace(/\./g,'_')] = item['ycsjcl']
+        }
+        console.log(2222)
+        console.log(this.saasProblemTypeInVersions)
+        
 
         //for循环计算license申请的 合计数
         let license_total = 0
@@ -483,6 +512,7 @@ export default {
         }
         this.analysisData['licenseData'][0]['合计'] = license_total //字典加入合计数
 
+        // 计算upgrade的合计行
         let upgrade_total = {
                 "resourcepool": "合计",
                 "upgradetype": "",
@@ -615,10 +645,10 @@ export default {
         saasProblemPieChart.setOption({
           series: [
             {
-              data: summaryData.slice(summaryData.length - 4, summaryData.length - 1)
+              data: summaryData.slice(summaryData.length - 3, summaryData.length)
             },
             {
-              data: summaryData.slice(2, summaryData.length - 4)
+              data: summaryData.slice(2, summaryData.length - 3)
             }
           ]
         })
@@ -643,6 +673,12 @@ export default {
 
 <style>
 /* 通过设置div class对应的float方向，可以让两个div在同一行 */
+.saasAnalysisTitle {
+  color: #3398DB; 
+  font-size: 18; 
+  margin: 5px 10px 5px 0;
+}
+
 .myChart {
   float: left;
 }
