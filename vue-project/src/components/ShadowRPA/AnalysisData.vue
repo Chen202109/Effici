@@ -39,7 +39,7 @@
           <el-table-column prop="datasync" label="数据同步" width="80" align="center" > </el-table-column>   
           <el-table-column prop="inverse" label="反算功能" width="80" align="center" > </el-table-column>
           <el-table-column prop="opening" label="单位开通" width="80" align="center" > </el-table-column>
-          <el-table-column prop="softbug" label="缺陷合计" width="80" align="center" style="font-size: 30px; width: 100% "> </el-table-column>         
+          <el-table-column prop="softbug" label="缺陷合计" width="80" align="center"> </el-table-column>         
         </el-table>
       </template>
     </div>

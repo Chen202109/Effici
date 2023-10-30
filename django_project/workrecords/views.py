@@ -140,10 +140,11 @@ def analysisselect(request):
         realdate_end = datetime.strptime(endData, '%Y-%m-%d') + timedelta(days=1)
 
 
-        sql = f'SELECT A.resourcepool, upgradetype,SUM(A.升级次数) as 升级次数, ' \
+        sql = f'SELECT A.resourcepool, upgradetype, ' \
               f'SUM(IF(LOCATE("bug", A.questiontype) > 0, A.数量, 0)) AS 缺陷, ' \
               f'SUM(IF(LOCATE("需求", A.questiontype) > 0, A.数量, 0)) AS 需求, ' \
-              f'SUM(IF(LOCATE("优化", A.questiontype) > 0, A.数量, 0)) AS 优化 ' \
+              f'SUM(IF(LOCATE("优化", A.questiontype) > 0, A.数量, 0)) AS 优化, ' \
+              f'SUM(A.升级次数) as 升级次数  ' \
               f' FROM ' \
               f' (SELECT resourcepool, upgradetype,COUNT(*) AS 升级次数, "" AS questiontype, 0 AS 数量 ' \
               f' FROM upgradeplan_2023 ' \
