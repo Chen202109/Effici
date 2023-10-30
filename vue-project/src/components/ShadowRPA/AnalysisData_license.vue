@@ -29,9 +29,6 @@
         
       }
     },
-    mounted() {
-      
-    },
 
     methods: {
       columnWidth(key) {
@@ -45,6 +42,7 @@
       },
 
       licenseTableCellStyle(row){
+        console.log(3333333)
         let style = ''
         if(row.column.label==="合计"){
           style =  'background: rgb(253 238 32 / 20%); color: red; '

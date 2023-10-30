@@ -17,19 +17,7 @@
       <!-- 临时放入table 组件 style="font-size: 10px; width: 100%"-->
       <template>
         <!-- 周末要发的受理信息数据-->
-        <div>
-          受理问题总共 <span style="color: red;">{{ all_total }}次</span>，其中bug数量为：<span
-            style="color: red;">{{ all_softbug }}个</span>，
-          实施配置：<span style="color: red;">{{ all_sspz }}个</span>，异常数据处理：<span style="color: red;">{{ all_ycsjcl }}次</span>
-        </div>
-        <div>
-          <el-table :data="analysisData['tableData']" :row-style="{ height: '30px' }"
-            :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
-            style="font-size: 14px; width: 100%; " Boolean border :cell-style="saasTableCellStyle">
-            <el-table-column prop="softversion" label="程序版本" width="80" align="center"> </el-table-column>
-            <el-table-column v-for="(item, index) in tableTitle" :key="index" :prop="item.prop" :label="item.label" width="78" align="center"> </el-table-column>
-          </el-table>
-        </div>
+        <saasProblemTable :saasProblemTableData="analysisData['tableData']"></saasProblemTable>
       </template>
     </div>
 
@@ -39,7 +27,6 @@
       <!-- 放入Echarts 可视化图形 组件 -->
       <div class="myChart" id="myChart" :style="{ width: '600px', height: '400px' }"></div>
       <div class="saasProblemPieChart" id="saasProblemPieChart" :style="{ width: '600px', height: '400px' }"></div>
-      <div class="annularChart" id="annularChart" :style="{ width: '600px', height: '0' }"></div>
     </div>
 
     <div class="clearFloat"></div>
@@ -50,11 +37,10 @@
     <div style="margin: 15px 20px 15px 0;">
       <el-table :data="saasProblemTypeInVersions"
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
-        :row-style="{ height: '25px' }" 
-        :cell-style="saasProblemTypeInVersionTableCellStyle" 
-        border 
-        style="width: 100%">
-        <el-table-column v-for="(value, key) in saasProblemTypeInVersions[0]" :key="key" :prop="key" :label="key.replace(/\_/g,'.')" :width="saasProblemTypeInVersionTableColumnWidth(key)" align="center"> </el-table-column>
+        :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%">
+        <el-table-column v-for="(value, key) in saasProblemTypeInVersions[0]" :key="key" :prop="key"
+          :label="key.replace(/\_/g, '.')" :width="columnWidth(key)" align="center">
+        </el-table-column>
       </el-table>
     </div>
 
@@ -68,10 +54,37 @@
 
     <div style="height: 20px;"></div>
 
-    <p class="saasAnalysisTitle"> 升级数据</p>
+
     <!-- 放入upgrade 资源池升级数据组件 -->
-    <div style="margin: 15px 20px 15px 0;">
-      <upgrade :upgradeData="analysisData['upgradeData']"></upgrade>
+    <div style="margin: 5px 20px 5px 0;">
+      <div>
+        <div class="dailyUpgradeTable">
+          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 日常升级数据</p>
+          <el-table :data="this.saasUpgradeData[0]"
+            :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
+            :row-style="{ height: '35px' }" 
+            :cell-style="upgradeTableCellStyle" 
+            border
+            style="width: 100%">
+            <el-table-column v-for="(value, key) in this.saasUpgradeData[0][0]" :key="key" :prop="key" :label="key"
+              :width="columnWidth(key)" align="center">
+            </el-table-column>
+          </el-table>
+        </div>
+        <div class="addedUpgradeTable">
+          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 增值升级数据</p>
+          <el-table :data="this.saasUpgradeData[1]"
+            :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
+            :row-style="{ height: '35px' }" 
+            :cell-style="upgradeTableCellStyle" 
+            border
+            style="width: 100%">
+            <el-table-column v-for="(value, key) in this.saasUpgradeData[1][0]" :key="key" :prop="key" :label="key"
+              :width="columnWidth(key)" align="center">
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
     </div>
 
 
@@ -79,6 +92,7 @@
 </template>
 
 <script>
+import saasProblemTable from '@/components/ShadowRPA/AnalysisData_saasProblemTable.vue'
 import license from '@/components/ShadowRPA/AnalysisData_license.vue'
 import upgrade from '@/components/ShadowRPA/AnalysisData_upgrade.vue'
 
@@ -94,13 +108,10 @@ export default {
   components: {
     license,
     upgrade,
+    saasProblemTable
   },
   data() {
     return {
-      all_total: 0,
-      all_softbug: 0,
-      all_sspz: 0,
-      all_ycsjcl: 0, // 本范围受理总数、产品bug、实施配置、异常数据处理
       tableTitle: [
         { prop: 'total', label: '受理合计' },
         { prop: 'report', label: '报表功能' },
@@ -120,14 +131,44 @@ export default {
       ],
       saasProblemTypeInVersions: [
         {
-          "问题分类":"产品bug",
+          "问题分类": "产品bug",
         },
         {
-          "问题分类":"实施配置",
+          "问题分类": "实施配置",
         },
         {
-          "问题分类":"异常数据处理",
+          "问题分类": "异常数据处理",
         },
+      ],
+      saasUpgradeData: [
+        [
+          {
+            " ": "升级次数",
+          },
+          {
+            " ": "缺陷",
+          },
+          {
+            " ": "需求",
+          },
+          {
+            " ": "优化",
+          },
+        ],
+        [
+          {
+            " ": "升级次数",
+          },
+          {
+            " ": "缺陷",
+          },
+          {
+            " ": "需求",
+          },
+          {
+            " ": "优化",
+          },
+        ],
       ],
       //查询日期
       dateRange: [
@@ -161,8 +202,10 @@ export default {
         ],
         // upgradeData 升级计划表格的数据
         upgradeData: [
-          { resourcepool: '01资源池', 缺陷: '0', 需求: '0', 优化: '0' },
+
         ], // 升级表格数据
+
+
         // licenseData license表格的数据
         licenseData: [
           {
@@ -211,7 +254,6 @@ export default {
     drawLine() {
       // 基于准备好的dom，初始化echarts实例
       let myChart = echarts.init(document.getElementById('myChart'))
-      let annularChart = echarts.init(document.getElementById('annularChart'))
       let saasProblemPieChart = echarts.init(document.getElementById('saasProblemPieChart'))
 
       // 绘制柱形图形
@@ -264,160 +306,107 @@ export default {
         ],
       }),
 
-        // 绘制饼状的图形
-        annularChart.setOption({
-          tooltip: { trigger: 'item' },
-          legend: {
-            top: '2%',
-            left: 'center',
+        saasProblemPieChart.setOption({
+          title: {
+            text: 'SaaS受理问题分类',
+            left: 'left',
+            top: '1%',
+            textStyle: {
+              fontSize: 18,
+              fontWeight: 'normal',
+              fontStyle: 'normal',
+              color: '#3398DB',
+            },
           },
+          tooltip: {
+            trigger: 'item',
+            formatter: '{a} <br/>{b}: {c} ({d}%)'
+          },
+
           series: [
             {
-              name: '受理数量',
+              name: 'Access From',
               type: 'pie',
-              radius: ['30%', '70%'],
-              avoidLabelOverlap: false,
-              itemStyle: {
-                borderRadius: 10,
-                borderColor: '#fff',
-                borderWidth: 2,
-              },
+              selectedMode: 'single',
+              radius: [0, '40%'],
+              top: "6%",
               label: {
                 show: true, // 是否显示标签
-                formatter: '{b} : {d}%', // 格式化标签内容
+                formatter: '{b}\n{c}次 \n {d}%',
                 position: 'inside', // 设置标签位置为内部
                 fontSize: 12, // 设置标签字体大小为14px
               },
-              emphasis: {
-                label: {
-                  show: true,
-                  fontSize: 40,
-                  fontWeight: 'bold',
-                },
-              },
               labelLine: {
-                show: false,
+                show: false
               },
               data: [
-                { value: 1048, name: '报表功能' },
-                { value: 735, name: '开票功能' },
-                { value: 580, name: 'license重置' },
-                { value: 484, name: '增值服务' },
-                { value: 300, name: '收缴业务' },
-                { value: 1048, name: '通知交互' },
-                { value: 735, name: '核销功能' },
-                { value: 580, name: '票据管理' },
-                { value: 484, name: '安全漏洞' },
-                { value: 300, name: '打印功能' },
-                { value: 484, name: '数据同步' },
-                { value: 300, name: '反算功能' },
-                { value: 300, name: '单位开通' },
-              ],
+                { value: 10, name: 'softbug' },
+                { value: 19, name: 'sspz' },
+                { value: 6, name: 'ycsjcl' }
+              ]
             },
-          ],
-        })
-
-      saasProblemPieChart.setOption({
-        title: {
-          text: 'SaaS受理问题分类',
-          left: 'left',
-          top: '1%',
-          textStyle: {
-            fontSize: 18,
-            fontWeight: 'normal',
-            fontStyle: 'normal',
-            color: '#3398DB',
-          },
-        },
-        tooltip: {
-          trigger: 'item',
-          formatter: '{a} <br/>{b}: {c} ({d}%)'
-        },
-
-        series: [
-          {
-            name: 'Access From',
-            type: 'pie',
-            selectedMode: 'single',
-            radius: [0, '35%'],
-            top: "6%",
-            label: {
-              show: true, // 是否显示标签
-              formatter: '{b}\n{c}次 \n {d}%',
-              position: 'inside', // 设置标签位置为内部
-              fontSize: 12, // 设置标签字体大小为14px
-            },
-            labelLine: {
-              show: false
-            },
-            data: [
-              { value: 10, name: 'softbug' },
-              { value: 19, name: 'sspz' },
-              { value: 6, name: 'ycsjcl' }
-            ]
-          },
-          {
-            name: 'Access From',
-            type: 'pie',
-            radius: ['45%', '60%'],
-            top: "6%",
-            left: 'center',
-            width: 600,
-            labelLine: {
-              length: 15,
-              length2: 0,
-              maxSurfaceAngle: 80
-            },
-            label: {
-              alignTo: 'edge',
-              formatter: '{b|{b}：}{c}次 \n {per|{d}%}  ',
-              minMargin: 5,
-              edgeDistance: 10,
-              lineHeight: 15,
-              rich: {
-                b: {
-                  color: '#4C5058',
-                  fontSize: 14,
-                  fontWeight: 'bold',
-                  lineHeight: 33
-                },
-                per: {
-                  color: '#fff',
-                  backgroundColor: '#4C5058',
-                  padding: [3, 4],
-                  borderRadius: 4
+            {
+              name: 'Access From',
+              type: 'pie',
+              radius: ['50%', '65%'],
+              top: "6%",
+              left: 'center',
+              width: 600,
+              labelLine: {
+                length: 15,
+                length2: 0,
+                maxSurfaceAngle: 80
+              },
+              label: {
+                alignTo: 'edge',
+                formatter: '{b|{b}：}{c}次 \n {per|{d}%}  ',
+                minMargin: 5,
+                edgeDistance: 10,
+                lineHeight: 15,
+                rich: {
+                  b: {
+                    color: '#4C5058',
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    lineHeight: 33
+                  },
+                  per: {
+                    color: '#fff',
+                    backgroundColor: '#4C5058',
+                    padding: [3, 4],
+                    borderRadius: 4
+                  }
                 }
-              }
-            },
-            labelLayout: function (params) {
-              const isLeft = params.labelRect.x < myChart.getWidth() / 2;
-              const points = params.labelLinePoints;
-              // Update the end point.
-              points[2][0] = isLeft
-                ? params.labelRect.x
-                : params.labelRect.x + params.labelRect.width;
-              return {
-                labelLinePoints: points
-              };
-            },
-            data: [
-              { value: 3, name: 'report' },
-              { value: 5, name: 'openbill' },
-              { value: 6, name: 'licenseReset' },
-              { value: 2, name: 'added' },
-              { value: 3, name: 'collection' },
-              { value: 1, name: 'exchange' },
-              { value: 6, name: 'writeoff' },
-              { value: 1, name: 'billManagement' },
-              { value: 0, name: 'security' },
-              { value: 0, name: 'print' },
-              { value: 2, name: 'datasync' },
-              { value: 2, name: 'inverse' },
-              { value: 8, name: 'opening' }
-            ]
-          }
-        ]
-      })
+              },
+              labelLayout: function (params) {
+                const isLeft = params.labelRect.x < myChart.getWidth() / 2;
+                const points = params.labelLinePoints;
+                // Update the end point.
+                points[2][0] = isLeft
+                  ? params.labelRect.x
+                  : params.labelRect.x + params.labelRect.width;
+                return {
+                  labelLinePoints: points
+                };
+              },
+              data: [
+                { value: 3, name: 'report' },
+                { value: 5, name: 'openbill' },
+                { value: 6, name: 'licenseReset' },
+                { value: 2, name: 'added' },
+                { value: 3, name: 'collection' },
+                { value: 1, name: 'exchange' },
+                { value: 6, name: 'writeoff' },
+                { value: 1, name: 'billManagement' },
+                { value: 0, name: 'security' },
+                { value: 0, name: 'print' },
+                { value: 2, name: 'datasync' },
+                { value: 2, name: 'inverse' },
+                { value: 8, name: 'opening' }
+              ]
+            }
+          ]
+        })
     },
 
     saasTableCellStyle(row) {//根据情况显示背景色
@@ -446,16 +435,29 @@ export default {
       return style
     },
 
-    saasProblemTypeInVersionTableColumnWidth(key) {
-        let width
-        if (key=== "问题分类"){
-          width = 110
-        }else{
-          width = 80
-        }
-        return width
-      },
+    upgradeTableCellStyle(row) {
+      console.log(4444)
+      let style = ''
+      if (row.column.label === "合计") {
+        style = 'background: rgb(253 238 32 / 20%); color: red; '
+      }
+      style += 'font-size: 14px; '
+      return style
+    },
 
+    columnWidth(key) {
+      let width
+      if (key === "问题分类") {
+        width = 110
+      } else if (key.length === 4) {
+        width = 75
+      } else if (key.length === 5) {
+        width = 85
+      } else if (key.length === 6) {
+        width = 110
+      } 
+      return width
+    },
 
 
     // 进行 查询 事件,因为axios是异步的请求，所以会先处理数据，空闲了才处理异步数据
@@ -490,14 +492,25 @@ export default {
         console.log('获得this.analysisData为', response.data.data)
         this.analysisData = response.data.data // 这里不能将整个data赋过去，会造成其他数据被覆盖
 
-        for (const item of this.analysisData['tableData']){
-          this.saasProblemTypeInVersions[0][item['softversion'].replace(/\./g,'_')] = item['softbug']
-          this.saasProblemTypeInVersions[1][item['softversion'].replace(/\./g,'_')] = item['sspz']
-          this.saasProblemTypeInVersions[2][item['softversion'].replace(/\./g,'_')] = item['ycsjcl']
+        // 清空原来数据，根据每一次搜索的数据重新生成
+        this.saasProblemTypeInVersions = [
+        {
+          "问题分类": "产品bug",
+        },
+        {
+          "问题分类": "实施配置",
+        },
+        {
+          "问题分类": "异常数据处理",
+        },
+      ]
+
+        for (const item of this.analysisData['tableData']) {
+          this.saasProblemTypeInVersions[0][item['softversion'].replace(/\./g, '_')] = item['softbug']
+          this.saasProblemTypeInVersions[1][item['softversion'].replace(/\./g, '_')] = item['sspz']
+          this.saasProblemTypeInVersions[2][item['softversion'].replace(/\./g, '_')] = item['ycsjcl']
         }
-        console.log(2222)
-        console.log(this.saasProblemTypeInVersions)
-        
+
 
         //for循环计算license申请的 合计数
         let license_total = 0
@@ -512,23 +525,96 @@ export default {
         }
         this.analysisData['licenseData'][0]['合计'] = license_total //字典加入合计数
 
+
+        // 清空原来的数据，根据每一次搜索重新生成表格
+        this.saasUpgradeData = [
+        [
+          {
+            " ": "升级次数",
+          },
+          {
+            " ": "缺陷",
+          },
+          {
+            " ": "需求",
+          },
+          {
+            " ": "优化",
+          },
+        ],
+        [
+          {
+            " ": "升级次数",
+          },
+          {
+            " ": "缺陷",
+          },
+          {
+            " ": "需求",
+          },
+          {
+            " ": "优化",
+          },
+        ],
+      ]
+
+        let dailyUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '日常')
+        let addedUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '增值')
+
         // 计算upgrade的合计行
         let upgrade_total = {
-                "resourcepool": "合计",
-                "upgradetype": "",
-                "升级次数": 0,
-                "缺陷": 0,
-                "需求": 0,
-                "优化": 0
-            }
-        
-        for( const item in this.analysisData["upgradeData"]){
-          upgrade_total["升级次数"] += parseInt(this.analysisData["upgradeData"][item]["升级次数"])
-          upgrade_total["缺陷"] += parseInt(this.analysisData["upgradeData"][item]["缺陷"])
-          upgrade_total["需求"] += parseInt(this.analysisData["upgradeData"][item]["需求"])
-          upgrade_total["优化"] += parseInt(this.analysisData["upgradeData"][item]["优化"])
+          "resourcepool": "合计",
+          "upgradetype": "",
+          "升级次数": 0,
+          "缺陷": 0,
+          "需求": 0,
+          "优化": 0
         }
-        this.analysisData["upgradeData"].push(upgrade_total)
+
+        for (const item in dailyUpgradeTableData) {
+          upgrade_total["升级次数"] += parseInt(dailyUpgradeTableData[item]["升级次数"])
+          upgrade_total["缺陷"] += parseInt(dailyUpgradeTableData[item]["缺陷"])
+          upgrade_total["需求"] += parseInt(dailyUpgradeTableData[item]["需求"])
+          upgrade_total["优化"] += parseInt(dailyUpgradeTableData[item]["优化"])
+        }
+        // 将合计行放入dailyUpgradeTableData中
+        dailyUpgradeTableData.push(upgrade_total)
+
+        upgrade_total = {
+          "resourcepool": "合计",
+          "upgradetype": "",
+          "升级次数": 0,
+          "缺陷": 0,
+          "需求": 0,
+          "优化": 0
+        }
+
+        for (const item in addedUpgradeTableData) {
+          upgrade_total["升级次数"] += parseInt(addedUpgradeTableData[item]["升级次数"])
+          upgrade_total["缺陷"] += parseInt(addedUpgradeTableData[item]["缺陷"])
+          upgrade_total["需求"] += parseInt(addedUpgradeTableData[item]["需求"])
+          upgrade_total["优化"] += parseInt(addedUpgradeTableData[item]["优化"])
+        }
+        // 将合计行放入addedUpgradeTableData中
+        addedUpgradeTableData.push(upgrade_total)
+
+        // 对日常和增值两个表进行row 和 col的交换
+        for (const item of dailyUpgradeTableData) {
+          this.saasUpgradeData[0][0][item["resourcepool"]] = item['升级次数']
+          this.saasUpgradeData[0][1][item["resourcepool"]] = item['缺陷']
+          this.saasUpgradeData[0][2][item["resourcepool"]] = item['需求']
+          this.saasUpgradeData[0][3][item["resourcepool"]] = item['优化']
+        }
+
+        for (const item of addedUpgradeTableData) {
+          this.saasUpgradeData[1][0][item["resourcepool"]] = item['升级次数']
+          this.saasUpgradeData[1][1][item["resourcepool"]] = item['缺陷']
+          this.saasUpgradeData[1][2][item["resourcepool"]] = item['需求']
+          this.saasUpgradeData[1][3][item["resourcepool"]] = item['优化']
+        }
+
+        console.log(211221122121)
+        console.log(this.saasUpgradeData)
 
       } catch (error) {
         console.log(error)
@@ -598,18 +684,6 @@ export default {
         })
       } //结束if判断
 
-      //受理情况的饼状图 修改它的 data
-      let annularChart = echarts.getInstanceByDom(
-        document.getElementById('annularChart')
-      ) // 获取到当前的annularChart实例
-      if (annularChart) {
-        // 修改annularChart的data参数
-        annularChart.setOption({
-          series: { data: this.analysisData['annularChart_data'] },
-        })
-      } //结束if判断
-
-
       // 嵌套环形图的数据放入
       let problemDict = {
         "softversion": "版本号",
@@ -639,9 +713,8 @@ export default {
       }
       let saasProblemPieChart = echarts.getInstanceByDom(
         document.getElementById('saasProblemPieChart')
-      ) // 获取到当前的annularChart实例
+      )
       if (saasProblemPieChart) {
-        // 修改annularChart的data参数
         saasProblemPieChart.setOption({
           series: [
             {
@@ -652,15 +725,11 @@ export default {
             }
           ]
         })
-      } //结束if判断
+      }
 
-      // 计算描述内容上的各种合计数
-      this.all_total = this.analysisData['tableData'][summaryRow].total
-      this.all_softbug = this.analysisData['tableData'][summaryRow].softbug
-      this.all_sspz = this.analysisData['tableData'][summaryRow].sspz
-      this.all_ycsjcl = this.analysisData['tableData'][summaryRow].ycsjcl
     },
     // 结束 查询 事件
+
   },
 }
 </script>
@@ -674,17 +743,13 @@ export default {
 <style>
 /* 通过设置div class对应的float方向，可以让两个div在同一行 */
 .saasAnalysisTitle {
-  color: #3398DB; 
-  font-size: 18; 
+  color: #3398DB;
+  font-size: 18;
   margin: 5px 10px 5px 0;
 }
 
 .myChart {
   float: left;
-}
-
-.annularChart {
-  float: right;
 }
 
 .saasProblemPieChart {
@@ -693,6 +758,19 @@ export default {
 
 .clearFloat {
   clear: both;
+}
+
+.dailyUpgradeTable {
+  width: 50%;
+  display: inline-block;
+  margin: 0 10px 0 0;
+}
+
+.addedUpgradeTable {
+  width: 45%;
+  display: inline-block;
+  margin: 0 0 0 10px;
+  float: right;
 }
 </style>
 
