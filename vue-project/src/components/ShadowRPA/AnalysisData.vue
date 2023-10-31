@@ -9,6 +9,7 @@
             end-placeholder="结束日期">
           </el-date-picker>
           <el-button type="primary" @click="search">查询</el-button>
+          <el-button type="primary" @click='exportAnalysisPageToPDF'>导出</el-button>
         </div>
       </template>
     </div>
@@ -23,10 +24,10 @@
 
     <div style="height: 20px;"></div>
 
-    <div style="margin: 15px 0, display: block">
+    <div id='saasProblemCharts'>
       <!-- 放入Echarts 可视化图形 组件 -->
-      <div class="myChart" id="myChart" :style="{ width: '600px', height: '400px' }"></div>
-      <div class="saasProblemPieChart" id="saasProblemPieChart" :style="{ width: '600px', height: '400px' }"></div>
+      <div class="myChart" id="myChart" :style="{ width: getInlineChartsWidth, height: '400px' }"></div>
+      <div class="saasProblemPieChart" id="saasProblemPieChart" :style="{ width: getInlineChartsWidth, height: '400px' }"></div>
     </div>
 
     <div class="clearFloat"></div>
@@ -59,7 +60,7 @@
     <div style="margin: 5px 20px 5px 0;">
       <div>
         <div class="dailyUpgradeTable">
-          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 日常升级数据</p>
+          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4日常升级统计</p>
           <el-table :data="this.saasUpgradeData[0]"
             :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
             :row-style="{ height: '35px' }" 
@@ -72,7 +73,7 @@
           </el-table>
         </div>
         <div class="addedUpgradeTable">
-          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 增值升级数据</p>
+          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4增值升级统计</p>
           <el-table :data="this.saasUpgradeData[1]"
             :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
             :row-style="{ height: '35px' }" 
@@ -95,6 +96,12 @@
 import saasProblemTable from '@/components/ShadowRPA/AnalysisData_saasProblemTable.vue'
 import license from '@/components/ShadowRPA/AnalysisData_license.vue'
 import upgrade from '@/components/ShadowRPA/AnalysisData_upgrade.vue'
+// import html2pdf from 'html2pdf.js'
+
+
+// 导出功能
+const fs = require('fs')
+const PDFDocument = require('pdfkit')
 
 // 引入基本模板
 let echarts = require('echarts/lib/echarts')
@@ -243,6 +250,13 @@ export default {
   // 计算合计属性
   computed: {
     data() { },
+    getInlineChartsWidth: function(){
+      console.log(999999)
+      console.log((window.screen.width-240-20*2-15*2-30-10)/2+'px')
+      // windows.screen.width返回屏幕宽度，减去侧边栏240px,减去container模型左右padding各20px和margin-right的10px,
+      // 减去主页面各自15px的padding, 减去不知道那里vue自己设的30px, 减去主页面内元素和滚动条保持距离的padding-right的10px,
+      return (window.screen.width-240-20*2-10-15*2-30-10)/2+'px'
+    },
   },
   // 在初始化页面完成后,再对dom节点上图形进行相关绘制
   mounted() {
@@ -289,11 +303,16 @@ export default {
           ],
         },
         yAxis: {},
+        grid: {
+          left: '5%',
+          right: '5%',
+          top: '11%',
+          bottom: '7%',
+        },
         series: [
           {
             name: '数量',
             type: 'bar',
-            top: '3%',
             data: [5, 20, 36, 10, 10, 20],
             // label 是说是否显示柱形图上的数值，position 表示数值的位置
             label: {
@@ -306,107 +325,110 @@ export default {
         ],
       }),
 
-        saasProblemPieChart.setOption({
-          title: {
-            text: 'SaaS受理问题分类',
-            left: 'left',
-            top: '1%',
-            textStyle: {
-              fontSize: 18,
-              fontWeight: 'normal',
-              fontStyle: 'normal',
-              color: '#3398DB',
-            },
+      saasProblemPieChart.setOption({
+        title: {
+          text: 'SaaS受理问题分类',
+          left: 'left',
+          top: '1%',
+          textStyle: {
+            fontSize: 18,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            color: '#3398DB',
           },
-          tooltip: {
-            trigger: 'item',
-            formatter: '{a} <br/>{b}: {c} ({d}%)'
-          },
+        },
+        tooltip: {
+          trigger: 'item',
+          formatter: '{a} <br/>{b}: {c} ({d}%)'
+        },
 
-          series: [
-            {
-              name: 'Access From',
-              type: 'pie',
-              selectedMode: 'single',
-              radius: [0, '40%'],
-              top: "6%",
-              label: {
-                show: true, // 是否显示标签
-                formatter: '{b}\n{c}次 \n {d}%',
-                position: 'inside', // 设置标签位置为内部
-                fontSize: 12, // 设置标签字体大小为14px
-              },
-              labelLine: {
-                show: false
-              },
-              data: [
-                { value: 10, name: 'softbug' },
-                { value: 19, name: 'sspz' },
-                { value: 6, name: 'ycsjcl' }
-              ]
+        series: [
+          {
+            name: 'Access From',
+            type: 'pie',
+            selectedMode: 'single',
+            radius: [0, '40%'],
+            top: "1%",
+            label: {
+              show: true, // 是否显示标签
+              formatter: '{b}\n{c}次 \n {d}%',
+              position: 'inside', // 设置标签位置为内部
+              fontSize: 12, // 设置标签字体大小为14px
+              color: '#000000',
             },
-            {
-              name: 'Access From',
-              type: 'pie',
-              radius: ['50%', '65%'],
-              top: "6%",
-              left: 'center',
-              width: 600,
-              labelLine: {
-                length: 15,
-                length2: 0,
-                maxSurfaceAngle: 80
-              },
-              label: {
-                alignTo: 'edge',
-                formatter: '{b|{b}：}{c}次 \n {per|{d}%}  ',
-                minMargin: 5,
-                edgeDistance: 10,
-                lineHeight: 15,
-                rich: {
-                  b: {
-                    color: '#4C5058',
-                    fontSize: 14,
-                    fontWeight: 'bold',
-                    lineHeight: 33
-                  },
-                  per: {
-                    color: '#fff',
-                    backgroundColor: '#4C5058',
-                    padding: [3, 4],
-                    borderRadius: 4
-                  }
-                }
-              },
-              labelLayout: function (params) {
-                const isLeft = params.labelRect.x < myChart.getWidth() / 2;
-                const points = params.labelLinePoints;
-                // Update the end point.
-                points[2][0] = isLeft
-                  ? params.labelRect.x
-                  : params.labelRect.x + params.labelRect.width;
-                return {
-                  labelLinePoints: points
-                };
-              },
-              data: [
-                { value: 3, name: 'report' },
-                { value: 5, name: 'openbill' },
-                { value: 6, name: 'licenseReset' },
-                { value: 2, name: 'added' },
-                { value: 3, name: 'collection' },
-                { value: 1, name: 'exchange' },
-                { value: 6, name: 'writeoff' },
-                { value: 1, name: 'billManagement' },
-                { value: 0, name: 'security' },
-                { value: 0, name: 'print' },
-                { value: 2, name: 'datasync' },
-                { value: 2, name: 'inverse' },
-                { value: 8, name: 'opening' }
-              ]
-            }
-          ]
-        })
+            labelLine: {
+              show: false
+            },
+            data: [
+              { value: 10, name: '程序bug', },
+              { value: 19, name: '实施配置', },
+              { value: 6, name: '异常情况处理', }
+            ]
+          },
+          {
+            name: 'Access From',
+            type: 'pie',
+            radius: ['50%', '65%'],
+            top: "1%",
+            left: 'center',
+            width: 600,
+            labelLine: {
+              length: 15,
+              length2: 0,
+              maxSurfaceAngle: 80
+            },
+            label: {
+              alignTo: 'edge',
+              formatter: '{b|{b}：}{c}次 {per|{d}%}  ',
+              minMargin: 5,
+              edgeDistance: 10,
+              lineHeight: 15,
+              rich: {
+                b: {
+                  color: '#4C5058',
+                  fontSize: 12,
+                  fontWeight: 'bold',
+                  lineHeight: 25
+                },
+                per: {
+                  color: '#fff',
+                  backgroundColor: '#4C5058',
+                  padding: [3, 4],
+                  // borderRadius: 4
+                },
+              }
+            },
+            labelLayout: function (params) {
+              const isLeft = params.labelRect.x < myChart.getWidth() / 2;
+              const points = params.labelLinePoints;
+              // Update the end point.
+              points[2][0] = isLeft
+                ? params.labelRect.x
+                : params.labelRect.x + params.labelRect.width;
+                points[1][1] = params.labelRect.y+params.labelRect.height
+                points[2][1] = params.labelRect.y+params.labelRect.height
+              return {
+                labelLinePoints: points
+              };
+            },
+            data: [
+              { value: 3, name: 'report' },
+              { value: 5, name: 'openbill' },
+              { value: 6, name: 'licenseReset' },
+              { value: 2, name: 'added' },
+              { value: 3, name: 'collection' },
+              { value: 1, name: 'exchange' },
+              { value: 6, name: 'writeoff' },
+              { value: 1, name: 'billManagement' },
+              { value: 0, name: 'security' },
+              { value: 0, name: 'print' },
+              { value: 2, name: 'datasync' },
+              { value: 2, name: 'inverse' },
+              { value: 8, name: 'opening' }
+            ]
+          }
+        ]
+      })
     },
 
     saasTableCellStyle(row) {//根据情况显示背景色
@@ -436,26 +458,31 @@ export default {
     },
 
     upgradeTableCellStyle(row) {
-      console.log(4444)
       let style = ''
-      if (row.column.label === "合计") {
-        style = 'background: rgb(253 238 32 / 20%); color: red; '
+      if (row.rowIndex === this.saasUpgradeData[0].length - 1) {
+        style = 'background: rgb(253 238 32 / 20%);'
       }
       style += 'font-size: 14px; '
       return style
     },
 
+    // 计算el-table列的宽度
     columnWidth(key) {
+      key= key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
+      let widthDict = {
+        2: 55,
+        3: 65,
+        4: 75,
+        5: 85,
+        6: 110,
+        10: 130,
+      }
       let width
       if (key === "问题分类") {
         width = 110
-      } else if (key.length === 4) {
-        width = 75
-      } else if (key.length === 5) {
-        width = 85
-      } else if (key.length === 6) {
-        width = 110
-      } 
+      } else if (key.length in widthDict){
+        width = widthDict[key.length]
+      }
       return width
     },
 
@@ -530,30 +557,30 @@ export default {
         this.saasUpgradeData = [
         [
           {
-            " ": "升级次数",
+            "saas_v4标准产品": "缺陷",
           },
           {
-            " ": "缺陷",
+            "saas_v4标准产品": "需求",
           },
           {
-            " ": "需求",
+            "saas_v4标准产品": "优化",
           },
           {
-            " ": "优化",
+            "saas_v4标准产品": "升级次数合计",
           },
         ],
         [
           {
-            " ": "升级次数",
+            "saas_v4增值产品": "缺陷",
           },
           {
-            " ": "缺陷",
+            "saas_v4增值产品": "需求",
           },
           {
-            " ": "需求",
+            "saas_v4增值产品": "优化",
           },
           {
-            " ": "优化",
+            "saas_v4增值产品": "升级次数合计",
           },
         ],
       ]
@@ -561,60 +588,57 @@ export default {
         let dailyUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '日常')
         let addedUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '增值')
 
-        // 计算upgrade的合计行
-        let upgrade_total = {
-          "resourcepool": "合计",
-          "upgradetype": "",
-          "升级次数": 0,
-          "缺陷": 0,
-          "需求": 0,
-          "优化": 0
-        }
+        // // 计算upgrade的合计行
+        // let upgrade_total = {
+        //   "resourcepool": "合计",
+        //   "upgradetype": "",
+        //   "升级次数": 0,
+        //   "缺陷": 0,
+        //   "需求": 0,
+        //   "优化": 0
+        // }
 
-        for (const item in dailyUpgradeTableData) {
-          upgrade_total["升级次数"] += parseInt(dailyUpgradeTableData[item]["升级次数"])
-          upgrade_total["缺陷"] += parseInt(dailyUpgradeTableData[item]["缺陷"])
-          upgrade_total["需求"] += parseInt(dailyUpgradeTableData[item]["需求"])
-          upgrade_total["优化"] += parseInt(dailyUpgradeTableData[item]["优化"])
-        }
-        // 将合计行放入dailyUpgradeTableData中
-        dailyUpgradeTableData.push(upgrade_total)
+        // for (const item in dailyUpgradeTableData) {
+        //   upgrade_total["升级次数"] += parseInt(dailyUpgradeTableData[item]["升级次数"])
+        //   upgrade_total["缺陷"] += parseInt(dailyUpgradeTableData[item]["缺陷"])
+        //   upgrade_total["需求"] += parseInt(dailyUpgradeTableData[item]["需求"])
+        //   upgrade_total["优化"] += parseInt(dailyUpgradeTableData[item]["优化"])
+        // }
+        // // 将合计行放入dailyUpgradeTableData中
+        // dailyUpgradeTableData.push(upgrade_total)
 
-        upgrade_total = {
-          "resourcepool": "合计",
-          "upgradetype": "",
-          "升级次数": 0,
-          "缺陷": 0,
-          "需求": 0,
-          "优化": 0
-        }
+        // upgrade_total = {
+        //   "resourcepool": "合计",
+        //   "upgradetype": "",
+        //   "升级次数": 0,
+        //   "缺陷": 0,
+        //   "需求": 0,
+        //   "优化": 0
+        // }
 
-        for (const item in addedUpgradeTableData) {
-          upgrade_total["升级次数"] += parseInt(addedUpgradeTableData[item]["升级次数"])
-          upgrade_total["缺陷"] += parseInt(addedUpgradeTableData[item]["缺陷"])
-          upgrade_total["需求"] += parseInt(addedUpgradeTableData[item]["需求"])
-          upgrade_total["优化"] += parseInt(addedUpgradeTableData[item]["优化"])
-        }
-        // 将合计行放入addedUpgradeTableData中
-        addedUpgradeTableData.push(upgrade_total)
+        // for (const item in addedUpgradeTableData) {
+        //   upgrade_total["升级次数"] += parseInt(addedUpgradeTableData[item]["升级次数"])
+        //   upgrade_total["缺陷"] += parseInt(addedUpgradeTableData[item]["缺陷"])
+        //   upgrade_total["需求"] += parseInt(addedUpgradeTableData[item]["需求"])
+        //   upgrade_total["优化"] += parseInt(addedUpgradeTableData[item]["优化"])
+        // }
+        // // 将合计行放入addedUpgradeTableData中
+        // addedUpgradeTableData.push(upgrade_total)
 
         // 对日常和增值两个表进行row 和 col的交换
         for (const item of dailyUpgradeTableData) {
-          this.saasUpgradeData[0][0][item["resourcepool"]] = item['升级次数']
-          this.saasUpgradeData[0][1][item["resourcepool"]] = item['缺陷']
-          this.saasUpgradeData[0][2][item["resourcepool"]] = item['需求']
-          this.saasUpgradeData[0][3][item["resourcepool"]] = item['优化']
+          this.saasUpgradeData[0][0][item["resourcepool"]] = item['缺陷']
+          this.saasUpgradeData[0][1][item["resourcepool"]] = item['需求']
+          this.saasUpgradeData[0][2][item["resourcepool"]] = item['优化']
+          this.saasUpgradeData[0][3][item["resourcepool"]] = item['升级次数']
         }
 
         for (const item of addedUpgradeTableData) {
-          this.saasUpgradeData[1][0][item["resourcepool"]] = item['升级次数']
-          this.saasUpgradeData[1][1][item["resourcepool"]] = item['缺陷']
-          this.saasUpgradeData[1][2][item["resourcepool"]] = item['需求']
-          this.saasUpgradeData[1][3][item["resourcepool"]] = item['优化']
+          this.saasUpgradeData[1][0][item["resourcepool"]] = item['缺陷']
+          this.saasUpgradeData[1][1][item["resourcepool"]] = item['需求']
+          this.saasUpgradeData[1][2][item["resourcepool"]] = item['优化']
+          this.saasUpgradeData[1][3][item["resourcepool"]] = item['升级次数']
         }
-
-        console.log(211221122121)
-        console.log(this.saasUpgradeData)
 
       } catch (error) {
         console.log(error)
@@ -664,9 +688,9 @@ export default {
                 fontSize: 14,
               },
               d: {
-                color: '#4C5058',
+                color: 'red',
                 fontSize: 14,
-                fontWeight: 'bold',
+                // fontWeight: 'bold',
               }
             }
 
@@ -730,6 +754,39 @@ export default {
     },
     // 结束 查询 事件
 
+    exportAnalysePage(){
+      // const content = document.getElementsByTagName('body')
+      const content = document.getElementById('news')
+      // html2pdf(content).then((pdf)=> {
+      //   pdf.save("saas数据汇报.pdf")
+      // })
+      // .catch((error) => {
+      //   console.log("error generating pdf: ", error);
+      // });
+      html2pdf(
+        content,
+        {
+          margin: 10,
+          filename: 'saas数据汇报.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 5 },
+          jsPDf: { unit: 'pt', format: 'a4', orientation: 'portrait' },
+        }
+      );
+    },
+
+    exportAnalysisPageToPDF(){
+      const doc = new PDFDocument();
+      const stream = doc.pipe(fs.createWriteStream('saas数据汇报.pdf'));
+      doc.fontSize(25).text(document.documentElement.outerHTML, 50, 50);
+      doc.end();
+      stream.on('finish', function () {
+        const link = document.createElement('a');
+        liink.href = stream.toBlobURL('application/pdf');
+        link.download = 'saas数据汇报.pdf';
+        link.click();
+      });
+    }
   },
 }
 </script>
@@ -741,6 +798,12 @@ export default {
 </style>
 
 <style>
+
+#saasProblemCharts {
+  margin: 15px 0; 
+  display: block
+}
+ 
 /* 通过设置div class对应的float方向，可以让两个div在同一行 */
 .saasAnalysisTitle {
   color: #3398DB;

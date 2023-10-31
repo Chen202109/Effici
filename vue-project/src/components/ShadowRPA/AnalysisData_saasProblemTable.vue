@@ -14,7 +14,7 @@
                 style="font-size: 14px; width: 100%; " Boolean border :cell-style="saasTableCellStyle">
                 <el-table-column prop="softversion" label="程序版本" width="80" align="center"> </el-table-column>
                 <el-table-column v-for="(item, index) in tableTitle" :key="index" :prop="item.prop" :label="item.label"
-                    width="78" align="center"> </el-table-column>
+                :width="columnWidth(item.label)" align="center"> </el-table-column>
             </el-table>
         </div>
     </div>
@@ -63,6 +63,16 @@ export default {
             // 因为数据进来时候不会自动变化summary row，summary row还是会返回旧的table的最后一行index，所以在这里对summary row进行一个刷新
             this.summaryRow = this.saasProblemTableData.length - 1
             return this.summaryRow
+        },
+
+        columnWidth(label) {
+            let width
+            if (label === "license重置"){
+                width = 100
+            }else {
+                width = 78
+            }
+            return width
         },
 
         saasTableCellStyle(row) {//根据情况显示背景色
