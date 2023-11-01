@@ -9,7 +9,8 @@
             end-placeholder="结束日期">
           </el-date-picker>
           <el-button type="primary" @click="search">查询</el-button>
-          <el-button type="primary" @click='exportAnalysisPageToPDF'>导出</el-button>
+          <el-button type="primary" @click='exportAnalysePage'>导出</el-button>
+          <el-button type="primary" @click='exportAnalysePage_1'>导出测试</el-button>
         </div>
       </template>
     </div>
@@ -96,12 +97,12 @@
 import saasProblemTable from '@/components/ShadowRPA/AnalysisData_saasProblemTable.vue'
 import license from '@/components/ShadowRPA/AnalysisData_license.vue'
 import upgrade from '@/components/ShadowRPA/AnalysisData_upgrade.vue'
-// import html2pdf from 'html2pdf.js'
+import html2pdf from 'html2pdf.js'
 
 
-// 导出功能
-const fs = require('fs')
-const PDFDocument = require('pdfkit')
+// // 导出功能
+// const fs = require('fs')
+// const PDFDocument = require('pdfkit')
 
 // 引入基本模板
 let echarts = require('echarts/lib/echarts')
@@ -755,14 +756,7 @@ export default {
     // 结束 查询 事件
 
     exportAnalysePage(){
-      // const content = document.getElementsByTagName('body')
       const content = document.getElementById('news')
-      // html2pdf(content).then((pdf)=> {
-      //   pdf.save("saas数据汇报.pdf")
-      // })
-      // .catch((error) => {
-      //   console.log("error generating pdf: ", error);
-      // });
       html2pdf(
         content,
         {
@@ -775,18 +769,35 @@ export default {
       );
     },
 
-    exportAnalysisPageToPDF(){
-      const doc = new PDFDocument();
-      const stream = doc.pipe(fs.createWriteStream('saas数据汇报.pdf'));
-      doc.fontSize(25).text(document.documentElement.outerHTML, 50, 50);
-      doc.end();
-      stream.on('finish', function () {
-        const link = document.createElement('a');
-        liink.href = stream.toBlobURL('application/pdf');
-        link.download = 'saas数据汇报.pdf';
-        link.click();
+    exportAnalysePage_1(){
+      const content = document.getElementById('news')
+      content.style.transform = 'scale(0.5)'
+      const option = {
+        margin: 10,
+        scale: 0.45,
+        image: { type: 'jpeg', quality: 0.98 },
+        jsPDf: { unit: 'pt', format: 'a4', orientation: 'portrait' },
+      }
+      html2pdf(content, option).then((pdf)=> {
+        pdf.save("saas数据汇报.pdf")
+      })
+      .catch((error) => {
+        console.log("error generating pdf: ", error);
       });
-    }
+    },
+
+    // exportAnalysisPageToPDF(){
+    //   const doc = new PDFDocument();
+    //   const stream = doc.pipe(fs.createWriteStream('saas数据汇报.pdf'));
+    //   doc.fontSize(25).text(document.documentElement.outerHTML, 50, 50);
+    //   doc.end();
+    //   stream.on('finish', function () {
+    //     const link = document.createElement('a');
+    //     liink.href = stream.toBlobURL('application/pdf');
+    //     link.download = 'saas数据汇报.pdf';
+    //     link.click();
+    //   });
+    // }
   },
 }
 </script>
