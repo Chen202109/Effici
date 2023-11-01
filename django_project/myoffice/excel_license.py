@@ -11,7 +11,7 @@ def license_inster_sql(filePath):
     # excel的字段标题和 表的字段 对照关系
     name_field = {
         '环境':'environment','省份':'region','单位名称':'agenname','授权日期':'authorizeddate',
-        '数据库类型':'databasetype','系统类型':'systemtype'   # 安装时间不能加入，会报错，以后解决   ,'安装时间':'installtime'
+        '数据库类型':'databasetype','系统类型':'systemtype','签名服务器厂商':'signatureServerType'   # 安装时间不能加入，会报错，以后解决   ,'安装时间':'installtime'
     }
 
     book = xlrd.open_workbook(filePath)  # 加载excel
