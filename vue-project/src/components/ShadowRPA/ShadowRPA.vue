@@ -36,6 +36,12 @@
               
             </template>
           </el-tab-pane>
+
+          <el-tab-pane label="升级汇报" overflow-y: auto>
+            <template>
+              <AnalysisUpgrade></AnalysisUpgrade>
+            </template>
+          </el-tab-pane>
         </el-tabs>
       </el-main>
     </el-container>
@@ -48,6 +54,7 @@ import RPAHeader from "@/components/ShadowRPA/RPAHeader.vue"
 import AssistSubmit from "@/components/ShadowRPA/AssistSubmit.vue"
 import AnalysisData from "@/components/ShadowRPA/AnalysisData.vue"
 import AnalysisDataTest from "./AnalysisDataTest.vue"
+import AnalysisUpgrade from "@/components/ShadowRPA/AnalysisUpgrade.vue"
 
 export default {
   data() {
@@ -74,6 +81,7 @@ export default {
   },
 
   components: { LeftMenu, RPAHeader, AssistSubmit, AnalysisData, AnalysisDataTest },
+  components: { LeftMenu, RPAHeader, AssistSubmit,AnalysisData,AnalysisUpgrade },
 };
 </script>
 

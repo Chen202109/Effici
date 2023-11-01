@@ -21,7 +21,8 @@ Vue.config.productionTip = false
 router.beforeEach((to, from, next) => { 
 	let tokenStr = sessionStorage.getItem('token')
 	console.log(tokenStr)
-	if (to.path === '/CMC/login') {
+	// 原来跳转到登录页面 if (to.path === '/CMC/login') {
+	if (to.path === '/CMC/ShadowRPA') {
 		next()
 		let tokenStr = window.sessionStorage.getItem('token')
 	}
@@ -29,7 +30,8 @@ router.beforeEach((to, from, next) => {
 	if (tokenStr) {
 		next()
 	} else {
-		next('/CMC/login')
+		next('/CMC/ShadowRPA')
+		//原来跳转到登录页面 next('/CMC/login')
 	}
 })
 

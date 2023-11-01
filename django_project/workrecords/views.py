@@ -159,14 +159,14 @@ def analysisselect(request):
               f' FROM ' \
               f' (SELECT resourcepool, upgradetype,COUNT(*) AS 升级次数, "" AS questiontype, 0 AS 数量 ' \
               f' FROM upgradeplan_2023 ' \
-              f' WHERE realdate >= "{beginData}" AND realdate <= "{endData}" ' \
+              f' WHERE realdate >= "{realdate_begin}" AND realdate <= "{realdate_end}" ' \
               f' GROUP BY resourcepool,upgradetype ' \
               f' UNION ALL ' \
               f' SELECT B.resourcepool,upgradetype, 0 AS 升级次数, B.questiontype, B.数量 ' \
               f' FROM ' \
               f' (SELECT resourcepool, upgradetype,questiontype, COUNT(*) AS 数量 ' \
               f' FROM upgradeplan_2023 ' \
-              f' WHERE realdate >= "{beginData}" AND realdate <= "{endData}" ' \
+              f' WHERE realdate >= "{realdate_begin}" AND realdate <= "{realdate_end}" ' \
               f' GROUP BY resourcepool,upgradetype, questiontype ' \
               f' ) B ' \
               f') A ' \
