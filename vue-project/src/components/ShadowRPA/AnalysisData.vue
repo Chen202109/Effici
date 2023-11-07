@@ -248,12 +248,10 @@ export default {
       },
     }
   },
-  // 计算合计属性
+  // 计算页面刚加载时候渲染的属性
   computed: {
     data() { },
     getInlineChartsWidth: function(){
-      console.log(999999)
-      console.log((window.screen.width-240-20*2-15*2-30-10)/2+'px')
       // windows.screen.width返回屏幕宽度，减去侧边栏240px,减去container模型左右padding各20px和margin-right的10px,
       // 减去主页面各自15px的padding, 减去不知道那里vue自己设的30px, 减去主页面内元素和滚动条保持距离的padding-right的10px,
       return (window.screen.width-240-20*2-10-15*2-30-10)/2+'px'

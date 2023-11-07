@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import JsonResponse
 from mydata import mysql_base
+from . import constant
 
 from datetime import datetime,timedelta # 用于传入的字符串转换成日期 datetime.strptime
 
@@ -156,8 +157,8 @@ def analysisselect(request):
               f'SUM(IF(LOCATE("需求", A.questiontype) > 0, A.数量, 0)) AS 需求, ' \
               f'SUM(IF(LOCATE("优化", A.questiontype) > 0, A.数量, 0)) AS 优化, ' \
               f'SUM(A.升级次数) as 升级次数 ' \
-              f' FROM ' \
-              f' (SELECT resourcepool, upgradetype,COUNT(*) AS 升级次数, "" AS questiontype, 0 AS 数量 ' \
+              f'FROM ' \
+              f'(SELECT resourcepool, upgradetype,COUNT(*) AS 升级次数, "" AS questiontype, 0 AS 数量 ' \
               f' FROM upgradeplan_2023 ' \
               f' WHERE realdate >= "{realdate_begin}" AND realdate <= "{realdate_end}" ' \
               f' GROUP BY resourcepool,upgradetype ' \
@@ -179,6 +180,70 @@ def analysisselect(request):
         # print(type(analysisData), len(analysisData), analysisData)
 
     return JsonResponse({'data': analysisData}, json_dumps_params={'ensure_ascii': False})
+
+
+def analysis_service_upgrade_trend(request):
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+        resource_pool = request.GET.get('resourcePool').split(',')
+        service_name = request.GET.get('serviceName').split(',')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        for i in range(len(resource_pool)):
+            for j in range(len(service_name)):
+                data.append({'service': resource_pool[i] + '-' + service_name[j], 
+                             'data': find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_end, service_name[j], resource_pool[i])})
+
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+
+def find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_end, service_name, resource_pool):
+
+    db =mysql_base.Db()
+
+    # 查询升级表，查看该资源池底下该服务的该时间范围内的升级时间  
+    sql = f' SELECT * FROM upgradeplan_2023' \
+            f' WHERE realdate >= "{realdate_begin}" AND realdate <= "{realdate_end}" ' \
+            f' AND resourcepool = "{resource_pool}" ' \
+            f' AND microservicename LIKE "%{service_name}%" ' \
+            f' ORDER BY realdate '
+    # 这个是将所有符合条件的整行的升级数据的返回，可以用作查详细数据时候的缓存
+    upgrade_record = db.select_offset(1, 1000, sql)
+    print(upgrade_record)
+    # 这个是在指定资源池底下的这个服务的升级日期的list，list每个元素是字典，key是日期，value是0
+    upgrade_time_record = [{'x':d["realdate"].split(' ')[0], 'version': d['resourcepoolversion'][-4:]} for d in upgrade_record if "realdate" in d]
+    print(upgrade_time_record)
+
+    saas_function = constant.saas_service_function_map[service_name]
+    province_list = constant.source_pool_province_map[resource_pool]
+
+    resource_pool_condition = ''
+    for i in province_list:
+        resource_pool_condition += f'region = "{i}" or '
+    resource_pool_condition = resource_pool_condition[:-3]
+ 
+    # 查询 work record 表，查询该service对应的功能的受理问题记录
+    sql = f' SELECT * FROM workrecords_2023 '\
+          f' where createtime>="{begin_date}" '\
+          f' AND createtime<="{end_date}" '\
+          f' AND errorfunction= "{saas_function}" ' \
+          f' AND environment = "公有云" ' \
+          f' AND softversion != "V3" ' \
+          f' AND ({resource_pool_condition}) ' \
+          f' ORDER BY createtime '
+    saasProblems = db.select_offset(1, 1000, sql)
+    
+    for i in range(len(upgrade_time_record)):
+        time_range = (upgrade_time_record[i]['x'], end_date if i==len(upgrade_time_record)-1 else upgrade_time_record[i+1]['x'])
+        upgrade_time_record[i]['y'] = len([d for d in saasProblems if time_range[0] < d["createtime"] <= time_range[1]])
+
+    print(upgrade_time_record)
+    return upgrade_time_record
 
 if __name__ == '__main__':
     pass
