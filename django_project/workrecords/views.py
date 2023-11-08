@@ -189,39 +189,45 @@ def analysis_service_upgrade_trend(request):
         begin_date = request.GET.get('beginData', default='2023-01-01')
         end_date = request.GET.get('endData', default='2023-12-31')
         resource_pool = request.GET.get('resourcePool').split(',')
-        service_name = request.GET.get('serviceName').split(',')
+        function_name = request.GET.get('function_name').split(',')
 
         realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
         realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
 
         for i in range(len(resource_pool)):
-            for j in range(len(service_name)):
-                data.append({'service': resource_pool[i] + '-' + service_name[j], 
-                             'data': find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_end, service_name[j], resource_pool[i])})
+            for j in range(len(function_name)):
+                data.append({'service': resource_pool[i] + '-' + function_name[j], 
+                             'data': find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_end, function_name[j], resource_pool[i])})
 
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 
-def find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_end, service_name, resource_pool):
+def find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_end, function_name, resource_pool):
 
     db =mysql_base.Db()
+
+    service_list = constant.saas_function_service_map[function_name]
+    service_condition = ''
+    for i in service_list:
+        service_condition += f'microservicename LIKE "%{i}%" or '
+    service_condition = service_condition[:-3]
 
     # 查询升级表，查看该资源池底下该服务的该时间范围内的升级时间  
     sql = f' SELECT * FROM upgradeplan_2023' \
             f' WHERE realdate >= "{realdate_begin}" AND realdate <= "{realdate_end}" ' \
             f' AND resourcepool = "{resource_pool}" ' \
-            f' AND microservicename LIKE "%{service_name}%" ' \
+            f' AND ({service_condition}) ' \
             f' ORDER BY realdate '
     # 这个是将所有符合条件的整行的升级数据的返回，可以用作查详细数据时候的缓存
     upgrade_record = db.select_offset(1, 1000, sql)
     print(upgrade_record)
     # 这个是在指定资源池底下的这个服务的升级日期的list，list每个元素是字典，key是日期，value是0
     upgrade_time_record = [{'x':d["realdate"].split(' ')[0], 'version': d['resourcepoolversion'][-4:]} for d in upgrade_record if "realdate" in d]
+    # 如果某两个字典的日期是一样的，那就是有一天同时两次的升级记录，他们version肯定也一样，将他们合并成一条
+    upgrade_time_record = [item for i, item in enumerate(upgrade_time_record) if 'x' not in item or item['x'] not in [x['x'] for x in upgrade_time_record[:i]]]
     print(upgrade_time_record)
 
-    saas_function = constant.saas_service_function_map[service_name]
     province_list = constant.source_pool_province_map[resource_pool]
-
     resource_pool_condition = ''
     for i in province_list:
         resource_pool_condition += f'region = "{i}" or '
@@ -231,7 +237,7 @@ def find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_en
     sql = f' SELECT * FROM workrecords_2023 '\
           f' where createtime>="{begin_date}" '\
           f' AND createtime<="{end_date}" '\
-          f' AND errorfunction= "{saas_function}" ' \
+          f' AND errorfunction= "{function_name}" ' \
           f' AND environment = "公有云" ' \
           f' AND softversion != "V3" ' \
           f' AND ({resource_pool_condition}) ' \

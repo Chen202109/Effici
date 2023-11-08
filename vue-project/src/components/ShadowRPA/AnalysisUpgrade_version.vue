@@ -7,9 +7,9 @@
           <el-option v-for="(item, index) in resourcePoolOptions" :key="index" :label="item" :value="item"></el-option>
         </el-select>
 
-        <span class="demonstration" style="margin-left: 15px;">服务名： </span>
-        <el-select v-model="serviceSelected" multiple placeholder="请选择服务">
-          <el-option v-for="(item, index) in serviceOptions" :key="index" :label="item" :value="item"></el-option>
+        <span class="demonstration" style="margin-left: 15px;">功能： </span>
+        <el-select v-model="functionSelected" multiple placeholder="请选择功能">
+          <el-option v-for="(item, index) in functionOptions" :key="index" :label="item" :value="item"></el-option>
         </el-select>
 
         <span class="demonstration" style="margin-left: 15px;">时间范围： </span>
@@ -55,17 +55,21 @@ export default {
       resourcePoolOptions: ['01资源池', '03资源池', '04资源池'],
       resourcePoolSelected: '',
       // service选择
-      serviceOptions: [
-        'saas-invoice-ebill-server',
-        'saas-billcollection-server',
-        'saas-industry-server',
-        'saas-finance-adapter-server',
+      functionOptions: [
+        '开票功能',
+        '核销功能',
+        '收缴业务',
+        '数据同步',
+        '通知交互',
+        '报表功能',
+        '票据管理',
       ],
-      serviceSelected: '',
+      functionSelected: '',
       // 日期查询范围
       dateRange: [
         new Date(
-          new Date().getFullYear() + '-' + (new Date().getMonth() + 1) + '-01'
+          // new Date().getFullYear() + '-' + (new Date().getMonth() + 1) + '-01'
+          new Date().getFullYear() + '-01-01'
         ),
         new Date(),
       ],
@@ -293,7 +297,7 @@ export default {
       // 触发查询事件，根据日期条件进行查询
       var searchValue = {} // 存放筛选条件信息
       searchValue['resourcePool'] = this.resourcePoolSelected.toString()
-      searchValue['serviceName']  = this.serviceSelected.toString()
+      searchValue['function_name']  = this.functionSelected.toString()
       // 获取年、月、日，进行拼接
       for (let i = 0; i < this.dateRange.length; i++) {
         var year = this.dateRange[i].getFullYear()
@@ -318,8 +322,8 @@ export default {
           searchValue['endData'] +
           '&resourcePool=' +
           searchValue['resourcePool'] +
-          '&serviceName=' +
-          searchValue['serviceName'] 
+          '&function_name=' +
+          searchValue['function_name'] 
         )
         this.lineChartData = response.data.data
         this.updateSaaSTrendLineChart()
