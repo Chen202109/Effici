@@ -8,12 +8,18 @@ saas_service_function_map = {
 
 saas_function_service_map = {
     "开票功能" : ['saas-invoice-ebill-server', 'saas-invoice-pbill-server', 'saas-industry-server', 'saas-signature-core-server', 'saas-billcollection-server'],
-    "核销功能" : ['saas-invoice-data-statistical-server', 'saas-bill-collect-server'],
     "收缴业务" : ['saas-paybook-directpaybook-server','saas-paybook-remitpaybook-server'],
-    '数据同步' : ['saas-finance-adapter-server'],
-    "通知交互" : ['saas-notice-server'],
+    "核销功能" : ['saas-invoice-data-statistical-server', 'saas-bill-collect-server'],
+    "打印功能" : [],
     "报表功能" : ['saas-invoice-data-statistical-server', 'saas-industry-report-server'],
     "票据管理" : ['saas-stock-server'],
+    "通知交互" : ['saas-notice-server'],
+    '数据同步' : ['saas-finance-adapter-server'],
+    "安全漏洞" : [],
+    "增值服务" : [],
+    "单位开通" : [],
+    "反算功能" : [],
+    "license重置" : [],
 }
 
 source_pool_province_map = {

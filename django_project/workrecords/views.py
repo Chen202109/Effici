@@ -207,43 +207,63 @@ def find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_en
     db =mysql_base.Db()
 
     service_list = constant.saas_function_service_map[function_name]
+    # 查到的如果是那几个不重要的功能没什么对应的service，那就先跳过
+    if service_list == []:
+        return []
+    
+    # 生成数据库查询时候对service的语句, 如果是V3，需要对应的服务,先用1=1跳过该条件
     service_condition = ''
-    for i in service_list:
-        service_condition += f'microservicename LIKE "%{i}%" or '
-    service_condition = service_condition[:-3]
+    if resource_pool != 'V3行业':
+        for i in service_list:
+            service_condition += f'microservicename LIKE "%{i}%" or '
+        service_condition = service_condition[:-3]
+    else:
+        service_condition = "1=1"
 
     # 查询升级表，查看该资源池底下该服务的该时间范围内的升级时间  
     sql = f' SELECT * FROM upgradeplan_2023' \
-            f' WHERE realdate >= "{realdate_begin}" AND realdate <= "{realdate_end}" ' \
-            f' AND resourcepool = "{resource_pool}" ' \
-            f' AND ({service_condition}) ' \
-            f' ORDER BY realdate '
+          f' WHERE realdate >= "{realdate_begin}" AND realdate <= "{realdate_end}" ' \
+          f' AND resourcepool = "{resource_pool}" ' \
+          f' AND ({service_condition}) '\
+          f' ORDER BY realdate '
+    
     # 这个是将所有符合条件的整行的升级数据的返回，可以用作查详细数据时候的缓存
     upgrade_record = db.select_offset(1, 1000, sql)
-    print(upgrade_record)
     # 这个是在指定资源池底下的这个服务的升级日期的list，list每个元素是字典，key是日期，value是0
-    upgrade_time_record = [{'x':d["realdate"].split(' ')[0], 'version': d['resourcepoolversion'][-4:]} for d in upgrade_record if "realdate" in d]
+    upgrade_time_record = [{'x':d["realdate"].split(' ')[0], 'version': "" if d['resourcepoolversion'][-4:] =="V3行业" else 'V'+'.'.join([num for num in d['resourcepoolversion'][-4:]])} for d in upgrade_record if "realdate" in d]
     # 如果某两个字典的日期是一样的，那就是有一天同时两次的升级记录，他们version肯定也一样，将他们合并成一条
     upgrade_time_record = [item for i, item in enumerate(upgrade_time_record) if 'x' not in item or item['x'] not in [x['x'] for x in upgrade_time_record[:i]]]
     print(upgrade_time_record)
 
-    province_list = constant.source_pool_province_map[resource_pool]
-    resource_pool_condition = ''
-    for i in province_list:
-        resource_pool_condition += f'region = "{i}" or '
-    resource_pool_condition = resource_pool_condition[:-3]
- 
-    # 查询 work record 表，查询该service对应的功能的受理问题记录
-    sql = f' SELECT * FROM workrecords_2023 '\
+    if resource_pool == 'V3行业':
+        sql = f' SELECT * FROM workrecords_2023 '\
           f' where createtime>="{begin_date}" '\
           f' AND createtime<="{end_date}" '\
           f' AND errorfunction= "{function_name}" ' \
           f' AND environment = "公有云" ' \
-          f' AND softversion != "V3" ' \
-          f' AND ({resource_pool_condition}) ' \
+          f' AND softversion = "V3" ' \
           f' ORDER BY createtime '
+    else:
+        # 生成对受理问题查询时候省份条件的语句
+        province_list = constant.source_pool_province_map[resource_pool]
+        resource_pool_condition = ''
+        for i in province_list:
+            resource_pool_condition += f'region = "{i}" or '
+        resource_pool_condition = resource_pool_condition[:-3]
+
+        # 查询 work record 表，查询这段时间内选择的功能的受理问题记录
+        sql = f' SELECT * FROM workrecords_2023 '\
+            f' where createtime>="{begin_date}" '\
+            f' AND createtime<="{end_date}" '\
+            f' AND errorfunction= "{function_name}" ' \
+            f' AND environment = "公有云" ' \
+            f' AND softversion != "V3" ' \
+            f' AND ({resource_pool_condition}) ' \
+            f' ORDER BY createtime '
+    
     saasProblems = db.select_offset(1, 1000, sql)
     
+    # 将受理问题查询出来的记录根据上面查询出来的升级时间点切割，然后赋值，每个时间点的值就是从这次升级到下次升级这个时间段内这个功能的受理次数
     for i in range(len(upgrade_time_record)):
         time_range = (upgrade_time_record[i]['x'], end_date if i==len(upgrade_time_record)-1 else upgrade_time_record[i+1]['x'])
         upgrade_time_record[i]['y'] = len([d for d in saasProblems if time_range[0] < d["createtime"] <= time_range[1]])

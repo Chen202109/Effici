@@ -2,21 +2,39 @@
   <div class="upgradeTrend">
     <div style="margin: 15px 0">
       <div>
-        <span class="demonstration">资源池： </span>
-        <el-select v-model="resourcePoolSelected" multiple placeholder="请选择资源池" style="width: 150px;">
-          <el-option v-for="(item, index) in resourcePoolOptions" :key="index" :label="item" :value="item"></el-option>
-        </el-select>
+        <div style="margin-bottom: 10px;">
+          <!-- <span class="demonstration">资源池： </span>
+          <el-select v-model="resourcePoolSelected" multiple placeholder="请选择资源池" style="width: 150px;">
+            <el-option v-for="(item, index) in resourcePoolOptions" :key="index" :label="item" :value="item"></el-option>
+          </el-select> -->
+          
+          <span class="demonstration">资源池： </span>
+          <el-radio-group v-model="resourcePoolSelected">
+            <el-radio-button v-for="(item, index) in resourcePoolOptions" :key="index" :label="item"></el-radio-button>
+          </el-radio-group>
 
-        <span class="demonstration" style="margin-left: 15px;">功能： </span>
-        <el-select v-model="functionSelected" multiple placeholder="请选择功能">
-          <el-option v-for="(item, index) in functionOptions" :key="index" :label="item" :value="item"></el-option>
-        </el-select>
+          <span class="demonstration" style="margin-left: 15px;">时间范围： </span>
+          <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
+            end-placeholder="结束日期">
+          </el-date-picker>
+          <el-button type="primary" @click="search">查询</el-button>
+        </div>
 
-        <span class="demonstration" style="margin-left: 15px;">时间范围： </span>
-        <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
-          end-placeholder="结束日期">
-        </el-date-picker>
-        <el-button type="primary" @click="search">查询</el-button>
+        <div>
+          <div style="margin-bottom: 10px;">
+            <span class="demonstration">业务分类： </span>
+            <el-checkbox-group v-model="businessSelected" @change="businessCheckBoxChange" style="display: inline-block;">
+              <el-checkbox v-for="(item, index) in businessOptions" :key="index" :label="item">{{item}}</el-checkbox>
+            </el-checkbox-group>
+          </div>
+
+          <div>
+            <span class="demonstration">功能分类： </span>
+            <el-checkbox-group v-model="functionSelected" style="display: inline-block;">
+              <el-checkbox v-for="(item, index) in functionOptions[this.businessSelected]" :key="index" :label="item">{{item}}</el-checkbox>
+            </el-checkbox-group>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -54,16 +72,17 @@ export default {
       // resourcePoolOptions: ['V3', '01资源池', '02资源池', '03资源池', '04资源池', '运营支撑平台'],
       resourcePoolOptions: ['01资源池', '03资源池', '04资源池'],
       resourcePoolSelected: '',
-      // service选择
-      functionOptions: [
-        '开票功能',
-        '核销功能',
-        '收缴业务',
-        '数据同步',
-        '通知交互',
-        '报表功能',
-        '票据管理',
-      ],
+      // 业务选择
+      businessOptions: ['日常业务', '综合业务', '票据管理', '三方系统', '其他业务'],
+      businessSelected: [],
+      // 功能选择
+      functionOptions: {
+        "日常业务" : ["开票功能", "收缴业务", "核销功能", "打印功能"],
+        "综合业务" : ["报表功能"],
+        "票据管理" : ["票据管理"],
+        "三方系统" : ["通知交互", "数据同步", "安全漏洞"],
+        "其他业务" : ["增值服务", "单位开通", "反算功能", "license重置"],
+      },
       functionSelected: '',
       // 日期查询范围
       dateRange: [
@@ -89,10 +108,24 @@ export default {
   // 在初始化页面完成后,再对dom节点上图形进行相关绘制
   mounted() {
     console.log('升级汇报-分析升级', this.versionData);
+    // 页面初始化后对checkbox,下拉列表组件添加初始值
+    this.resourcePoolSelected = this.resourcePoolOptions[0];
+    this.businessSelected.push(this.businessOptions[0]);
+    this.functionSelected  = this.functionOptions[this.businessSelected];
+    // 对图标进行一个初始化
     this.drawLine();
   },
 
   methods: {
+    //业务类型的checkbox单选功能
+    businessCheckBoxChange(value){
+      if(this.businessSelected.length > 1){
+        this.businessSelected.splice(0,1)
+      }
+      this.functionSelected  = this.functionOptions[this.businessSelected];
+    },
+
+    // 用于使用echarts进行图标的基础绘制
     drawLine() {
       // 基于准备好的dom，初始化echarts实例
       let youChart = echarts.init(document.getElementById('youChart'))
@@ -200,50 +233,69 @@ export default {
       option && youChart.setOption(option);
 
 
-      // saas version和bug的折线图绘制
+      // saas version和bug的折线图的init
       let saasVersionTrendChart = echarts.init(document.getElementById('saasVersionTrendChart'))
-      option = {
+
+    },
+
+    /**
+     * 当查询之后，数据更新，根据新的数据更新折线图的信息
+     */
+    updateSaaSTrendLineChart(){
+      // 对option的基础设置
+      let option = {
         title : {
           top: '1%',
+          left: '5%',
           text: 'SaaS版本三线受理趋势',
-          left: 'center'
+          left: 'left'
         },
         legend: {
           top: '7%',
           data: []
         },
         grid: {
-          top: '30%',
-          bottom: '30%',
+          top: '22%',
+          bottom: '20%',
           left: '5%',
           right: '5%',
         },
         xAxis: {
+          name : '升级时间',
+          nameLocation : 'middle',
+          nameGap: 25,
+          nameTextStyle : {
+            fontSize : 16,
+          },
           type: 'time'
         },
         yAxis: {
+          name : '问题受理数量',
+          nameLocation : 'middle',
+          nameGap: 25,
+          nameTextStyle : {
+            fontSize : 16,
+          },
           type: 'value'
         },
         
         series: []
       };
-      saasVersionTrendChart.setOption(option);
 
-    },
-
-    updateSaaSTrendLineChart(){
+      // 对于每一条线数据的设置
       let versionData = []
       let currentVersion = []
-      let series = []
-      let legendData = []
       for (let i = 0; i < this.lineChartData.length; i++) {
+        // 版本号数据的取出，并且给当前版本号设置空值，那样第一个数据点就会显示版本号了
         versionData.push(this.lineChartData[i].data.map((item) => item.version))
         currentVersion.push('')
+        // 数据注入给echarts
         let data1 = this.lineChartData[i].data
         let series_1 = {
           name: this.lineChartData[i].service,
           type: 'line',
           data: this.lineChartData[i].data.map((item) => [item.x, item.y]),
+          // 当每检测到版本号变动了，进行label的显示
           label: {
             show: true,
             formatter: function (params) {
@@ -257,35 +309,30 @@ export default {
               return ''; // 如果版本号未变动，则不显示 label
             },
             position: 'top'
-          }
+          },
+          // markPoint: {
+          //   data:[{type: 'max', name: '最大值'}]
+          // }
         };
-        series.push(series_1)
-        legendData.push(this.lineChartData[i].service)
+        option.series.push(series_1)
+        option.legend.data.push(this.lineChartData[i].service)
       }
 
-
-      let tooltip = {
+      // 鼠标悬浮在数据点上的时候的设置
+      option.tooltip = {
         trigger: 'axis',
         formatter: function (params) {
           const index = params[0].dataIndex; // 获取当前数据点的索引
           const xValue = params[0].value[0]; // x 值
           const yValue = params[0].value[1]; // y 值
-          const version = versionData[params[0].seriesIndex][index]; // 获取对应版本号
-          return `X: ${xValue}<br/>Y: ${yValue}<br/>Version: ${version}`;
+          const version = versionData[params[0].seriesIndex][index]; // 获取数据点对应版本号
+          return `升级时间: ${xValue}<br/>受理数量: ${yValue}<br/>版本号: ${version}`;
         }
       };
-
-      console.log('updated local series: ', series)
       
       let saasVersionTrendChart = echarts.getInstanceByDom(document.getElementById('saasVersionTrendChart'))
       if (saasVersionTrendChart){
-        saasVersionTrendChart.setOption({
-          tooltip: tooltip,
-          series : series,
-          legend: {
-            data: legendData
-          }
-        })
+        saasVersionTrendChart.setOption(option,true)
       } 
 
       console.log("updated echart linechart: ", saasVersionTrendChart)
