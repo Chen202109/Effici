@@ -7,4 +7,5 @@ urlpatterns = [
     path('select',views.select),
     path('analysisselect',views.analysisselect),
     path('analysis_service_upgrade_trend',views.analysis_service_upgrade_trend),
+    path('analysis_version_upgrade_trend',views.analysis_version_upgrade_trend),
 ]

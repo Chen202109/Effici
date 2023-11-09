@@ -38,6 +38,7 @@
       </div>
     </div>
 
+    <div class="saasUpgradeTrendChart" id="saasUpgradeTrendChart" :style="{ width: getMainPageWidth, height: '400px' }"></div>
     <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getMainPageWidth, height: '400px' }"></div>
 
     <div></div>
@@ -93,7 +94,8 @@ export default {
         new Date(),
       ],
 
-      lineChartData: [],
+      saasUpgradeLineChartData: [],
+      saasVersionLineCHartData: [],
     }
   },
   // 计算页面刚加载时候渲染的属性
@@ -234,20 +236,20 @@ export default {
 
 
       // saas version和bug的折线图的init
+      let saasUpgradeTrendChart = echarts.init(document.getElementById('saasUpgradeTrendChart'))
       let saasVersionTrendChart = echarts.init(document.getElementById('saasVersionTrendChart'))
-
     },
 
     /**
-     * 当查询之后，数据更新，根据新的数据更新折线图的信息
+     * 当查询之后，数据更新，根据新的数据更新升级趋势折线图的信息
      */
-    updateSaaSTrendLineChart(){
+    updateSaaSUpgradeTrendLineChart(){
       // 对option的基础设置
       let option = {
         title : {
           top: '1%',
           left: '5%',
-          text: 'SaaS版本三线受理趋势',
+          text: 'SaaS公有云版本三线受理趋势',
           left: 'left'
         },
         legend: {
@@ -285,16 +287,16 @@ export default {
       // 对于每一条线数据的设置
       let versionData = []
       let currentVersion = []
-      for (let i = 0; i < this.lineChartData.length; i++) {
+      for (let i = 0; i < this.saasUpgradeLineChartData.length; i++) {
         // 版本号数据的取出，并且给当前版本号设置空值，那样第一个数据点就会显示版本号了
-        versionData.push(this.lineChartData[i].data.map((item) => item.version))
+        versionData.push(this.saasUpgradeLineChartData[i].data.map((item) => item.version))
         currentVersion.push('')
         // 数据注入给echarts
-        let data1 = this.lineChartData[i].data
+        let data1 = this.saasUpgradeLineChartData[i].data
         let series_1 = {
-          name: this.lineChartData[i].service,
+          name: this.saasUpgradeLineChartData[i].service,
           type: 'line',
-          data: this.lineChartData[i].data.map((item) => [item.x, item.y]),
+          data: this.saasUpgradeLineChartData[i].data.map((item) => [item.x, item.y]),
           // 当每检测到版本号变动了，进行label的显示
           label: {
             show: true,
@@ -310,12 +312,15 @@ export default {
             },
             position: 'top'
           },
-          // markPoint: {
-          //   data:[{type: 'max', name: '最大值'}]
-          // }
+          markLine: {
+            symbol: ['none', 'none'],
+            label: { show: false },
+            data: [{ xAxis: 1 }, { xAxis: 3 }, { xAxis: 5 }, { xAxis: 7 }]
+          },
+          areaStyle: {},
         };
         option.series.push(series_1)
-        option.legend.data.push(this.lineChartData[i].service)
+        option.legend.data.push(this.saasUpgradeLineChartData[i].service)
       }
 
       // 鼠标悬浮在数据点上的时候的设置
@@ -329,13 +334,35 @@ export default {
           return `升级时间: ${xValue}<br/>受理数量: ${yValue}<br/>版本号: ${version}`;
         }
       };
+
+      let visualMap = {
+        type: 'piecewise',
+        show: false,
+        dimension: 0,
+        seriesIndex: 0,
+        pieces: [
+          {
+            gt: 1,
+            lt: 3,
+            color: 'rgba(0, 0, 180, 0.4)'
+          },
+        ]
+      };
+      option.visualMap = visualMap;
       
-      let saasVersionTrendChart = echarts.getInstanceByDom(document.getElementById('saasVersionTrendChart'))
-      if (saasVersionTrendChart){
-        saasVersionTrendChart.setOption(option,true)
+      let saasUpgradeTrendChart = echarts.getInstanceByDom(document.getElementById('saasUpgradeTrendChart'))
+      if (saasUpgradeTrendChart){
+        saasUpgradeTrendChart.setOption(option,true)
       } 
 
-      console.log("updated echart linechart: ", saasVersionTrendChart)
+      console.log("updated echart linechart: ", saasUpgradeTrendChart)
+
+    },
+
+    /**
+     * 当查询之后，数据更新，根据新的数据更新版本趋势折线图的信息
+     */
+    updateSaaSVersionTrendLineChart(){
 
     },
 
@@ -372,15 +399,17 @@ export default {
           '&function_name=' +
           searchValue['function_name'] 
         )
-        this.lineChartData = response.data.data
-        this.updateSaaSTrendLineChart()
-        console.log('update local linechart data: ', this.lineChartData)
+        this.saasUpgradeLineChartData = response.data.data
+        this.updateSaaSUpgradeTrendLineChart()
+        console.log('update local linechart data: ', this.saasUpgradeLineChartData)
         
       } catch (error) {
         console.log(error)
         this.$message.error('错了哦，仔细看错误信息弹窗')
         alert('失败' + error)
       }
+
+
     },
   }
 }

@@ -203,6 +203,9 @@ def analysis_service_upgrade_trend(request):
 
 
 def find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_end, function_name, resource_pool):
+    """
+    去查找指定的资源池的指定功能对应的几个service的升级和bug趋势
+    """
 
     db =mysql_base.Db()
 
@@ -270,6 +273,15 @@ def find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_en
 
     print(upgrade_time_record)
     return upgrade_time_record
+
+
+def analysis_version_upgrade_trend(request):
+    """
+    分析版本信息和bug的趋势对比。
+    """
+    data = []
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
 
 if __name__ == '__main__':
     pass
