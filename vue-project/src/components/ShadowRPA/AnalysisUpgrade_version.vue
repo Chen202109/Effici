@@ -74,15 +74,12 @@ export default {
       resourcePoolOptions: ['01资源池', '03资源池', '04资源池'],
       resourcePoolSelected: '',
       // 业务选择
-      businessOptions: ['日常业务', '综合业务', '票据管理', '三方系统', '其他业务'],
+      businessOptions: ['日常业务', '其他业务'],
       businessSelected: [],
       // 功能选择
       functionOptions: {
-        "日常业务" : ["开票功能", "收缴业务", "核销功能", "打印功能"],
-        "综合业务" : ["报表功能"],
-        "票据管理" : ["票据管理"],
-        "三方系统" : ["通知交互", "数据同步", "安全漏洞"],
-        "其他业务" : ["增值服务", "单位开通", "反算功能", "license重置"],
+        "日常业务" : ["开票功能", "收缴业务", "核销功能", "打印功能", "报表功能", "票据管理", "通知交互", "反算功能","数据同步"],
+        "其他业务" : ["增值服务", "单位开通", "license重置", "安全漏洞"],
       },
       functionSelected: '',
       // 日期查询范围
@@ -95,7 +92,7 @@ export default {
       ],
 
       saasUpgradeLineChartData: [],
-      saasVersionLineCHartData: [],
+      saasVersionLineChartData: [],
     }
   },
   // 计算页面刚加载时候渲染的属性
@@ -269,7 +266,10 @@ export default {
           nameTextStyle : {
             fontSize : 16,
           },
-          type: 'time'
+          type: 'time',
+          axisLine : {
+            onZero: false, // 不在y=0处对齐x轴
+          }
         },
         yAxis: {
           name : '问题受理数量',
@@ -278,21 +278,26 @@ export default {
           nameTextStyle : {
             fontSize : 16,
           },
-          type: 'value'
+          type: 'value',
+          min: -1, // 设置y轴的最小值为-1，可以根据需要微调这个值, 让整个y轴不是从0开始向上移动
         },
         
-        series: []
+        series: [],
+
       };
 
       // 对于每一条线数据的设置
       let versionData = []
       let currentVersion = []
+      let legendData = []
       for (let i = 0; i < this.saasUpgradeLineChartData.length; i++) {
         // 版本号数据的取出，并且给当前版本号设置空值，那样第一个数据点就会显示版本号了
         versionData.push(this.saasUpgradeLineChartData[i].data.map((item) => item.version))
         currentVersion.push('')
-        // 数据注入给echarts
+        // 数据注入给echarts,定义data1因为不知道为什么label的formatter函数就访问不到this.saasUpgradeLineChartData, 而且将data1定义在for外面
         let data1 = this.saasUpgradeLineChartData[i].data
+        // 
+        let versionChangeData = data1.filter((item, index) => (index > 0 && item.version !== data1[index - 1].version) || (index ===0) ).map(item => item)
         let series_1 = {
           name: this.saasUpgradeLineChartData[i].service,
           type: 'line',
@@ -310,18 +315,31 @@ export default {
               }
               return ''; // 如果版本号未变动，则不显示 label
             },
-            position: 'top'
+            position: 'top',
           },
-          markLine: {
-            symbol: ['none', 'none'],
-            label: { show: false },
-            data: [{ xAxis: 1 }, { xAxis: 3 }, { xAxis: 5 }, { xAxis: 7 }]
-          },
-          areaStyle: {},
+          markLine : {
+              symbol : ['none','none'], //取消起始和结束箭头
+              // 将数据进行过滤，只取每次变动的版本号的数据点，然后进行Markline虚线的展示
+              data: versionChangeData.map((item) => {
+                return {
+                  xAxis : item.x,
+                  lineStyle : {
+                    type : 'dashed'
+                  },
+                  symbol: "none",
+                  label: {
+                    show: false,
+                  }
+                }
+              }),
+            }
         };
+        console.log("this series", series_1)
         option.series.push(series_1)
-        option.legend.data.push(this.saasUpgradeLineChartData[i].service)
+        // option.legend.data.push(this.saasUpgradeLineChartData[i].service)
+        legendData.push(this.saasUpgradeLineChartData[i].service)
       }
+      option.legend.data = legendData
 
       // 鼠标悬浮在数据点上的时候的设置
       option.tooltip = {
@@ -331,31 +349,18 @@ export default {
           const xValue = params[0].value[0]; // x 值
           const yValue = params[0].value[1]; // y 值
           const version = versionData[params[0].seriesIndex][index]; // 获取数据点对应版本号
-          return `升级时间: ${xValue}<br/>受理数量: ${yValue}<br/>版本号: ${version}`;
+          // 使用legendData是因为取不到this.saasUpgradeLineChartData
+          const func = legendData[params[0].seriesIndex]
+          return `升级时间: ${xValue}<br/>受理数量: ${yValue}<br/>版本号: ${version}<br/>功能: ${func}`;
         }
       };
-
-      let visualMap = {
-        type: 'piecewise',
-        show: false,
-        dimension: 0,
-        seriesIndex: 0,
-        pieces: [
-          {
-            gt: 1,
-            lt: 3,
-            color: 'rgba(0, 0, 180, 0.4)'
-          },
-        ]
-      };
-      option.visualMap = visualMap;
       
       let saasUpgradeTrendChart = echarts.getInstanceByDom(document.getElementById('saasUpgradeTrendChart'))
       if (saasUpgradeTrendChart){
         saasUpgradeTrendChart.setOption(option,true)
       } 
 
-      console.log("updated echart linechart: ", saasUpgradeTrendChart)
+      console.log("updated echart upgrade linechart: ", saasUpgradeTrendChart)
 
     },
 
@@ -363,7 +368,16 @@ export default {
      * 当查询之后，数据更新，根据新的数据更新版本趋势折线图的信息
      */
     updateSaaSVersionTrendLineChart(){
+      // let option = {
 
+      // }
+
+      // let saasVersionLineChartData = echarts.getInstanceByDom(document.getElementById('saasVersionLineChartData'))
+      // if (saasVersionLineChartData){
+      //   saasVersionLineChartData.setOption(option,true)
+      // } 
+
+      // console.log("updated echart upgrade linechart: ", saasVersionLineChartData)
     },
 
 
@@ -388,6 +402,7 @@ export default {
         }
       } //结束for，完成日期的拼接
 
+      // 对升级趋势折线图的后端数据请求
       try {
         const response = await this.$http.get(
           '/api/CMC/workrecords/analysis_service_upgrade_trend?beginData=' +
@@ -402,6 +417,28 @@ export default {
         this.saasUpgradeLineChartData = response.data.data
         this.updateSaaSUpgradeTrendLineChart()
         console.log('update local linechart data: ', this.saasUpgradeLineChartData)
+        
+      } catch (error) {
+        console.log(error)
+        this.$message.error('错了哦，仔细看错误信息弹窗')
+        alert('失败' + error)
+      }
+
+      // 对版本趋势折线图的后端数据请求
+      try {
+        const response = await this.$http.get(
+          '/api/CMC/workrecords/analysis_version_upgrade_trend?beginData=' +
+          searchValue['beginData'] +
+          '&endData=' +
+          searchValue['endData'] +
+          '&resourcePool=' +
+          searchValue['resourcePool'] +
+          '&function_name=' +
+          searchValue['function_name'] 
+        )
+        this.saasVersionLineChartData = response.data.data
+        this.updateSaaSVersionTrendLineChart()
+        console.log('update local version linechart data: ', this.saasVersionLineChartData)
         
       } catch (error) {
         console.log(error)

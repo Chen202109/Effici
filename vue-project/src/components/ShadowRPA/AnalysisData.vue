@@ -825,7 +825,7 @@ export default {
 }
 
 .saasProblemPieChart {
-  float: right;
+  float: left;
 }
 
 .clearFloat {
