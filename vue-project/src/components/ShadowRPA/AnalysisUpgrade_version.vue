@@ -39,11 +39,13 @@
     </div>
     <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getMainPageWidth, height: '400px' }">
     </div>
+    <div class="saasProvinceAndFunctionChart" id="saasProvinceAndFunctionChart" :style="{ width: getMainPageWidth, height: '400px' }">
+    </div>
+    <div class="saasProvinceAndAgencyChart" id="saasProvinceAndAgencyChart" :style="{ width: getMainPageWidth, height: '400px' }">
+    </div>
 
     <div></div>
 
-
-    <div class="youChart" id="youChart" :style="{ width: '1250px', height: '450px' }"></div>
   </div>
 </template>
 
@@ -91,7 +93,9 @@ export default {
       ],
 
       saasUpgradeLineChartData: [],
-      saasVersionLineChartData: [],
+      saasVersionBarChartData: [],
+      saasProvinceBarChartData: [],
+      saasProvinceAndAgencyChartData: [],
     }
   },
   // 计算页面刚加载时候渲染的属性
@@ -123,117 +127,13 @@ export default {
       this.functionSelected = this.functionOptions[this.businessSelected];
     },
 
-    // 用于使用echarts进行图标的基础绘制
+    // 用于使用echarts进行图标的基础绘制init
     drawLine() {
-      // 基于准备好的dom，初始化echarts实例
-      let youChart = echarts.init(document.getElementById('youChart'))
-
-      var option;
-      const data = [["v1.13.0", 116], ["v1.13.1", 129], ["2000-06-07", 135], ["2000-06-08", 86], ["2000-06-09", 73], ["v1.13.1", 85], ["2000-06-11", 73], ["2000-06-12", 68], ["v1.13.4", 92], ["2000-06-14", 130], ["v1.13.3", 245], ["2000-06-16", 139], ["2000-06-17", 115], ["2000-06-18", 111], ["2000-06-19", 309], ["v1.13.4", 206], ["v1.13.6", 137], ["2000-06-22", 128], ["2000-06-23", 85], ["2000-06-24", 94], ["v1.13.7", 71], ["2000-06-26", 106], ["2000-06-27", 84], ["2000-06-28", 93], ["v1.14.0", 85], ["v1.14.1", 73], ["2000-07-01", 83], ["2000-07-02", 125], ["2000-07-03", 107], ["2000-07-04", 82], ["v1.14.2", 44], ["2000-07-06", 72], ["v1.14.3", 106], ["2000-07-08", 107], ["2000-07-09", 66], ["v1.14.4", 91], ["2000-07-11", 92], ["2000-07-12", 113], ["2000-07-13", 107], ["2000-07-14", 131], ["v1.14.5", 111], ["2000-07-16", 64], ["2000-07-17", 69], ["2000-07-18", 88], ["2000-07-19", 77], ["2000-07-20", 83], ["2000-07-21", 111], ["2000-07-22", 57], ["v1.14.6", 55], ["2000-07-24", 60]];
-      const dateList = data.map(function (item) {
-        return item[0];
-      });
-      const valueList = data.map(function (item) {
-        return item[1];
-      });
-      option = {
-        // Make gradient line here
-        visualMap: [
-          {
-            show: false,
-            type: 'continuous',
-            seriesIndex: 0,
-            min: 0,
-            max: 400
-          },
-          {
-            show: false,
-            type: 'continuous',
-            seriesIndex: 1,
-            dimension: 0,
-            min: 0,
-            max: dateList.length - 1
-          }
-        ],
-        title: [
-          {
-            left: 'left',
-            text: '        开票功能saas-industry-server三线受理趋势'
-          },
-          {
-            top: '46%',
-            left: 'left',
-            text: '        数据同步saas-finance-adapter-server三线受理趋势'
-          }
-        ],
-        tooltip: {
-          trigger: 'axis'
-        },
-        xAxis: [
-          {
-            data: dateList
-          },
-          {
-            data: dateList,
-            gridIndex: 1
-          }
-        ],
-        yAxis: [
-          {},
-          {
-            gridIndex: 1
-          }
-        ],
-        grid: [
-          {
-            bottom: '60%'
-          },
-          {
-            top: '60%'
-          }
-        ],
-        series: [
-          {
-            type: 'line',
-            showSymbol: true,
-            data: valueList,
-            markPoint: {
-              data: [
-                { type: 'max', name: '最大值' },
-                { type: 'min', name: '最小值' }
-              ],
-              label: {
-                show: true,
-                formatter: '{c}'
-              }
-            }
-          },
-
-          {
-            type: 'line',
-            showSymbol: true,
-            data: valueList,
-            xAxisIndex: 1,
-            yAxisIndex: 1,
-            markLine: {
-              data: [
-                { type: 'max', name: '最大值' },
-                { type: 'min', name: '最小值' }
-              ],
-              label: {
-                show: true,
-                formatter: '{c}'
-              }
-            }
-          }
-        ]
-      };
-      option && youChart.setOption(option);
-
-
-      // saas version和bug的折线图的init
+      // saas 升级，版本更新和bug的折线图的init
       let saasUpgradeTrendChart = echarts.init(document.getElementById('saasUpgradeTrendChart'))
       let saasVersionTrendChart = echarts.init(document.getElementById('saasVersionTrendChart'))
+      let saasProvinceAndFunctionChart = echarts.init(document.getElementById('saasProvinceAndFunctionChart'))
+      let saasProvinceAndAgencyChart = echarts.init(document.getElementById('saasProvinceAndAgencyChart'))
     },
 
     /**
@@ -333,7 +233,6 @@ export default {
             }),
           }
         };
-        console.log("this series", series_1)
         option.series.push(series_1)
         // option.legend.data.push(this.saasUpgradeLineChartData[i].service)
         legendData.push(this.saasUpgradeLineChartData[i].service)
@@ -364,17 +263,26 @@ export default {
     },
 
     /**
-     * 当查询之后，数据更新，根据新的数据更新版本趋势折线图的信息
+     * @param barChartData 整个图的数据数组
+     * @param barChartTitle 这张图的标题
+     * @param xAxisType x轴的坐标类型，有date，value，category等等
+     * @param xAxisLabelNewLine 因为有些时候，x轴的坐标分类太多，比如当有30个以上的category的时候，导致x轴的有些标签会缺失，这个输入如果为true,会将偶数的label换行形成更多空间展示
+     * @param chartElementId 对应的要更新的图表元素id
+     * @description 当查询之后，数据更新，根据新的数据更新柱状图的基础配置。
+     * 整个图的数据是一个大数组，里面包含的每个字典是：有属性seriesName, data。这里seriesName是该series的名字，data是该series的数据。
+     * data是一个数组，里面同样也是多个字典，每个字典代表着一个数据点，格式为 {‘x’: "xxx", "y": "xxx", "aaa":"aaa", "bbb":"bbb"}
+     * x和y的值是用于对应图的x和y轴的值，剩下的aaa，bbb等是其他可能多的需要添加的数据标签，但是再本基础配置方法中不做处理，只做x和y的对应。
+     * xAxis的type为传入的参数，有date，value，category等等，yAxis的type默认为value,因为y轴一般是数值。
      */
-    updateSaaSVersionTrendLineChart() {
-      // let xAxisData = ["V4.0.4.3", "V4.0.4.5", "V4.3.1.2", "V4.3.1.3", "V4.3.2.0"]
-      let xAxisData = this.saasVersionLineChartData[0].data.map(item => item.x)
-
+    updateBarChartBasic(barChartData, barChartTitle, xAxisType, xAxisLabelNewLine, chartElementId){
+      let xAxisData = barChartData[0].seriesData.map(item => item.x)
+      // 看看是否要给x轴数据添加换行
+      xAxisData =(xAxisLabelNewLine)? xAxisData.map((item, index) => (index%2===0)?item: '\n'+item): xAxisData
       let option = {
         title: {
           top: '1%',
           left: '5%',
-          text: 'SaaS版本三线受理趋势',
+          text: barChartTitle,
           left: 'left'
         },
         tooltip: {
@@ -388,13 +296,15 @@ export default {
         },
         grid: {
           left: '3%',
-          right: '4%',
-          bottom: '3%',
+          right: '3%',
+          top: '22%',
+          bottom: '15%',
           containLabel: true
         },
         xAxis: [
           {
-            type: 'category',
+            type: xAxisType,
+            axisLabel: { interval: 0 },
             data: xAxisData
           }
         ],
@@ -406,27 +316,114 @@ export default {
         series: []
       };
 
-      for (let i = 0; i < this.saasVersionLineChartData.length; i++) {
+      for (let i = 0; i < barChartData.length; i++) {
         let series_1 = {
-            name: this.saasVersionLineChartData[i].func,
+            name: barChartData[i].seriesName,
             type: 'bar',
             emphasis: {
               focus: 'series'
             },
-            data: this.saasVersionLineChartData[i].data.map(item=>item.y)
+            data: barChartData[i].seriesData.map(item=>item.y),
+            label: {
+              // 设置柱形图的数值
+              show: true,
+              position: 'top',
+              align: 'center',
+              formatter: '{c|{c}}次',
+              rich: {
+                c: {
+                  // color: '#4C5058',
+                  fontSize: 10,
+                },
+              }
+            },
         }
         option.series.push(series_1)
       }
 
-      let saasVersionLineChartData = echarts.getInstanceByDom(document.getElementById('saasVersionTrendChart'))
-      if (saasVersionLineChartData) {
-        saasVersionLineChartData.setOption(option, true)
+      let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
+      if (chart) {
+        chart.setOption(option, true)
       }
 
-      console.log("updated echart upgrade linechart: ", saasVersionLineChartData)
+      console.log("updated echart : ", chart)
     },
+    //   let xAxisData = this.saasProvinceBarChartData[0].data.map((item, index) => (index%2===0)?item.x: '\n'+item.x)
+
+    //   let option = {
+    //     title: {
+    //       top: '1%',
+    //       left: '5%',
+    //       text: 'SaaS省份三线受理统计',
+    //       left: 'left'
+    //     },
+    //     tooltip: {
+    //       trigger: 'axis',
+    //       axisPointer: {
+    //         type: 'shadow'
+    //       }
+    //     },
+    //     legend: {
+    //       top: '7%',
+    //     },
+    //     grid: {
+    //       left: '3%',
+    //       right: '3%',
+    //       top: '22%',
+    //       bottom: '15%',
+    //       containLabel: true
+    //     },
+    //     xAxis: [
+    //       {
+    //         type: 'category',
+    //         axisLabel: { interval: 0 },
+    //         data: xAxisData
+    //       }
+    //     ],
+    //     yAxis: [
+    //       {
+    //         type: 'value'
+    //       }
+    //     ],
+    //     series: []
+    //   };
+
+    //   for (let i = 0; i < this.saasProvinceBarChartData.length; i++) {
+    //     let series_1 = {
+    //         name: this.saasProvinceBarChartData[i].func,
+    //         type: 'bar',
+    //         emphasis: {
+    //           focus: 'series'
+    //         },
+    //         data: this.saasProvinceBarChartData[i].data.map(item=>item.y),
+    //         label: {
+    //           // 设置柱形图的数值
+    //           show: true,
+    //           position: 'top',
+    //           align: 'center',
+    //           formatter: '{c|{c}}次',
+    //           rich: {
+    //             c: {
+    //               // color: '#4C5058',
+    //               fontSize: 10,
+    //             },
+    //           }
+    //         },
+    //     }
+    //     option.series.push(series_1)
+    //   }
+
+    //   let saasProvinceChart = echarts.getInstanceByDom(document.getElementById('saasProvinceAndFunctionChart'))
+    //   if (saasProvinceChart) {
+    //     saasProvinceChart.setOption(option, true)
+    //   }
+    //   console.log("updated echart province barchart: ", saasProvinceChart)
+    // }, 
 
 
+    /**
+     * 按下查询按钮之后异步查询更新页面图标数据。
+     */
     async search() {
       // 触发查询事件，根据日期条件进行查询
       var searchValue = {} // 存放筛选条件信息
@@ -470,7 +467,7 @@ export default {
         alert('失败' + error)
       }
 
-      // 对版本趋势折线图的后端数据请求
+      // 对版本趋势柱状图的后端数据请求
       try {
         const response = await this.$http.get(
           '/api/CMC/workrecords/analysis_version_upgrade_trend?beginData=' +
@@ -482,9 +479,10 @@ export default {
           '&function_name=' +
           searchValue['function_name']
         )
-        this.saasVersionLineChartData = response.data.data
-        this.updateSaaSVersionTrendLineChart()
-        console.log('update local version linechart data: ', this.saasVersionLineChartData)
+        this.saasVersionBarChartData = response.data.data
+        // this.updateSaaSVersionTrendBarChart()
+        this.updateBarChartBasic(this.saasVersionBarChartData,'SaaS版本三线受理趋势', "category", false, 'saasVersionTrendChart')
+        console.log('update local version linechart data: ', this.saasVersionBarChartData)
 
       } catch (error) {
         console.log(error)
@@ -492,6 +490,51 @@ export default {
         alert('失败' + error)
       }
 
+      // 对省份受理数量柱状图的后端数据请求
+      try {
+        const response = await this.$http.get(
+          '/api/CMC/workrecords/analysis_saas_function_by_province?beginData=' +
+          searchValue['beginData'] +
+          '&endData=' +
+          searchValue['endData'] +
+          '&resourcePool=' +
+          searchValue['resourcePool'] +
+          '&function_name=' +
+          searchValue['function_name']
+        )
+        this.saasProvinceBarChartData = response.data.data
+        // this.updateSaaSProvinceBarChart()
+        this.updateBarChartBasic(this.saasProvinceBarChartData,'SaaS省份三线受理统计', "category", true, 'saasProvinceAndFunctionChart')
+        console.log('update local province bar chart data: ', this.saasProvinceBarChartData)
+
+      } catch (error) {
+        console.log(error)
+        this.$message.error('错了哦，仔细看错误信息弹窗')
+        alert('失败' + error)
+      }
+
+      // 对省份受理数量和单位开通数量对比柱状图的后端数据请求
+      try {
+        const response = await this.$http.get(
+          '/api/CMC/workrecords/analysis_saas_function_by_province_agency?beginData=' +
+          searchValue['beginData'] +
+          '&endData=' +
+          searchValue['endData'] +
+          '&resourcePool=' +
+          searchValue['resourcePool'] +
+          '&function_name=' +
+          searchValue['function_name']
+        )
+        this.saasProvinceAndAgencyChartData = response.data.data
+        this.updateBarChartBasic(this.saasProvinceAndAgencyChartData,'SaaS三线受理问题省份和单位开通数量对比', "category", true, 'saasProvinceAndAgencyChart')
+        
+        console.log('update local province and angency bar chart data: ', this.saasProvinceAndAgencyChartData)
+
+      } catch (error) {
+        console.log(error)
+        this.$message.error('错了哦，仔细看错误信息弹窗')
+        alert('失败' + error)
+      }
 
     },
   }

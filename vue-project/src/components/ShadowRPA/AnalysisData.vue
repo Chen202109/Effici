@@ -27,8 +27,8 @@
 
     <div id='saasProblemCharts'>
       <!-- 放入Echarts 可视化图形 组件 -->
-      <div class="myChart" id="myChart" :style="{ width: getInlineChartsWidth, height: '400px' }"></div>
-      <div class="saasProblemPieChart" id="saasProblemPieChart" :style="{ width: getInlineChartsWidth, height: '400px' }"></div>
+      <div class="myChart" id="myChart" :style="{ width: getInlineChartsWidth, height: '420px' }"></div>
+      <div class="saasProblemPieChart" id="saasProblemPieChart" :style="{ width: getInlineChartsWidth, height: '420px' }"></div>
     </div>
 
     <div class="clearFloat"></div>
@@ -292,6 +292,7 @@ export default {
           //   // position: ['20px', '20px']
         },
         xAxis: {
+          axisLabel: { interval: 0 },
           data: [
             'V3',
             'V4.0.4.7',
@@ -306,7 +307,7 @@ export default {
           left: '5%',
           right: '5%',
           top: '11%',
-          bottom: '7%',
+          bottom: '10%',
         },
         series: [
           {
@@ -697,11 +698,13 @@ export default {
         }
       })
 
+      let xAxisData = this.analysisData['myChart_xAxis'].map((item, index) => (index%2===0)?item: '\n'+item)
+      xAxisData =(this.analysisData['myChart_xAxis'].length > 8)? xAxisData: this.analysisData['myChart_xAxis']
       // 使用构造好的 seriesData 绘制柱形图
       if (myChart) {
         // 修改xAxis的data参数
         myChart.setOption({
-          xAxis: { data: this.analysisData['myChart_xAxis'] },
+          xAxis: { data:  xAxisData},
           // series: {data: this.analysisData['myChart_series']}
           series: { data: seriesData },
         })

@@ -304,7 +304,70 @@ def analysis_version_upgrade_trend(request):
             saas_version_data = [{'x': entry['x'], 'y': Counter(item['softversion'] for item in saas_function_data)[entry['x']]} for entry in saas_version_data]
 
             print(saas_version_data)
-            data.append({'func': function_name[i], 'data': saas_version_data})
+            data.append({'seriesName': function_name[i], 'seriesData': saas_version_data})
+    print("version:   "+str(data))
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+
+def analysis_saas_function_by_province(request):
+    """
+    分析省份受理的功能的问题数量的对比。
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+        function_name = request.GET.get('function_name').split(',')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        sql = f'SELECT DISTINCT region from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
+        region_list = db.select_offset(1, 1000, sql)
+        saas_province_data = [{'x':d["region"], 'y':0} for d in region_list if "region" in d]
+
+        for i in range(len(function_name)):
+            sql = f' SELECT * from workrecords_2023 '\
+                  f' WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '\
+                  f' AND errorfunction = "{function_name[i]}" '
+            saas_function_data = db.select_offset(1, 1000, sql)
+            saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
+
+            print(saas_province_data)
+            data.append({'seriesName': function_name[i], 'seriesData': saas_province_data})
+    print("version:   "+str(data))
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+
+def analysis_saas_function_by_province_agency(request):
+    """
+    分析省份受理的问题数量的对比。
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        sql = f'SELECT DISTINCT region from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
+        region_list = db.select_offset(1, 1000, sql)
+        saas_province_data = [{'x':d["region"], 'y':0} for d in region_list if "region" in d]
+
+        sql = f' SELECT * from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
+        saas_function_data = db.select_offset(1, 1000, sql)
+        saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
+
+        print(saas_province_data)
+        data.append({'seriesName': "问题受理数量", 'seriesData': saas_province_data})
+            
     print("version:   "+str(data))
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
