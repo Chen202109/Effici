@@ -3,11 +3,7 @@
     <div style="margin: 15px 0">
       <div>
         <div style="margin-bottom: 10px;">
-          <!-- <span class="demonstration">资源池： </span>
-          <el-select v-model="resourcePoolSelected" multiple placeholder="请选择资源池" style="width: 150px;">
-            <el-option v-for="(item, index) in resourcePoolOptions" :key="index" :label="item" :value="item"></el-option>
-          </el-select> -->
-          
+
           <span class="demonstration">资源池： </span>
           <el-radio-group v-model="resourcePoolSelected">
             <el-radio-button v-for="(item, index) in resourcePoolOptions" :key="index" :label="item"></el-radio-button>
@@ -24,22 +20,25 @@
           <div style="margin-bottom: 10px;">
             <span class="demonstration">业务分类： </span>
             <el-checkbox-group v-model="businessSelected" @change="businessCheckBoxChange" style="display: inline-block;">
-              <el-checkbox v-for="(item, index) in businessOptions" :key="index" :label="item">{{item}}</el-checkbox>
+              <el-checkbox v-for="(item, index) in businessOptions" :key="index" :label="item">{{ item }}</el-checkbox>
             </el-checkbox-group>
           </div>
 
           <div>
             <span class="demonstration">功能分类： </span>
             <el-checkbox-group v-model="functionSelected" style="display: inline-block;">
-              <el-checkbox v-for="(item, index) in functionOptions[this.businessSelected]" :key="index" :label="item">{{item}}</el-checkbox>
+              <el-checkbox v-for="(item, index) in functionOptions[this.businessSelected]" :key="index"
+                :label="item">{{ item }}</el-checkbox>
             </el-checkbox-group>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="saasUpgradeTrendChart" id="saasUpgradeTrendChart" :style="{ width: getMainPageWidth, height: '400px' }"></div>
-    <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getMainPageWidth, height: '400px' }"></div>
+    <div class="saasUpgradeTrendChart" id="saasUpgradeTrendChart" :style="{ width: getMainPageWidth, height: '400px' }">
+    </div>
+    <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getMainPageWidth, height: '400px' }">
+    </div>
 
     <div></div>
 
@@ -78,8 +77,8 @@ export default {
       businessSelected: [],
       // 功能选择
       functionOptions: {
-        "日常业务" : ["开票功能", "收缴业务", "核销功能", "打印功能", "报表功能", "票据管理", "通知交互", "反算功能","数据同步"],
-        "其他业务" : ["增值服务", "单位开通", "license重置", "安全漏洞"],
+        "日常业务": ["开票功能", "收缴业务", "核销功能", "打印功能", "报表功能", "票据管理", "通知交互", "反算功能", "数据同步"],
+        "其他业务": ["增值服务", "单位开通", "license重置", "安全漏洞"],
       },
       functionSelected: '',
       // 日期查询范围
@@ -98,10 +97,10 @@ export default {
   // 计算页面刚加载时候渲染的属性
   computed: {
     data() { },
-    getMainPageWidth: function(){
+    getMainPageWidth: function () {
       // windows.screen.width返回屏幕宽度，减去侧边栏240px,减去container模型左右padding各20px和margin-right的10px,
       // 减去主页面各自15px的padding, 减去不知道那里vue自己设的30px, 减去主页面内元素和滚动条保持距离的padding-right的10px,
-      return (window.screen.width-240-20*2-10-15*2-30-10)+'px'
+      return (window.screen.width - 240 - 20 * 2 - 10 - 15 * 2 - 30 - 10) + 'px'
     },
   },
   // 在初始化页面完成后,再对dom节点上图形进行相关绘制
@@ -110,18 +109,18 @@ export default {
     // 页面初始化后对checkbox,下拉列表组件添加初始值
     this.resourcePoolSelected = this.resourcePoolOptions[0];
     this.businessSelected.push(this.businessOptions[0]);
-    this.functionSelected  = this.functionOptions[this.businessSelected];
+    this.functionSelected = this.functionOptions[this.businessSelected];
     // 对图标进行一个初始化
     this.drawLine();
   },
 
   methods: {
     //业务类型的checkbox单选功能
-    businessCheckBoxChange(value){
-      if(this.businessSelected.length > 1){
-        this.businessSelected.splice(0,1)
+    businessCheckBoxChange(value) {
+      if (this.businessSelected.length > 1) {
+        this.businessSelected.splice(0, 1)
       }
-      this.functionSelected  = this.functionOptions[this.businessSelected];
+      this.functionSelected = this.functionOptions[this.businessSelected];
     },
 
     // 用于使用echarts进行图标的基础绘制
@@ -240,13 +239,13 @@ export default {
     /**
      * 当查询之后，数据更新，根据新的数据更新升级趋势折线图的信息
      */
-    updateSaaSUpgradeTrendLineChart(){
+    updateSaaSUpgradeTrendLineChart() {
       // 对option的基础设置
       let option = {
-        title : {
+        title: {
           top: '1%',
           left: '5%',
-          text: 'SaaS公有云版本三线受理趋势',
+          text: 'SaaS公有云版本升级三线受理趋势',
           left: 'left'
         },
         legend: {
@@ -260,28 +259,28 @@ export default {
           right: '5%',
         },
         xAxis: {
-          name : '升级时间',
-          nameLocation : 'middle',
+          name: '升级时间',
+          nameLocation: 'middle',
           nameGap: 25,
-          nameTextStyle : {
-            fontSize : 16,
+          nameTextStyle: {
+            fontSize: 16,
           },
           type: 'time',
-          axisLine : {
+          axisLine: {
             onZero: false, // 不在y=0处对齐x轴
           }
         },
         yAxis: {
-          name : '问题受理数量',
-          nameLocation : 'middle',
+          name: '问题受理数量',
+          nameLocation: 'middle',
           nameGap: 25,
-          nameTextStyle : {
-            fontSize : 16,
+          nameTextStyle: {
+            fontSize: 16,
           },
           type: 'value',
           min: -1, // 设置y轴的最小值为-1，可以根据需要微调这个值, 让整个y轴不是从0开始向上移动
         },
-        
+
         series: [],
 
       };
@@ -297,7 +296,7 @@ export default {
         // 数据注入给echarts,定义data1因为不知道为什么label的formatter函数就访问不到this.saasUpgradeLineChartData, 而且将data1定义在for外面
         let data1 = this.saasUpgradeLineChartData[i].data
         // 
-        let versionChangeData = data1.filter((item, index) => (index > 0 && item.version !== data1[index - 1].version) || (index ===0) ).map(item => item)
+        let versionChangeData = data1.filter((item, index) => (index > 0 && item.version !== data1[index - 1].version) || (index === 0)).map(item => item)
         let series_1 = {
           name: this.saasUpgradeLineChartData[i].service,
           type: 'line',
@@ -317,22 +316,22 @@ export default {
             },
             position: 'top',
           },
-          markLine : {
-              symbol : ['none','none'], //取消起始和结束箭头
-              // 将数据进行过滤，只取每次变动的版本号的数据点，然后进行Markline虚线的展示
-              data: versionChangeData.map((item) => {
-                return {
-                  xAxis : item.x,
-                  lineStyle : {
-                    type : 'dashed'
-                  },
-                  symbol: "none",
-                  label: {
-                    show: false,
-                  }
+          markLine: {
+            symbol: ['none', 'none'], //取消起始和结束箭头
+            // 将数据进行过滤，只取每次变动的版本号的数据点，然后进行Markline虚线的展示
+            data: versionChangeData.map((item) => {
+              return {
+                xAxis: item.x,
+                lineStyle: {
+                  type: 'dashed'
+                },
+                symbol: "none",
+                label: {
+                  show: false,
                 }
-              }),
-            }
+              }
+            }),
+          }
         };
         console.log("this series", series_1)
         option.series.push(series_1)
@@ -354,11 +353,11 @@ export default {
           return `升级时间: ${xValue}<br/>受理数量: ${yValue}<br/>版本号: ${version}<br/>功能: ${func}`;
         }
       };
-      
+
       let saasUpgradeTrendChart = echarts.getInstanceByDom(document.getElementById('saasUpgradeTrendChart'))
-      if (saasUpgradeTrendChart){
-        saasUpgradeTrendChart.setOption(option,true)
-      } 
+      if (saasUpgradeTrendChart) {
+        saasUpgradeTrendChart.setOption(option, true)
+      }
 
       console.log("updated echart upgrade linechart: ", saasUpgradeTrendChart)
 
@@ -367,17 +366,64 @@ export default {
     /**
      * 当查询之后，数据更新，根据新的数据更新版本趋势折线图的信息
      */
-    updateSaaSVersionTrendLineChart(){
-      // let option = {
+    updateSaaSVersionTrendLineChart() {
+      // let xAxisData = ["V4.0.4.3", "V4.0.4.5", "V4.3.1.2", "V4.3.1.3", "V4.3.2.0"]
+      let xAxisData = this.saasVersionLineChartData[0].data.map(item => item.x)
 
-      // }
+      let option = {
+        title: {
+          top: '1%',
+          left: '5%',
+          text: 'SaaS版本三线受理趋势',
+          left: 'left'
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          }
+        },
+        legend: {
+          top: '7%',
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
+        },
+        xAxis: [
+          {
+            type: 'category',
+            data: xAxisData
+          }
+        ],
+        yAxis: [
+          {
+            type: 'value'
+          }
+        ],
+        series: []
+      };
 
-      // let saasVersionLineChartData = echarts.getInstanceByDom(document.getElementById('saasVersionLineChartData'))
-      // if (saasVersionLineChartData){
-      //   saasVersionLineChartData.setOption(option,true)
-      // } 
+      for (let i = 0; i < this.saasVersionLineChartData.length; i++) {
+        let series_1 = {
+            name: this.saasVersionLineChartData[i].func,
+            type: 'bar',
+            emphasis: {
+              focus: 'series'
+            },
+            data: this.saasVersionLineChartData[i].data.map(item=>item.y)
+        }
+        option.series.push(series_1)
+      }
 
-      // console.log("updated echart upgrade linechart: ", saasVersionLineChartData)
+      let saasVersionLineChartData = echarts.getInstanceByDom(document.getElementById('saasVersionTrendChart'))
+      if (saasVersionLineChartData) {
+        saasVersionLineChartData.setOption(option, true)
+      }
+
+      console.log("updated echart upgrade linechart: ", saasVersionLineChartData)
     },
 
 
@@ -385,7 +431,7 @@ export default {
       // 触发查询事件，根据日期条件进行查询
       var searchValue = {} // 存放筛选条件信息
       searchValue['resourcePool'] = this.resourcePoolSelected.toString()
-      searchValue['function_name']  = this.functionSelected.toString()
+      searchValue['function_name'] = this.functionSelected.toString()
       // 获取年、月、日，进行拼接
       for (let i = 0; i < this.dateRange.length; i++) {
         var year = this.dateRange[i].getFullYear()
@@ -412,12 +458,12 @@ export default {
           '&resourcePool=' +
           searchValue['resourcePool'] +
           '&function_name=' +
-          searchValue['function_name'] 
+          searchValue['function_name']
         )
         this.saasUpgradeLineChartData = response.data.data
         this.updateSaaSUpgradeTrendLineChart()
         console.log('update local linechart data: ', this.saasUpgradeLineChartData)
-        
+
       } catch (error) {
         console.log(error)
         this.$message.error('错了哦，仔细看错误信息弹窗')
@@ -434,12 +480,12 @@ export default {
           '&resourcePool=' +
           searchValue['resourcePool'] +
           '&function_name=' +
-          searchValue['function_name'] 
+          searchValue['function_name']
         )
         this.saasVersionLineChartData = response.data.data
         this.updateSaaSVersionTrendLineChart()
         console.log('update local version linechart data: ', this.saasVersionLineChartData)
-        
+
       } catch (error) {
         console.log(error)
         this.$message.error('错了哦，仔细看错误信息弹窗')
@@ -461,5 +507,4 @@ export default {
 
 .el-icon-arrow-down {
   font-size: 12px;
-}
-</style>
+}</style>

@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import JsonResponse
 from mydata import mysql_base
+from collections import Counter
 from . import constant
 
 from datetime import datetime,timedelta # 用于传入的字符串转换成日期 datetime.strptime
@@ -256,7 +257,7 @@ def find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_en
 
         # 查询 work record 表，查询这段时间内选择的功能的受理问题记录
         sql = f' SELECT * FROM workrecords_2023 '\
-            f' where createtime>="{begin_date}" '\
+            f' WHERE createtime>="{begin_date}" '\
             f' AND createtime<="{end_date}" '\
             f' AND errorfunction= "{function_name}" ' \
             f' AND environment = "公有云" ' \
@@ -280,6 +281,31 @@ def analysis_version_upgrade_trend(request):
     分析版本信息和bug的趋势对比。
     """
     data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+        function_name = request.GET.get('function_name').split(',')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        sql = f'SELECT DISTINCT softversion from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" ORDER BY softversion '
+        soft_version_list = db.select_offset(1, 1000, sql)
+        saas_version_data = [{'x':d["softversion"], 'y':0} for d in soft_version_list if "softversion" in d]
+
+        for i in range(len(function_name)):
+            sql = f' SELECT * from workrecords_2023 '\
+                  f' WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '\
+                  f' AND errorfunction = "{function_name[i]}" '
+            saas_function_data = db.select_offset(1, 1000, sql)
+            saas_version_data = [{'x': entry['x'], 'y': Counter(item['softversion'] for item in saas_function_data)[entry['x']]} for entry in saas_version_data]
+
+            print(saas_version_data)
+            data.append({'func': function_name[i], 'data': saas_version_data})
+    print("version:   "+str(data))
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 
