@@ -316,6 +316,22 @@ export default {
         series: []
       };
 
+      this.normalBarChartAddingSeries(barChartData,option)
+
+      let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
+      if (chart) {
+        chart.setOption(option, true)
+      }
+
+      console.log("updated "+chartElementId+" echart : ", chart)
+    },
+
+    /**
+     * 将柱状图的数组信息循环添加进入柱状图的series中
+     * @param {barChartData} barChartData 后端返回的包含柱状图所有信息的一个数组
+     * @param {option} option 柱状图的option
+     */
+    normalBarChartAddingSeries(barChartData, option){
       for (let i = 0; i < barChartData.length; i++) {
         let series_1 = {
             name: barChartData[i].seriesName,
@@ -329,6 +345,9 @@ export default {
               show: true,
               position: 'top',
               align: 'center',
+              // formatter: function (params){
+              //   return (params.value===0)?"":params.value+"次"
+              // },
               formatter: '{c|{c}}次',
               rich: {
                 c: {
@@ -340,86 +359,56 @@ export default {
         }
         option.series.push(series_1)
       }
-
-      let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
-      if (chart) {
-        chart.setOption(option, true)
-      }
-
-      console.log("updated echart : ", chart)
     },
-    //   let xAxisData = this.saasProvinceBarChartData[0].data.map((item, index) => (index%2===0)?item.x: '\n'+item.x)
 
+    // /**
+    //  * 当查询之后，数据更新，在更新省份受理与单位数量对比的省份数据柱状图基础数据之后，额外的单位数量的折线数据更新
+    //  */
+    // updateSaaSProvinceAndAgencyBarChart(){
+
+    //   // 因为之前在updateBarChartBasic已经set过option，所以这里是附加添加option，只需要把额外需要添加的数据放入就行。
+    //   // 不知道为什么，可能是因为updateBarChartBasic的setOption设为true，需要更改的属性不能只添加额外的数据，是要把那个属性整个替换掉，但是其他以前setOption过的属性不需要变动。
     //   let option = {
-    //     title: {
-    //       top: '1%',
-    //       left: '5%',
-    //       text: 'SaaS省份三线受理统计',
-    //       left: 'left'
-    //     },
-    //     tooltip: {
-    //       trigger: 'axis',
-    //       axisPointer: {
-    //         type: 'shadow'
-    //       }
-    //     },
-    //     legend: {
-    //       top: '7%',
-    //     },
-    //     grid: {
-    //       left: '3%',
-    //       right: '3%',
-    //       top: '22%',
-    //       bottom: '15%',
-    //       containLabel: true
-    //     },
-    //     xAxis: [
-    //       {
-    //         type: 'category',
-    //         axisLabel: { interval: 0 },
-    //         data: xAxisData
-    //       }
-    //     ],
     //     yAxis: [
-    //       {
-    //         type: 'value'
-    //       }
+    //         {
+    //           type: 'value',
+    //           name: '受理数量',
+    //           alignTicks: true,
+    //           position: 'left',
+    //           axisLine: {
+    //             show: true,
+    //           },
+    //         },
+    //         {
+    //           type: 'value',
+    //           name: '单位数量',
+    //           position: 'right',
+    //           alignTicks: true,
+    //           axisLine: {
+    //             show: true,
+    //           },
+    //         }
     //     ],
-    //     series: []
-    //   };
-
-    //   for (let i = 0; i < this.saasProvinceBarChartData.length; i++) {
-    //     let series_1 = {
-    //         name: this.saasProvinceBarChartData[i].func,
-    //         type: 'bar',
-    //         emphasis: {
-    //           focus: 'series'
-    //         },
-    //         data: this.saasProvinceBarChartData[i].data.map(item=>item.y),
-    //         label: {
-    //           // 设置柱形图的数值
-    //           show: true,
-    //           position: 'top',
-    //           align: 'center',
-    //           formatter: '{c|{c}}次',
-    //           rich: {
-    //             c: {
-    //               // color: '#4C5058',
-    //               fontSize: 10,
-    //             },
-    //           }
-    //         },
-    //     }
-    //     option.series.push(series_1)
+    //     series: [
+    //         {
+    //           name: 'Temperature',
+    //           type: 'line',
+    //           yAxisIndex: 1,
+    //           data: [2, 0, 2, 2, 2, 0, 2,2, 0, 2,2, 0, 2,2, 0, 2,2, 0, 2,2, 0, 2,2, 0, 2,2, 0, 2,2]
+    //         }
+    //     ]
     //   }
 
-    //   let saasProvinceChart = echarts.getInstanceByDom(document.getElementById('saasProvinceAndFunctionChart'))
-    //   if (saasProvinceChart) {
-    //     saasProvinceChart.setOption(option, true)
-    //   }
-    //   console.log("updated echart province barchart: ", saasProvinceChart)
-    // }, 
+    //   this.normalBarChartAddingSeries(this.saasProvinceAndAgencyChartData, option)
 
+    //   let chart = echarts.getInstanceByDom(document.getElementById('saasProvinceAndAgencyChart'))
+    //   if (chart) {
+    //     // 现在是添加属性，所以不用replace设成true，直接setOption就行
+    //     chart.setOption(option)
+    //   }
+
+    //   console.log("updated echart saasProvinceAndAgencyChart : ", chart)
+    // },
 
     /**
      * 按下查询按钮之后异步查询更新页面图标数据。
@@ -480,7 +469,6 @@ export default {
           searchValue['function_name']
         )
         this.saasVersionBarChartData = response.data.data
-        // this.updateSaaSVersionTrendBarChart()
         this.updateBarChartBasic(this.saasVersionBarChartData,'SaaS版本三线受理趋势', "category", false, 'saasVersionTrendChart')
         console.log('update local version linechart data: ', this.saasVersionBarChartData)
 
@@ -503,7 +491,6 @@ export default {
           searchValue['function_name']
         )
         this.saasProvinceBarChartData = response.data.data
-        // this.updateSaaSProvinceBarChart()
         this.updateBarChartBasic(this.saasProvinceBarChartData,'SaaS省份三线受理统计', "category", true, 'saasProvinceAndFunctionChart')
         console.log('update local province bar chart data: ', this.saasProvinceBarChartData)
 
@@ -527,7 +514,7 @@ export default {
         )
         this.saasProvinceAndAgencyChartData = response.data.data
         this.updateBarChartBasic(this.saasProvinceAndAgencyChartData,'SaaS三线受理问题省份和单位开通数量对比', "category", true, 'saasProvinceAndAgencyChart')
-        
+        // this.updateSaaSProvinceAndAgencyBarChart()
         console.log('update local province and angency bar chart data: ', this.saasProvinceAndAgencyChartData)
 
       } catch (error) {
