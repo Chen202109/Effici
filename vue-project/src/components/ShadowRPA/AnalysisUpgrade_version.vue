@@ -113,7 +113,7 @@ export default {
     // 页面初始化后对checkbox,下拉列表组件添加初始值
     this.resourcePoolSelected = this.resourcePoolOptions[0];
     this.businessSelected.push(this.businessOptions[0]);
-    this.functionSelected = this.functionOptions[this.businessSelected];
+    this.functionSelected = this.functionOptions[this.businessSelected].slice(0,3);
     // 对图标进行一个初始化
     this.drawLine();
   },
@@ -145,15 +145,15 @@ export default {
         title: {
           top: '1%',
           left: '5%',
-          text: 'SaaS公有云版本升级三线受理趋势',
+          text: this.resourcePoolSelected+'受理趋势',
           left: 'left'
         },
         legend: {
-          top: '7%',
+          top: '8%',
           data: []
         },
         grid: {
-          top: '22%',
+          top: '23%',
           bottom: '20%',
           left: '5%',
           right: '5%',
@@ -276,8 +276,15 @@ export default {
      */
     updateBarChartBasic(barChartData, barChartTitle, xAxisType, xAxisLabelNewLine, chartElementId){
       let xAxisData = barChartData[0].seriesData.map(item => item.x)
-      // 看看是否要给x轴数据添加换行
-      xAxisData =(xAxisLabelNewLine)? xAxisData.map((item, index) => (index%2===0)?item: '\n'+item): xAxisData
+      let removeList = []
+      xAxisData.forEach((item) => {
+        let count = 0
+        barChartData.forEach(({seriesData})=>{console.log("data y: ", item, seriesData.find(ele=>ele.x === item).y); count = (seriesData.find(ele=>ele.x === item).y === 0)?count+1:count})
+        if(count === barChartData.length) removeList.push(item)
+      })
+      console.log("remove: ",removeList)
+      xAxisData = xAxisData.filter(item => !removeList.includes(item))
+
       let option = {
         title: {
           top: '1%',
@@ -292,12 +299,12 @@ export default {
           }
         },
         legend: {
-          top: '7%',
+          top: '8%',
         },
         grid: {
           left: '3%',
           right: '3%',
-          top: '22%',
+          top: '23%',
           bottom: '15%',
           containLabel: true
         },
@@ -316,7 +323,12 @@ export default {
         series: []
       };
 
-      this.normalBarChartAddingSeries(barChartData,option)
+      // 根据数据对图标添加series
+      this.normalBarChartAddingSeries(barChartData, option)
+
+      // 看看是否要给x轴数据添加换行
+      xAxisData =(xAxisLabelNewLine)? xAxisData.map((item, index) => (index%2===0)?item: '\n'+item): xAxisData
+      option.xAxis[0].data = xAxisData
 
       let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
       if (chart) {
@@ -339,7 +351,8 @@ export default {
             emphasis: {
               focus: 'series'
             },
-            data: barChartData[i].seriesData.map(item=>item.y),
+            // data: barChartData[i].seriesData.map(item=>item.y),
+            data: barChartData[i].seriesData.filter((item) => option.xAxis[0].data.includes(item.x)).map(item=>item.y),
             label: {
               // 设置柱形图的数值
               show: true,
@@ -357,6 +370,7 @@ export default {
               }
             },
         }
+        console.log("this option: ",option)
         option.series.push(series_1)
       }
     },
@@ -469,7 +483,7 @@ export default {
           searchValue['function_name']
         )
         this.saasVersionBarChartData = response.data.data
-        this.updateBarChartBasic(this.saasVersionBarChartData,'SaaS版本三线受理趋势', "category", false, 'saasVersionTrendChart')
+        this.updateBarChartBasic(this.saasVersionBarChartData,'SaaS公有云全版本受理趋势', "category", false, 'saasVersionTrendChart')
         console.log('update local version linechart data: ', this.saasVersionBarChartData)
 
       } catch (error) {
@@ -513,7 +527,7 @@ export default {
           searchValue['function_name']
         )
         this.saasProvinceAndAgencyChartData = response.data.data
-        this.updateBarChartBasic(this.saasProvinceAndAgencyChartData,'SaaS三线受理问题省份和单位开通数量对比', "category", true, 'saasProvinceAndAgencyChart')
+        this.updateBarChartBasic(this.saasProvinceAndAgencyChartData,'SaaS公有云全国各省受理统计', "category", true, 'saasProvinceAndAgencyChart')
         // this.updateSaaSProvinceAndAgencyBarChart()
         console.log('update local province and angency bar chart data: ', this.saasProvinceAndAgencyChartData)
 
