@@ -293,14 +293,14 @@ def analysis_version_upgrade_trend(request):
         db =mysql_base.Db()
 
         sql = f'SELECT DISTINCT softversion from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" ORDER BY softversion '
-        soft_version_list = db.select_offset(1, 1000, sql)
+        soft_version_list = db.select_offset(1, 2000, sql)
         saas_version_data = [{'x':d["softversion"], 'y':0} for d in soft_version_list if "softversion" in d]
 
         for i in range(len(function_name)):
             sql = f' SELECT * from workrecords_2023 '\
                   f' WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '\
                   f' AND errorfunction = "{function_name[i]}" '
-            saas_function_data = db.select_offset(1, 1000, sql)
+            saas_function_data = db.select_offset(1, 2000, sql)
             saas_version_data = [{'x': entry['x'], 'y': Counter(item['softversion'] for item in saas_function_data)[entry['x']]} for entry in saas_version_data]
 
             print(saas_version_data)
@@ -326,14 +326,14 @@ def analysis_saas_function_by_province(request):
         db =mysql_base.Db()
 
         sql = f'SELECT DISTINCT region from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
-        region_list = db.select_offset(1, 1000, sql)
+        region_list = db.select_offset(1, 2000, sql)
         saas_province_data = [{'x':d["region"], 'y':0} for d in region_list if "region" in d]
 
         for i in range(len(function_name)):
             sql = f' SELECT * from workrecords_2023 '\
                   f' WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '\
                   f' AND errorfunction = "{function_name[i]}" '
-            saas_function_data = db.select_offset(1, 1000, sql)
+            saas_function_data = db.select_offset(1, 2000, sql)
             saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
 
             print(saas_province_data)
@@ -342,7 +342,7 @@ def analysis_saas_function_by_province(request):
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 
-def analysis_saas_function_by_province_agency(request):
+def analysis_saas_problem_by_province_agency(request):
     """
     分析省份受理的问题数量的对比。
     """
@@ -358,15 +358,40 @@ def analysis_saas_function_by_province_agency(request):
         db =mysql_base.Db()
 
         sql = f'SELECT DISTINCT region from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
-        region_list = db.select_offset(1, 1000, sql)
+        region_list = db.select_offset(1, 2000, sql)
         saas_province_data = [{'x':d["region"], 'y':0} for d in region_list if "region" in d]
 
         sql = f' SELECT * from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
-        saas_function_data = db.select_offset(1, 1000, sql)
+        saas_function_data = db.select_offset(1, 2000, sql)
         saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
 
         print(saas_province_data)
         data.append({'seriesName': "问题受理数量", 'seriesData': saas_province_data})
+            
+    print("version:   "+str(data))
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+
+def analysis_saas_problem_by_month(request):
+    """
+    分析某一年月份受理的问题数量的对比。
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        saas_month_data = []
+
+        db =mysql_base.Db()
+        sql = f'SELECT MONTH(createtime) AS Month,COUNT(*) AS ProblemAmount FROM workrecords_2023 WHERE MONTH(createtime) between {datetime.strptime(begin_date, "%Y-%m-%d").month} and {datetime.strptime(end_date, "%Y-%m-%d").month} GROUP BY MONTH(createtime)'
+        saas_month_data = db.select_offset(1, 2000, sql)
+        seriesData = [{'x':str(d["Month"])+'月', 'y':d["ProblemAmount"]} for d in saas_month_data]
+        data.append({'seriesName': "问题受理数量", 'seriesData': seriesData})
             
     print("version:   "+str(data))
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})

@@ -27,8 +27,8 @@
           <div>
             <span class="demonstration">功能分类： </span>
             <el-checkbox-group v-model="functionSelected" style="display: inline-block;">
-              <el-checkbox v-for="(item, index) in functionOptions[this.businessSelected]" :key="index"
-                :label="item">{{ item }}</el-checkbox>
+              <el-checkbox v-for="(item, index) in functionOptions[this.businessSelected]" :key="index" :label="item">{{
+                item }}</el-checkbox>
             </el-checkbox-group>
           </div>
         </div>
@@ -41,7 +41,17 @@
     </div>
     <div class="saasProvinceAndFunctionChart" id="saasProvinceAndFunctionChart" :style="{ width: getMainPageWidth, height: '400px' }">
     </div>
+    <div class="saasProvinceAndFunctionChartSplit" id="saasProvinceAndFunctionChartSplit">
+      <!-- 因为省份和功能会产生太多柱子，所以对省份进行一个切割，分成多张图来展现，注意，v-for这边生成的i是从1开始，所以id的末尾是1不是0 -->
+      <div v-for="i in provinceSplitNum" 
+         :class="'saasProvinceAndFunctionChart' + i" 
+         :id="'saasProvinceAndFunctionChart' + i"
+         :style="{ width: getMainPageWidth, height: '400px' }">
+      </div>
+    </div>
     <div class="saasProvinceAndAgencyChart" id="saasProvinceAndAgencyChart" :style="{ width: getMainPageWidth, height: '400px' }">
+    </div>
+    <div class="saasProblemMonthChart" id="saasProblemMonthChart" :style="{ width: getMainPageWidth, height: '400px' }">
     </div>
 
     <div></div>
@@ -71,7 +81,6 @@ export default {
   data() {
     return {
       // 资源池选择
-      // resourcePoolOptions: ['V3', '01资源池', '02资源池', '03资源池', '04资源池', '运营支撑平台'],
       resourcePoolOptions: ['01资源池', '03资源池', '04资源池'],
       resourcePoolSelected: '',
       // 业务选择
@@ -91,11 +100,14 @@ export default {
         ),
         new Date(),
       ],
+      provinceSplitNum : 2,
 
+      // 这个页面各类图的数据
       saasUpgradeLineChartData: [],
       saasVersionBarChartData: [],
       saasProvinceBarChartData: [],
       saasProvinceAndAgencyChartData: [],
+      saasProblemMonthChartData: [],
     }
   },
   // 计算页面刚加载时候渲染的属性
@@ -113,7 +125,7 @@ export default {
     // 页面初始化后对checkbox,下拉列表组件添加初始值
     this.resourcePoolSelected = this.resourcePoolOptions[0];
     this.businessSelected.push(this.businessOptions[0]);
-    this.functionSelected = this.functionOptions[this.businessSelected].slice(0,3);
+    this.functionSelected = this.functionOptions[this.businessSelected].slice(0, 3);
     // 对图标进行一个初始化
     this.drawLine();
   },
@@ -130,10 +142,13 @@ export default {
     // 用于使用echarts进行图标的基础绘制init
     drawLine() {
       // saas 升级，版本更新和bug的折线图的init
-      let saasUpgradeTrendChart = echarts.init(document.getElementById('saasUpgradeTrendChart'))
-      let saasVersionTrendChart = echarts.init(document.getElementById('saasVersionTrendChart'))
-      let saasProvinceAndFunctionChart = echarts.init(document.getElementById('saasProvinceAndFunctionChart'))
-      let saasProvinceAndAgencyChart = echarts.init(document.getElementById('saasProvinceAndAgencyChart'))
+      echarts.init(document.getElementById('saasUpgradeTrendChart'))
+      echarts.init(document.getElementById('saasVersionTrendChart'))
+      echarts.init(document.getElementById('saasProvinceAndFunctionChart'))
+      echarts.init(document.getElementById('saasProvinceAndAgencyChart'))
+      echarts.init(document.getElementById('saasProblemMonthChart'))
+      // 因为是使用v-for生成的元素，所以使用this.$nextTick来进行延迟，否则可能会出现还没渲染元素就init的情况
+      this.$nextTick(() => {for (let i = 0; i < this.provinceSplitNum; i++) echarts.init(document.getElementById('saasProvinceAndFunctionChart'+(i+1)))})
     },
 
     /**
@@ -145,7 +160,7 @@ export default {
         title: {
           top: '1%',
           left: '5%',
-          text: this.resourcePoolSelected+'受理趋势',
+          text: this.resourcePoolSelected + '受理趋势',
           left: 'left'
         },
         legend: {
@@ -274,15 +289,16 @@ export default {
      * x和y的值是用于对应图的x和y轴的值，剩下的aaa，bbb等是其他可能多的需要添加的数据标签，但是再本基础配置方法中不做处理，只做x和y的对应。
      * xAxis的type为传入的参数，有date，value，category等等，yAxis的type默认为value,因为y轴一般是数值。
      */
-    updateBarChartBasic(barChartData, barChartTitle, xAxisType, xAxisLabelNewLine, chartElementId){
+    updateBarChartBasic(barChartData, barChartTitle, xAxisType, xAxisLabelNewLine, chartElementId) {
       let xAxisData = barChartData[0].seriesData.map(item => item.x)
+      // 将如果所有项都是0的x轴的值去掉
       let removeList = []
       xAxisData.forEach((item) => {
         let count = 0
-        barChartData.forEach(({seriesData})=>{console.log("data y: ", item, seriesData.find(ele=>ele.x === item).y); count = (seriesData.find(ele=>ele.x === item).y === 0)?count+1:count})
-        if(count === barChartData.length) removeList.push(item)
+        barChartData.forEach(({ seriesData }) => { count = (seriesData.find(ele => ele.x === item).y === 0) ? count + 1 : count })
+        if (count === barChartData.length) removeList.push(item)
       })
-      console.log("remove: ",removeList)
+      console.log("remove: ", removeList)
       xAxisData = xAxisData.filter(item => !removeList.includes(item))
 
       let option = {
@@ -327,7 +343,7 @@ export default {
       this.normalBarChartAddingSeries(barChartData, option)
 
       // 看看是否要给x轴数据添加换行
-      xAxisData =(xAxisLabelNewLine)? xAxisData.map((item, index) => (index%2===0)?item: '\n'+item): xAxisData
+      xAxisData = (xAxisLabelNewLine) ? xAxisData.map((item, index) => (index % 2 === 0) ? item : '\n' + item) : xAxisData
       option.xAxis[0].data = xAxisData
 
       let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
@@ -335,7 +351,7 @@ export default {
         chart.setOption(option, true)
       }
 
-      console.log("updated "+chartElementId+" echart : ", chart)
+      console.log("updated " + chartElementId + " echart : ", chart)
     },
 
     /**
@@ -343,34 +359,34 @@ export default {
      * @param {barChartData} barChartData 后端返回的包含柱状图所有信息的一个数组
      * @param {option} option 柱状图的option
      */
-    normalBarChartAddingSeries(barChartData, option){
+    normalBarChartAddingSeries(barChartData, option) {
       for (let i = 0; i < barChartData.length; i++) {
         let series_1 = {
-            name: barChartData[i].seriesName,
-            type: 'bar',
-            emphasis: {
-              focus: 'series'
-            },
-            // data: barChartData[i].seriesData.map(item=>item.y),
-            data: barChartData[i].seriesData.filter((item) => option.xAxis[0].data.includes(item.x)).map(item=>item.y),
-            label: {
-              // 设置柱形图的数值
-              show: true,
-              position: 'top',
-              align: 'center',
-              // formatter: function (params){
-              //   return (params.value===0)?"":params.value+"次"
-              // },
-              formatter: '{c|{c}}次',
-              rich: {
-                c: {
-                  // color: '#4C5058',
-                  fontSize: 10,
-                },
-              }
-            },
+          name: barChartData[i].seriesName,
+          type: 'bar',
+          barMaxWidth: 30,
+          emphasis: {
+            focus: 'series'
+          },
+          // data: barChartData[i].seriesData.map(item=>item.y),
+          data: barChartData[i].seriesData.filter((item) => option.xAxis[0].data.includes(item.x)).map(item => item.y),
+          label: {
+            // 设置柱形图的数值
+            show: true,
+            position: 'top',
+            align: 'center',
+            // formatter: function (params){
+            //   return (params.value===0)?"":params.value+"次"
+            // },
+            formatter: '{c|{c}}次',
+            rich: {
+              c: {
+                // color: '#4C5058',
+                fontSize: 10,
+              },
+            }
+          },
         }
-        console.log("this option: ",option)
         option.series.push(series_1)
       }
     },
@@ -447,8 +463,19 @@ export default {
           searchValue['endData'] = endData
         }
       } //结束for，完成日期的拼接
+      
+      this.searchSaaSServiceUpgradeTrend(searchValue)
+      this.searchSaaSVersionUpgradeTrend(searchValue)
+      this.searchSaaSFunctionByProvince(searchValue)
+      this.searchSaaSProblemByProvinceAgency(searchValue)
+      this.searchSaaSProblemByMonth(searchValue)
+    },
 
-      // 对升级趋势折线图的后端数据请求
+    /**
+     * @param {searchValue} searchValue 搜索参数的字典
+     * @description 对升级趋势折线图的后端数据请求
+     */
+    async searchSaaSServiceUpgradeTrend(searchValue) {
       try {
         const response = await this.$http.get(
           '/api/CMC/workrecords/analysis_service_upgrade_trend?beginData=' +
@@ -469,8 +496,13 @@ export default {
         this.$message.error('错了哦，仔细看错误信息弹窗')
         alert('失败' + error)
       }
+    },
 
-      // 对版本趋势柱状图的后端数据请求
+    /**
+     * @param {searchValue} searchValue 搜索参数的字典
+     * @description 对版本趋势柱状图的后端数据请求
+     */
+    async searchSaaSVersionUpgradeTrend(searchValue) {
       try {
         const response = await this.$http.get(
           '/api/CMC/workrecords/analysis_version_upgrade_trend?beginData=' +
@@ -483,7 +515,7 @@ export default {
           searchValue['function_name']
         )
         this.saasVersionBarChartData = response.data.data
-        this.updateBarChartBasic(this.saasVersionBarChartData,'SaaS公有云全版本受理趋势', "category", false, 'saasVersionTrendChart')
+        this.updateBarChartBasic(this.saasVersionBarChartData, 'SaaS全版本受理趋势', "category", false, 'saasVersionTrendChart')
         console.log('update local version linechart data: ', this.saasVersionBarChartData)
 
       } catch (error) {
@@ -491,43 +523,82 @@ export default {
         this.$message.error('错了哦，仔细看错误信息弹窗')
         alert('失败' + error)
       }
+    },
 
-      // 对省份受理数量柱状图的后端数据请求
+    /**
+     * @param {searchValue} searchValue 搜索参数的字典
+     * @description 对省份受理数量柱状图的后端数据请求
+     */
+    async searchSaaSFunctionByProvince(searchValue) {
       try {
         const response = await this.$http.get(
           '/api/CMC/workrecords/analysis_saas_function_by_province?beginData=' +
           searchValue['beginData'] +
           '&endData=' +
           searchValue['endData'] +
-          '&resourcePool=' +
-          searchValue['resourcePool'] +
           '&function_name=' +
           searchValue['function_name']
         )
         this.saasProvinceBarChartData = response.data.data
-        this.updateBarChartBasic(this.saasProvinceBarChartData,'SaaS省份三线受理统计', "category", true, 'saasProvinceAndFunctionChart')
+        this.updateBarChartBasic(this.saasProvinceBarChartData, 'SaaS省份三线受理统计', "category", true, 'saasProvinceAndFunctionChart')
         console.log('update local province bar chart data: ', this.saasProvinceBarChartData)
 
+        // 将x，省份的信息提取出来，统计所有省份的这几个功能的受理数量，并进行排序
+        let result = []
+        let yMax = 0
+        const xAxis = new Set(this.saasProvinceBarChartData[0].seriesData.map(subItem => subItem.x));
+        xAxis.forEach(x => {
+          let ySum = 0
+          this.saasProvinceBarChartData.forEach((item) => { 
+            const y = item.seriesData.filter(subItem => subItem.x === x)[0].y;
+            ySum += y; 
+            yMax = y > yMax ? y : yMax;
+          })
+          result.push({ x, y: ySum });
+        });
+        result.sort((a, b) => b.y - a.y)
+        console.log('accumulate: ',result) 
+        console.log('yMax', yMax)
+        
+        // 要分成几张图的数据，进行遍历循环，给柱状图添加数据。
+        for (let i = 0; i < this.provinceSplitNum; i++){
+          // 先截取出这一张图的x轴的省份
+          let splitAxis = result.slice(i*result.length/this.provinceSplitNum,(i+1)*result.length/this.provinceSplitNum)
+          let splitData = []
+          // 从所有数据saasProvinceBarChartData中抽取这一张图的x轴的省份的相关数据，生成和saasProvinceBarChartData同一格式的数组
+          this.saasProvinceBarChartData.forEach((item) => {splitData.push( {seriesName: item.seriesName, seriesData: item.seriesData.filter( subItem => splitAxis.some(sub => sub.x === subItem.x) )} );});
+          // 将数据注入柱状图内，i+1是因为元素在使用v-for生成的时候，v-for的i是从1开始，这里是0开始，所以使用i+1来获取相同的id
+          this.updateBarChartBasic(splitData, 'SaaS省份三线受理统计(子集'+(i+1)+')', "category", false, 'saasProvinceAndFunctionChart'+(i+1))
+          let chart = echarts.getInstanceByDom(document.getElementById('saasProvinceAndFunctionChart'+(i+1)))
+          chart.setOption({
+            yAxis : {
+              type : "value",
+              max: Math.ceil( yMax/10 ) *10
+            }
+          })
+        }
+        
       } catch (error) {
         console.log(error)
         this.$message.error('错了哦，仔细看错误信息弹窗')
         alert('失败' + error)
       }
+    },
 
-      // 对省份受理数量和单位开通数量对比柱状图的后端数据请求
+    /**
+     * @param {searchValue} searchValue 搜索参数的字典
+     * @description 对省份受理数量和单位开通数量对比柱状图的后端数据请求
+     */
+    async searchSaaSProblemByProvinceAgency(searchValue) {
       try {
         const response = await this.$http.get(
-          '/api/CMC/workrecords/analysis_saas_function_by_province_agency?beginData=' +
+          '/api/CMC/workrecords/analysis_saas_problem_by_province_agency?beginData=' +
           searchValue['beginData'] +
           '&endData=' +
-          searchValue['endData'] +
-          '&resourcePool=' +
-          searchValue['resourcePool'] +
-          '&function_name=' +
-          searchValue['function_name']
+          searchValue['endData']
         )
         this.saasProvinceAndAgencyChartData = response.data.data
-        this.updateBarChartBasic(this.saasProvinceAndAgencyChartData,'SaaS公有云全国各省受理统计', "category", true, 'saasProvinceAndAgencyChart')
+        this.updateBarChartBasic(this.saasProvinceAndAgencyChartData, 'SaaS全国各省受理统计', "category", true, 'saasProvinceAndAgencyChart')
         // this.updateSaaSProvinceAndAgencyBarChart()
         console.log('update local province and angency bar chart data: ', this.saasProvinceAndAgencyChartData)
 
@@ -536,8 +607,32 @@ export default {
         this.$message.error('错了哦，仔细看错误信息弹窗')
         alert('失败' + error)
       }
-
     },
+
+    /**
+     * @param {searchValue} searchValue 搜索参数的字典
+     * @description 对省份受理数量和单位开通数量对比柱状图的后端数据请求
+     */
+     async searchSaaSProblemByMonth(searchValue) {
+      try {
+        const response = await this.$http.get(
+          '/api/CMC/workrecords/analysis_saas_problem_by_month?beginData=' +
+          searchValue['beginData'] +
+          '&endData=' +
+          searchValue['endData']
+        )
+        this.saasProblemMonthChartData = response.data.data
+        this.updateBarChartBasic(this.saasProblemMonthChartData, searchValue['beginData'].slice(0,4)+'年SaaS月份受理统计', "category", false, 'saasProblemMonthChart')
+        console.log('update local month bar chart data: ', this.saasProblemMonthChartData)
+
+      } catch (error) {
+        console.log(error)
+        this.$message.error('错了哦，仔细看错误信息弹窗')
+        alert('失败' + error)
+      }
+    },
+
+
   }
 }
 </script>
@@ -551,4 +646,5 @@ export default {
 
 .el-icon-arrow-down {
   font-size: 12px;
-}</style>
+}
+</style>
