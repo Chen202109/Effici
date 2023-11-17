@@ -37,6 +37,8 @@
 
     <div class="saasUpgradeTrendChart" id="saasUpgradeTrendChart" :style="{ width: getMainPageWidth, height: '400px' }">
     </div>
+    <div class="saasVersionTrendByResourcePoolChart" id="saasVersionTrendByResourcePoolChart" :style="{ width: getMainPageWidth, height: '400px' }">
+    </div>
     <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getMainPageWidth, height: '400px' }">
     </div>
     <div class="saasProvinceAndFunctionChart" id="saasProvinceAndFunctionChart" :style="{ width: getMainPageWidth, height: '400px' }">
@@ -104,6 +106,7 @@ export default {
 
       // 这个页面各类图的数据
       saasUpgradeLineChartData: [],
+      saasVersionByResoucePoolBarChartData: [],
       saasVersionBarChartData: [],
       saasProvinceBarChartData: [],
       saasProvinceAndAgencyChartData: [],
@@ -143,6 +146,7 @@ export default {
     drawLine() {
       // saas 升级，版本更新和bug的折线图的init
       echarts.init(document.getElementById('saasUpgradeTrendChart'))
+      echarts.init(document.getElementById('saasVersionTrendByResourcePoolChart'))
       echarts.init(document.getElementById('saasVersionTrendChart'))
       echarts.init(document.getElementById('saasProvinceAndFunctionChart'))
       echarts.init(document.getElementById('saasProvinceAndAgencyChart'))
@@ -391,54 +395,95 @@ export default {
       }
     },
 
-    // /**
-    //  * 当查询之后，数据更新，在更新省份受理与单位数量对比的省份数据柱状图基础数据之后，额外的单位数量的折线数据更新
-    //  */
-    // updateSaaSProvinceAndAgencyBarChart(){
+    /**
+     * 当查询之后，数据更新，更新省份受理与单位数量对比的省份数据柱状图和单位数量的折线数据更新
+     */
+    updateSaaSProvinceAndAgencyBarChart(barChartData, barChartTitle, xAxisType, xAxisLabelNewLine, chartElementId){
+      let xAxisData = this.saasProvinceAndAgencyChartData[0].seriesData.map(item => item.x)
+      let colors = ['#5470C6', '#EE6666'];
+      let option = {
+        color: colors,
+        title: {
+          top: '1%',
+          left: '5%',
+          text: barChartTitle,
+          left: 'left'
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          }
+        },
+        legend: {
+          top: '8%',
+        },
+        grid: {
+          left: '3%',
+          right: '3%',
+          top: '23%',
+          bottom: '15%',
+          containLabel: true
+        },
+        xAxis: [
+          {
+            type: xAxisType,
+            axisLabel: { interval: 0 },
+            data: xAxisData
+          }
+        ],
+        yAxis: [
+            {
+              type: 'value',
+              name: '受理数量',
+              alignTicks: true,
+              position: 'left',
+              axisLine: {
+                show: true,
+                lineStyle: {
+                  color: colors[0]
+                }
+              },
+            },
+            {
+              type: 'value',
+              name: '单位数量',
+              position: 'right',
+              alignTicks: true,
+              axisLine: {
+                show: true,
+                lineStyle: {
+                  color: colors[1]
+                }
+              },
+            }
+        ],
+        series: [
+            {
+              name: barChartData[0].seriesName,
+              type: 'bar',
+              // 这里可以直接map把y的值取出来，因为这里就一组series，y为0的x过滤就不会存在，xAxis还是原来的不会有x的值被去除，使用这里并不需要让y再去对应xAxis的进行过滤
+              data: barChartData[0].seriesData.map(item=>item.y),
+            },
+            {
+              name: barChartData[1].seriesName,
+              type: 'line',
+              yAxisIndex: 1,
+              data: barChartData[1].seriesData.map(item=>item.y),
+            }
+        ]
+      }
 
-    //   // 因为之前在updateBarChartBasic已经set过option，所以这里是附加添加option，只需要把额外需要添加的数据放入就行。
-    //   // 不知道为什么，可能是因为updateBarChartBasic的setOption设为true，需要更改的属性不能只添加额外的数据，是要把那个属性整个替换掉，但是其他以前setOption过的属性不需要变动。
-    //   let option = {
-    //     yAxis: [
-    //         {
-    //           type: 'value',
-    //           name: '受理数量',
-    //           alignTicks: true,
-    //           position: 'left',
-    //           axisLine: {
-    //             show: true,
-    //           },
-    //         },
-    //         {
-    //           type: 'value',
-    //           name: '单位数量',
-    //           position: 'right',
-    //           alignTicks: true,
-    //           axisLine: {
-    //             show: true,
-    //           },
-    //         }
-    //     ],
-    //     series: [
-    //         {
-    //           name: 'Temperature',
-    //           type: 'line',
-    //           yAxisIndex: 1,
-    //           data: [2, 0, 2, 2, 2, 0, 2,2, 0, 2,2, 0, 2,2, 0, 2,2, 0, 2,2, 0, 2,2, 0, 2,2, 0, 2,2]
-    //         }
-    //     ]
-    //   }
+      // 看看是否要给x轴数据添加换行
+      xAxisData = (xAxisLabelNewLine) ? xAxisData.map((item, index) => (index % 2 === 0) ? item : '\n' + item) : xAxisData
+      option.xAxis[0].data = xAxisData
 
-    //   this.normalBarChartAddingSeries(this.saasProvinceAndAgencyChartData, option)
+      let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
+      // 现在是添加属性，所以不用replace设成true，直接setOption就行
+      chart.setOption(option, true)
 
-    //   let chart = echarts.getInstanceByDom(document.getElementById('saasProvinceAndAgencyChart'))
-    //   if (chart) {
-    //     // 现在是添加属性，所以不用replace设成true，直接setOption就行
-    //     chart.setOption(option)
-    //   }
-
-    //   console.log("updated echart saasProvinceAndAgencyChart : ", chart)
-    // },
+      console.log("updated echart saasProvinceAndAgencyChart : ", chart)
+    },
 
     /**
      * 按下查询按钮之后异步查询更新页面图标数据。
@@ -465,6 +510,7 @@ export default {
       } //结束for，完成日期的拼接
       
       this.searchSaaSServiceUpgradeTrend(searchValue)
+      this.searchSaaSVersionUpgradeTrendByResoucePool(searchValue)
       this.searchSaaSVersionUpgradeTrend(searchValue)
       this.searchSaaSFunctionByProvince(searchValue)
       this.searchSaaSProblemByProvinceAgency(searchValue)
@@ -490,6 +536,33 @@ export default {
         this.saasUpgradeLineChartData = response.data.data
         this.updateSaaSUpgradeTrendLineChart()
         console.log('update local linechart data: ', this.saasUpgradeLineChartData)
+
+      } catch (error) {
+        console.log(error)
+        this.$message.error('错了哦，仔细看错误信息弹窗')
+        alert('失败' + error)
+      }
+    },
+
+    /**
+     * @param {searchValue} searchValue 搜索参数的字典
+     * @description 对公有云指定资源池的版本和受理数量对比的查询
+     */
+     async searchSaaSVersionUpgradeTrendByResoucePool(searchValue) {
+      try {
+        const response = await this.$http.get(
+          '/api/CMC/workrecords/analysis_version_problem_by_resource_pool?beginData=' +
+          searchValue['beginData'] +
+          '&endData=' +
+          searchValue['endData'] +
+          '&resourcePool=' +
+          searchValue['resourcePool'] +
+          '&function_name=' +
+          searchValue['function_name']
+        )
+        this.saasVersionByResoucePoolBarChartData = response.data.data
+        this.updateBarChartBasic(this.saasVersionByResoucePoolBarChartData, searchValue['resourcePool']+'SaaS版本受理统计', "category", false, 'saasVersionTrendByResourcePoolChart')
+        console.log('update local month bar chart data: ', this.saasVersionByResoucePoolBarChartData)
 
       } catch (error) {
         console.log(error)
@@ -598,8 +671,8 @@ export default {
           searchValue['endData']
         )
         this.saasProvinceAndAgencyChartData = response.data.data
-        this.updateBarChartBasic(this.saasProvinceAndAgencyChartData, 'SaaS全国各省受理统计', "category", true, 'saasProvinceAndAgencyChart')
-        // this.updateSaaSProvinceAndAgencyBarChart()
+        // this.updateBarChartBasic(this.saasProvinceAndAgencyChartData, 'SaaS全国各省受理统计', "category", true, 'saasProvinceAndAgencyChart')
+        this.updateSaaSProvinceAndAgencyBarChart(this.saasProvinceAndAgencyChartData, 'SaaS全国各省受理统计', "category", true, 'saasProvinceAndAgencyChart')
         console.log('update local province and angency bar chart data: ', this.saasProvinceAndAgencyChartData)
 
       } catch (error) {

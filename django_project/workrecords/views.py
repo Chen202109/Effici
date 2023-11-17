@@ -72,7 +72,6 @@ def analysisselect(request):
             license_dict[f'{license_region}']=license_count # 添加字典元素
 
         analysisData['licenseData'].append(license_dict) # 添加数组元素 license申请的内容
-        print(f'当前license数据 {analysisData["licenseData"]}')
         # ■■■ 结束license的数据获取
 
         # ■■■ 开始分页查询，获得对应时间范围内，【数据汇报】--->受理问题的表格数据
@@ -142,7 +141,6 @@ def analysisselect(request):
               f'where createtime>="{beginData}" and createtime<="{endData}" ' \
               f'GROUP BY errorfunction'
         annularChart_data = db.select_offset(1, 1000, sql)
-        print(type(annularChart_data),f'annularChart_data{annularChart_data}')
 
         analysisData['annularChart_data'] =  annularChart_data # 添加数组元素 【数据汇报】---> 饼状图形数据
         # ■■■ 结束 受理问题 相关的数据获取
@@ -174,10 +172,9 @@ def analysisselect(request):
               f') A ' \
               f'GROUP BY A.resourcepool,upgradetype'
         upgradeData = db.select_offset(1, 1000, sql)
+        print("ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss")
         analysisData['upgradeData'] = upgradeData  # 添加数组元素 【数据汇报】--->升级计划的内容
         # ■■■ 结束 升级计划 相关的数据获取
-
-        # print(f'tableData 返回 {tableData}')
         # print(type(analysisData), len(analysisData), analysisData)
 
     return JsonResponse({'data': analysisData}, json_dumps_params={'ensure_ascii': False})
@@ -189,16 +186,16 @@ def analysis_service_upgrade_trend(request):
     if request.method == 'GET':
         begin_date = request.GET.get('beginData', default='2023-01-01')
         end_date = request.GET.get('endData', default='2023-12-31')
-        resource_pool = request.GET.get('resourcePool').split(',')
-        function_name = request.GET.get('function_name').split(',')
+        resource_pools = request.GET.get('resourcePool').split(',')
+        function_names = request.GET.get('function_name').split(',')
 
         realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
         realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
 
-        for i in range(len(resource_pool)):
-            for j in range(len(function_name)):
-                data.append({'service': resource_pool[i] + '-' + function_name[j], 
-                             'data': find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_end, function_name[j], resource_pool[i])})
+        for i in range(len(resource_pools)):
+            for j in range(len(function_names)):
+                data.append({'service': resource_pools[i] + '-' + function_names[j], 
+                             'data': find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_end, function_names[j], resource_pools[i])})
 
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
@@ -232,12 +229,11 @@ def find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_en
           f' ORDER BY realdate '
     
     # 这个是将所有符合条件的整行的升级数据的返回，可以用作查详细数据时候的缓存
-    upgrade_record = db.select_offset(1, 1000, sql)
+    upgrade_record = db.select_offset(1, 2000, sql)
     # 这个是在指定资源池底下的这个服务的升级日期的list，list每个元素是字典，key是日期，value是0
     upgrade_time_record = [{'x':d["realdate"].split(' ')[0], 'version': "" if d['resourcepoolversion'][-4:] =="V3行业" else 'V'+'.'.join([num for num in d['resourcepoolversion'][-4:]])} for d in upgrade_record if "realdate" in d]
     # 如果某两个字典的日期是一样的，那就是有一天同时两次的升级记录，他们version肯定也一样，将他们合并成一条
     upgrade_time_record = [item for i, item in enumerate(upgrade_time_record) if 'x' not in item or item['x'] not in [x['x'] for x in upgrade_time_record[:i]]]
-    print(upgrade_time_record)
 
     if resource_pool == 'V3行业':
         sql = f' SELECT * FROM workrecords_2023 '\
@@ -268,12 +264,62 @@ def find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_en
     saasProblems = db.select_offset(1, 1000, sql)
     
     # 将受理问题查询出来的记录根据上面查询出来的升级时间点切割，然后赋值，每个时间点的值就是从这次升级到下次升级这个时间段内这个功能的受理次数
+    # (remark: 因为比如一个大版本升级了，然后这个功能并没有升级，那么这个错的次数还是统计到上一次这个功能升级的数据点中，直到下一次这个功能升级了，
+    # 所以折线图的数据点的值累加起来并不一定是这个版本这个功能受理了多少问题，而是着重在这次这个功能升级到下次这个功能升级之间对于这个升级，它出现了多少的问题)
     for i in range(len(upgrade_time_record)):
         time_range = (upgrade_time_record[i]['x'], end_date if i==len(upgrade_time_record)-1 else upgrade_time_record[i+1]['x'])
         upgrade_time_record[i]['y'] = len([d for d in saasProblems if time_range[0] < d["createtime"] <= time_range[1]])
-
+    
     print(upgrade_time_record)
     return upgrade_time_record
+
+
+def analysis_version_problem_by_resource_pool(request):
+    """
+    分析版本信息和bug的趋势对比。
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+        resource_pools = request.GET.get('resourcePool').split(',')
+        function_names = request.GET.get('function_name').split(',')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        # 先获取这段时间内的有哪些版本
+        sql = f'SELECT DISTINCT softversion from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" AND softversion != "V3"  ORDER BY softversion '
+        soft_version_list = db.select_offset(1, 2000, sql)
+        saas_version_data = [{'x':d["softversion"], 'y':0} for d in soft_version_list if "softversion" in d]
+
+        for resource_pool in resource_pools: 
+            # 生成对受理问题查询时候省份条件的语句
+            province_list = constant.source_pool_province_map[resource_pool]
+            resource_pool_condition = ''
+            for i in province_list:
+                resource_pool_condition += f'region = "{i}" or '
+            resource_pool_condition = resource_pool_condition[:-3]
+
+            for function_name in function_names:
+                # 查询 work record 表，查询这段时间内选择的功能的受理问题记录
+                sql = f' SELECT * FROM workrecords_2023 '\
+                    f' WHERE createtime>="{begin_date}" '\
+                    f' AND createtime<="{end_date}" '\
+                    f' AND errorfunction= "{function_name}" ' \
+                    f' AND environment = "公有云" ' \
+                    f' AND softversion != "V3" ' \
+                    f' AND ({resource_pool_condition}) ' \
+                    f' ORDER BY createtime '
+                saas_function_data = db.select_offset(1, 2000, sql)
+
+                saas_version_data = [{'x': entry['x'], 'y': Counter(item['softversion'] for item in saas_function_data)[entry['x']]} for entry in saas_version_data]
+                data.append({'seriesName': function_name, 'seriesData': saas_version_data})
+    print("version:   "+str(data))
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 
 def analysis_version_upgrade_trend(request):
@@ -302,8 +348,6 @@ def analysis_version_upgrade_trend(request):
                   f' AND errorfunction = "{function_name[i]}" '
             saas_function_data = db.select_offset(1, 2000, sql)
             saas_version_data = [{'x': entry['x'], 'y': Counter(item['softversion'] for item in saas_function_data)[entry['x']]} for entry in saas_version_data]
-
-            print(saas_version_data)
             data.append({'seriesName': function_name[i], 'seriesData': saas_version_data})
     print("version:   "+str(data))
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
@@ -335,8 +379,6 @@ def analysis_saas_function_by_province(request):
                   f' AND errorfunction = "{function_name[i]}" '
             saas_function_data = db.select_offset(1, 2000, sql)
             saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
-
-            print(saas_province_data)
             data.append({'seriesName': function_name[i], 'seriesData': saas_province_data})
     print("version:   "+str(data))
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
@@ -357,16 +399,25 @@ def analysis_saas_problem_by_province_agency(request):
 
         db =mysql_base.Db()
 
+        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":0}]
         sql = f'SELECT DISTINCT region from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
         region_list = db.select_offset(1, 2000, sql)
-        saas_province_data = [{'x':d["region"], 'y':0} for d in region_list if "region" in d]
+        saas_province_problem_data = [{'x':d["region"], 'y':0} for d in region_list if "region" in d]
 
+        # 查询这段时间内的受理问题，然后将他们count一遍放入对应省份的数据点的y值
         sql = f' SELECT * from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
         saas_function_data = db.select_offset(1, 2000, sql)
-        saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
+        saas_province_problem_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_problem_data]
+        data.append({'seriesName': "问题受理数量", 'seriesData': saas_province_problem_data})
 
-        print(saas_province_data)
-        data.append({'seriesName': "问题受理数量", 'seriesData': saas_province_data})
+        import pandas as pd
+        # 对上线单位数量统计进行读取
+        dataframe = pd.read_csv('./workrecords/existedAgencyAccountByProvince.csv',sep=',').rename(columns={'省份':'x','数量':'y'}).to_dict(orient="records")
+        # 生成一个顺序与saas_province_problem_data一致的数组，目的是为了两条series数据里面相同位置的字典对应的x值一致，那样抽取的y的值才一致。
+        # 新数组的x值通过saas_province_problem_data获取，y的值通过dataFrame读取的上线单位的数量进行填入。
+        saas_province_agency_account_data = [{**prov, 'y': next(filter(lambda ag: ag['x'] == prov['x'], dataframe))['y']} for prov in saas_province_problem_data]
+        data.append({'seriesName': "上线单位数量", 'seriesData': saas_province_agency_account_data})
+
             
     print("version:   "+str(data))
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})

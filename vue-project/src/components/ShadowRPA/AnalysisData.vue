@@ -48,7 +48,7 @@
 
     <div style="height: 20px;"></div>
 
-    <p class="saasAnalysisTitle"> license受理数据</p>
+    <p class="saasAnalysisTitle"> saas_v4 license受理数据统计</p>
     <!-- 放入license的数据组件 -->
     <div style="margin: 15px 0">
       <license :licenseData="analysisData['licenseData']"></license>
@@ -251,6 +251,9 @@ export default {
   // 计算页面刚加载时候渲染的属性
   computed: {
     data() { },
+    /**
+     * 获取主页面宽度的一半，用于给两个在一个水平面的图设定宽度
+     */
     getInlineChartsWidth: function(){
       // windows.screen.width返回屏幕宽度，减去侧边栏240px,减去container模型左右padding各20px和margin-right的10px,
       // 减去主页面各自15px的padding, 减去不知道那里vue自己设的30px, 减去主页面内元素和滚动条保持距离的padding-right的10px,
@@ -341,7 +344,6 @@ export default {
           trigger: 'item',
           formatter: '{a} <br/>{b}: {c} ({d}%)'
         },
-
         series: [
           {
             name: 'Access From',
@@ -368,10 +370,12 @@ export default {
           {
             name: 'Access From',
             type: 'pie',
-            radius: ['50%', '65%'],
+            // 设定外圈的环的大小
+            radius: ['48%', '62%'],
             top: "1%",
             left: 'center',
-            width: 600,
+            // width不直接指定，因为这个图的大小是通过整个屏幕计算宽度除以2得到的，所以和这个图的宽度保持一直，具体算法见getInlineChartsWidth()方法
+            width: (window.screen.width-240-20*2-10-15*2-30-10)/2,
             labelLine: {
               length: 15,
               length2: 0,
@@ -398,15 +402,16 @@ export default {
                 },
               }
             },
+            // 给标签线设置格式
             labelLayout: function (params) {
-              const isLeft = params.labelRect.x < myChart.getWidth() / 2;
+              // 通过标签魔性labelRect的x，查看是在这张图左边还是右边 （不能使用params.label.x直接看label的文字的坐标，不知道为什么直接整个回调所有设置失效）
+              const isLeft = params.labelRect.x < saasProblemPieChart.getWidth() / 2;
               const points = params.labelLinePoints;
-              // Update the end point.
-              points[2][0] = isLeft
-                ? params.labelRect.x
-                : params.labelRect.x + params.labelRect.width;
-                points[1][1] = params.labelRect.y+params.labelRect.height
-                points[2][1] = params.labelRect.y+params.labelRect.height
+              // 更新水平方向的标签线的末尾坐标，看是左边的标签还是右边的标签，如果是右边的标签的话就取到标签的x值也就是标签最靠左的点然后加上标签宽度
+              points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
+              // 更新竖直方向的标签线的末尾坐标，因为想要label显示在线上方，所以加上label的高度。
+              points[1][1] = params.labelRect.y+params.labelRect.height
+              points[2][1] = params.labelRect.y+params.labelRect.height
               return {
                 labelLinePoints: points
               };
