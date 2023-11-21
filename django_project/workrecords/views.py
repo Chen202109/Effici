@@ -65,12 +65,14 @@ def analysisselect(request):
         # 将上面的转成下面这种，这样前端才能挂到license_data里面
         # [{'上海': 2, '北京':3, '广东':3}]  注：license_data数组只是 前端的analysisData字典的一部分 analysisData['license_data']
         
-        # 根据列表推导式，取出region和count对应的值生成数组然后转化成字典
-        license_dict = {d["region"] : d["count"] for d in licenseData_list}
-        analysisData['licenseData'].append(license_dict)
+        # # 根据列表推导式，取出region和count对应的值生成数组然后转化成字典
+        # license_dict = {d["region"] : d["count"] for d in licenseData_list}
+        # analysisData['licenseData'].append(license_dict)
 
-        # license_data = [{k: v} for k, v in sorted({d["region"] : d["count"] for d in licenseData_list}.items(), key=lambda item:item[1], reverse=True)]
-        # analysisData['licenseData'] = license_data
+        license_data = [{k: v} for k, v in sorted({d["region"] : d["count"] for d in licenseData_list}.items(), key=lambda item:item[1], reverse=True)]
+        license_data.insert(0, {"省份": "单位申请数"})
+        license_data.append({"合计": sum(item["count"] for item in licenseData_list)})
+        analysisData['licenseData'] = license_data
         
 
         # ■■■ 结束license的数据获取
@@ -269,7 +271,6 @@ def find_service_upgrade_trend(begin_date, end_date, realdate_begin, realdate_en
         time_range = (upgrade_time_record[i]['x'], end_date if i==len(upgrade_time_record)-1 else upgrade_time_record[i+1]['x'])
         upgrade_time_record[i]['y'] = len([d for d in saasProblems if time_range[0] < d["createtime"] <= time_range[1]])
     
-    print(upgrade_time_record)
     return upgrade_time_record
 
 
@@ -319,20 +320,16 @@ def analysis_version_problem_by_resource_pool(request):
                 data.append({'seriesName': function_name, 'seriesData': saas_version_data})
             
             # 对这个资源池的升级次数按版本进行统计分类
-            sql = f' SELECT DISTINCT resourcepoolversion, COUNT(*) as upgradeAmount from upgradeplan_2023 '\
+            sql = f' SELECT DISTINCT resourcepoolversion, upgradetype, COUNT(*) as upgradeAmount from upgradeplan_2023 '\
                   f' WHERE plandate>="{begin_date}" AND plandate<="{end_date}" '\
                   f' AND resourcepool="{resource_pool}" '\
-                  f' GROUP BY resourcepoolversion'
+                  f' GROUP BY resourcepoolversion, upgradetype'
             upgrade_record = db.select_offset(1, 2000, sql)
-            upgrade_amount_record = [{'x': entry['x'], 
-                                      'y': next((item['upgradeAmount'] for item in upgrade_record if item['resourcepoolversion'] == "腾讯云-"+ resource_pool + entry['x'][1:].replace(".", "")),0)
-                                      } for entry in saas_version_data]
-            print("sssssssssssssssssss")
-            print(upgrade_amount_record)
-            data.append({'seriesName': "版本升级次数", 'seriesData': upgrade_amount_record})
+            daily_upgrade_amount_record = [{'x': entry['x'], 'y': next((item['upgradeAmount'] for item in upgrade_record if item['resourcepoolversion'] == "腾讯云-"+ resource_pool + entry['x'][1:].replace(".", "") and item["upgradetype"] == "日常"),0)} for entry in saas_version_data]
+            added_daily_upgrade_amount_record    = [{'x': entry['x'], 'y': next((item['upgradeAmount'] for item in upgrade_record if item['resourcepoolversion'] == "腾讯云-"+ resource_pool + entry['x'][1:].replace(".", "") and item["upgradetype"] == "增值"),0)} for entry in saas_version_data]
+            data.append({'seriesName': "日常升级次数", 'seriesData': daily_upgrade_amount_record})
+            data.append({'seriesName': "增值升级次数", 'seriesData': added_daily_upgrade_amount_record})
 
-
-    print("version:   "+str(data))
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 
@@ -363,7 +360,6 @@ def analysis_version_upgrade_trend(request):
             saas_function_data = db.select_offset(1, 2000, sql)
             saas_version_data = [{'x': entry['x'], 'y': Counter(item['softversion'] for item in saas_function_data)[entry['x']]} for entry in saas_version_data]
             data.append({'seriesName': function_name[i], 'seriesData': saas_version_data})
-    print("version:   "+str(data))
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 
@@ -394,7 +390,6 @@ def analysis_saas_function_by_province(request):
             saas_function_data = db.select_offset(1, 2000, sql)
             saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
             data.append({'seriesName': function_name[i], 'seriesData': saas_province_data})
-    print("version:   "+str(data))
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 
@@ -431,9 +426,7 @@ def analysis_saas_problem_by_province_agency(request):
         # 新数组的x值通过saas_province_problem_data获取，y的值通过dataFrame读取的上线单位的数量进行填入。
         saas_province_agency_account_data = [{**prov, 'y': next(filter(lambda ag: ag['x'] == prov['x'], dataframe))['y']} for prov in saas_province_problem_data]
         data.append({'seriesName': "上线单位数量", 'seriesData': saas_province_agency_account_data})
-
             
-    print("version:   "+str(data))
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 
@@ -458,7 +451,6 @@ def analysis_saas_problem_by_month(request):
         seriesData = [{'x':str(d["Month"])+'月', 'y':d["ProblemAmount"]} for d in saas_month_data]
         data.append({'seriesName': "问题受理数量", 'seriesData': seriesData})
             
-    print("version:   "+str(data))
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 

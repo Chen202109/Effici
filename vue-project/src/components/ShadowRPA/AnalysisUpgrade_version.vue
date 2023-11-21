@@ -294,6 +294,7 @@ export default {
      * xAxis的type为传入的参数，有date，value，category等等，yAxis的type默认为value,因为y轴一般是数值。
      */
     updateBarChartBasic(barChartData, barChartTitle, xAxisType, xAxisLabelNewLine, chartElementId) {
+      // 拿到x轴的数据
       let xAxisData = barChartData[0].seriesData.map(item => item.x)
       // 将如果所有项都是0的x轴的值去掉
       let removeList = []
@@ -364,6 +365,7 @@ export default {
      * @param {option} option 柱状图的option
      */
     normalBarChartAddingSeries(barChartData, option) {
+      let colors = ["", "", "", "", "", "", "", "", "", "", "", "", ""]
       for (let i = 0; i < barChartData.length; i++) {
         let series_1 = {
           name: barChartData[i].seriesName,
@@ -374,6 +376,9 @@ export default {
           },
           // data: barChartData[i].seriesData.map(item=>item.y),
           data: barChartData[i].seriesData.filter((item) => option.xAxis[0].data.includes(item.x)).map(item => item.y),
+          // itemStyle: {
+          //   color : "skyblue"
+          // },
           label: {
             // 设置柱形图的数值
             show: true,

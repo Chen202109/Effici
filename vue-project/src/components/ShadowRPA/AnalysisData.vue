@@ -557,10 +557,13 @@ export default {
             } // 如果是数字，则相加, 目的是为排除开汉字 申请单位数
           }
         }
-        this.analysisData['licenseData'][0]['合计'] = license_total //字典加入合计数
-        // let sortedEntries = Object.keys(this.analysisData['licenseData'][0]).map(key=>({key, val: String(this.analysisData['licenseData'][0][key])})).sort((a,b)=>b.val-a.val)
-        // this.analysisData['licenseData'][0] = sortedEntries
+        // this.analysisData['licenseData'][0]['合计'] = license_total //字典加入合计数
 
+        // let sortedEntries = Object.keys(this.analysisData['licenseData']).map(key=>({key, val: String(this.analysisData['licenseData'][key])})).sort((a,b)=>b.val-a.val)
+        // this.analysisData['licenseData']= sortedEntries
+
+        // let sortedData = this.analysisData["licenseData"].sort((a,b) => Object.values(b)[0] - Object.values(a)[0])
+        // this.analysisData['licenseData']= sortedData
 
 
         // 清空原来的数据，根据每一次搜索重新生成表格
