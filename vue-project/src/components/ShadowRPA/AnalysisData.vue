@@ -522,7 +522,9 @@ export default {
           searchValue['endData']
         )
         console.log('获得this.analysisData为', response.data.data)
+        this.analysisData = []
         this.analysisData = response.data.data // 这里不能将整个data赋过去，会造成其他数据被覆盖
+        console.log('获得this.analysisData为', this.analysisData)
 
         // 清空原来数据，根据每一次搜索的数据重新生成
         this.saasProblemTypeInVersions = [
@@ -556,6 +558,9 @@ export default {
           }
         }
         this.analysisData['licenseData'][0]['合计'] = license_total //字典加入合计数
+        // let sortedEntries = Object.keys(this.analysisData['licenseData'][0]).map(key=>({key, val: String(this.analysisData['licenseData'][0][key])})).sort((a,b)=>b.val-a.val)
+        // this.analysisData['licenseData'][0] = sortedEntries
+
 
 
         // 清空原来的数据，根据每一次搜索重新生成表格
@@ -593,43 +598,6 @@ export default {
         let dailyUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '日常')
         let addedUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '增值')
 
-        // // 计算upgrade的合计行
-        // let upgrade_total = {
-        //   "resourcepool": "合计",
-        //   "upgradetype": "",
-        //   "升级次数": 0,
-        //   "缺陷": 0,
-        //   "需求": 0,
-        //   "优化": 0
-        // }
-
-        // for (const item in dailyUpgradeTableData) {
-        //   upgrade_total["升级次数"] += parseInt(dailyUpgradeTableData[item]["升级次数"])
-        //   upgrade_total["缺陷"] += parseInt(dailyUpgradeTableData[item]["缺陷"])
-        //   upgrade_total["需求"] += parseInt(dailyUpgradeTableData[item]["需求"])
-        //   upgrade_total["优化"] += parseInt(dailyUpgradeTableData[item]["优化"])
-        // }
-        // // 将合计行放入dailyUpgradeTableData中
-        // dailyUpgradeTableData.push(upgrade_total)
-
-        // upgrade_total = {
-        //   "resourcepool": "合计",
-        //   "upgradetype": "",
-        //   "升级次数": 0,
-        //   "缺陷": 0,
-        //   "需求": 0,
-        //   "优化": 0
-        // }
-
-        // for (const item in addedUpgradeTableData) {
-        //   upgrade_total["升级次数"] += parseInt(addedUpgradeTableData[item]["升级次数"])
-        //   upgrade_total["缺陷"] += parseInt(addedUpgradeTableData[item]["缺陷"])
-        //   upgrade_total["需求"] += parseInt(addedUpgradeTableData[item]["需求"])
-        //   upgrade_total["优化"] += parseInt(addedUpgradeTableData[item]["优化"])
-        // }
-        // // 将合计行放入addedUpgradeTableData中
-        // addedUpgradeTableData.push(upgrade_total)
-
         // 对日常和增值两个表进行row 和 col的交换
         for (const item of dailyUpgradeTableData) {
           this.saasUpgradeData[0][0][item["resourcepool"]] = item['缺陷']
@@ -637,7 +605,6 @@ export default {
           this.saasUpgradeData[0][2][item["resourcepool"]] = item['优化']
           this.saasUpgradeData[0][3][item["resourcepool"]] = item['升级次数']
         }
-
         for (const item of addedUpgradeTableData) {
           this.saasUpgradeData[1][0][item["resourcepool"]] = item['缺陷']
           this.saasUpgradeData[1][1][item["resourcepool"]] = item['需求']

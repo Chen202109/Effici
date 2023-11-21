@@ -63,15 +63,16 @@ def analysisselect(request):
         licenseData_list = db.select_offset(1, 1000, sql)
         # 这个是查询后返回的数据，类似 [{'region': '上海', 'count': 2}, {'region': '北京', 'count': 1}]
         # 将上面的转成下面这种，这样前端才能挂到license_data里面
-        # [{'上海': 2, '北京':3}]  注：license_data数组只是 前端的analysisData字典的一部分 analysisData['license_data']
+        # [{'上海': 2, '北京':3, '广东':3}]  注：license_data数组只是 前端的analysisData字典的一部分 analysisData['license_data']
+        
+        # 根据列表推导式，取出region和count对应的值生成数组然后转化成字典
+        license_dict = {d["region"] : d["count"] for d in licenseData_list}
+        analysisData['licenseData'].append(license_dict)
 
-        license_dict = {} # 用于保存数组内的字典 , 像这样 [{'上海': 2, '北京':3}]
-        for i in range(len(licenseData_list)): # 循环次数为查询出来的sql返回的dict，注意select都是返回dict
-            license_region = licenseData_list[i]['region'] # 获得
-            license_count = licenseData_list[i]['count']
-            license_dict[f'{license_region}']=license_count # 添加字典元素
+        # license_data = [{k: v} for k, v in sorted({d["region"] : d["count"] for d in licenseData_list}.items(), key=lambda item:item[1], reverse=True)]
+        # analysisData['licenseData'] = license_data
+        
 
-        analysisData['licenseData'].append(license_dict) # 添加数组元素 license申请的内容
         # ■■■ 结束license的数据获取
 
         # ■■■ 开始分页查询，获得对应时间范围内，【数据汇报】--->受理问题的表格数据
@@ -172,10 +173,8 @@ def analysisselect(request):
               f') A ' \
               f'GROUP BY A.resourcepool,upgradetype'
         upgradeData = db.select_offset(1, 1000, sql)
-        print("ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss")
         analysisData['upgradeData'] = upgradeData  # 添加数组元素 【数据汇报】--->升级计划的内容
         # ■■■ 结束 升级计划 相关的数据获取
-        # print(type(analysisData), len(analysisData), analysisData)
 
     return JsonResponse({'data': analysisData}, json_dumps_params={'ensure_ascii': False})
 
@@ -304,11 +303,11 @@ def analysis_version_problem_by_resource_pool(request):
                 resource_pool_condition += f'region = "{i}" or '
             resource_pool_condition = resource_pool_condition[:-3]
 
+            # 对每个功能的受理问题进行统计
             for function_name in function_names:
                 # 查询 work record 表，查询这段时间内选择的功能的受理问题记录
                 sql = f' SELECT * FROM workrecords_2023 '\
-                    f' WHERE createtime>="{begin_date}" '\
-                    f' AND createtime<="{end_date}" '\
+                    f' WHERE createtime>="{begin_date}" AND createtime<="{end_date}" '\
                     f' AND errorfunction= "{function_name}" ' \
                     f' AND environment = "公有云" ' \
                     f' AND softversion != "V3" ' \
@@ -318,6 +317,21 @@ def analysis_version_problem_by_resource_pool(request):
 
                 saas_version_data = [{'x': entry['x'], 'y': Counter(item['softversion'] for item in saas_function_data)[entry['x']]} for entry in saas_version_data]
                 data.append({'seriesName': function_name, 'seriesData': saas_version_data})
+            
+            # 对这个资源池的升级次数按版本进行统计分类
+            sql = f' SELECT DISTINCT resourcepoolversion, COUNT(*) as upgradeAmount from upgradeplan_2023 '\
+                  f' WHERE plandate>="{begin_date}" AND plandate<="{end_date}" '\
+                  f' AND resourcepool="{resource_pool}" '\
+                  f' GROUP BY resourcepoolversion'
+            upgrade_record = db.select_offset(1, 2000, sql)
+            upgrade_amount_record = [{'x': entry['x'], 
+                                      'y': next((item['upgradeAmount'] for item in upgrade_record if item['resourcepoolversion'] == "腾讯云-"+ resource_pool + entry['x'][1:].replace(".", "")),0)
+                                      } for entry in saas_version_data]
+            print("sssssssssssssssssss")
+            print(upgrade_amount_record)
+            data.append({'seriesName': "版本升级次数", 'seriesData': upgrade_amount_record})
+
+
     print("version:   "+str(data))
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
