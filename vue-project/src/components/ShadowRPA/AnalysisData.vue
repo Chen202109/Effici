@@ -120,6 +120,7 @@ export default {
   },
   data() {
     return {
+      // saasProblemTableData这个总表格的表头
       tableTitle: [
         { prop: 'total', label: '受理合计' },
         { prop: 'report', label: '报表功能' },
@@ -137,6 +138,34 @@ export default {
         { prop: 'opening', label: '单位开通' },
         { prop: 'softbug', label: '缺陷合计' },
       ],
+      //查询日期
+      dateRange: [
+        new Date(
+          new Date().getFullYear() + '-' + (new Date().getMonth() + 1) + '-01'
+        ),
+        new Date(),
+      ],
+      // 出错功能的key的对照，因为后台返回的数据的key是缩写，所以需要一个对照
+      problemDict : {
+        "softversion": "版本号",
+        "total": "受理合计",
+        "report": "报表功能",
+        "openbill": "开票功能",
+        "licenseReset": "license重置",
+        "added": "增值服务",
+        "collection": "收缴业务",
+        "exchange": "通知交互",
+        "writeoff": "核销功能",
+        "billManagement": "票据管理",
+        "security": "安全漏洞",
+        "print": "打印功能",
+        "datasync": "数据同步",
+        "inverse": "反算功能",
+        "opening": "单位开通",
+        "softbug": "缺陷合计",
+        "sspz": "实施配置",
+        "ycsjcl": "异常数据处理"
+      },
       saasProblemTypeInVersions: [
         {
           "问题分类": "产品bug",
@@ -151,39 +180,32 @@ export default {
       saasUpgradeData: [
         [
           {
-            " ": "升级次数",
+            "saas_v4标准产品": "缺陷",
           },
           {
-            " ": "缺陷",
+            "saas_v4标准产品": "需求",
           },
           {
-            " ": "需求",
+            "saas_v4标准产品": "优化",
           },
           {
-            " ": "优化",
+            "saas_v4标准产品": "升级次数合计",
           },
         ],
         [
           {
-            " ": "升级次数",
+            "saas_v4标准产品": "缺陷",
           },
           {
-            " ": "缺陷",
+            "saas_v4标准产品": "需求",
           },
           {
-            " ": "需求",
+            "saas_v4标准产品": "优化",
           },
           {
-            " ": "优化",
+            "saas_v4标准产品": "升级次数合计",
           },
         ],
-      ],
-      //查询日期
-      dateRange: [
-        new Date(
-          new Date().getFullYear() + '-' + (new Date().getMonth() + 1) + '-01'
-        ),
-        new Date(),
       ],
       // 通过this.$http.get 请求analysisselect 返回的 分析analysis 数据data
       analysisData: {
@@ -209,43 +231,11 @@ export default {
           },
         ],
         // upgradeData 升级计划表格的数据
-        upgradeData: [
-
-        ], // 升级表格数据
-
-
+        upgradeData: [],
         // licenseData license表格的数据
-        licenseData: [
-          {
-            北京: 999,
-            山西: 99,
-            内蒙古: 99,
-            辽宁: 99,
-            吉林: 99,
-            黑龙江: 99,
-            上海: 99,
-            安徽: 99,
-            福建: 99,
-            江西: 999,
-            山东: 99,
-            河南: 99,
-            湖北: 99,
-            广东: 99,
-            广西: 99,
-            海南: 99,
-            重庆: 99,
-            四川: 99,
-            贵州: 999,
-            云南: 99,
-            西藏: 99,
-            陕西: 99,
-            甘肃: 99,
-            青海: 99,
-            宁夏: 99,
-            新疆: 99,
-          },
-        ], // license表格数据
+        licenseData: [], 
       },
+
     }
   },
   // 计算页面刚加载时候渲染的属性
@@ -286,13 +276,6 @@ export default {
             fontStyle: 'normal',
             color: '#3398DB',
           },
-        },
-        tooltip: {
-          //设置鼠标悬停提示框的位置。
-          //   trigger: 'axis',
-          //   position: [20, 20]
-          //   // 等价于
-          //   // position: ['20px', '20px']
         },
         xAxis: {
           axisLabel: { interval: 0 },
@@ -452,7 +435,6 @@ export default {
       return style
     },
 
-
     saasProblemTypeInVersionTableCellStyle(row) {
       let style = ''
       if (row.column.label === "合计") {
@@ -471,7 +453,9 @@ export default {
       return style
     },
 
-    // 计算el-table列的宽度
+    /**
+     * 计算el-table列的宽度
+     */
     columnWidth(key) {
       key= key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
       let widthDict = {
@@ -491,43 +475,12 @@ export default {
       return width
     },
 
-
-    // 进行 查询 事件,因为axios是异步的请求，所以会先处理数据，空闲了才处理异步数据
-    async search() {
-      // 触发查询事件，根据日期条件进行查询
-      var searchValue = {} // 存放筛选条件信息
-      // 获取年、月、日，进行拼接
-      for (let i = 0; i < this.dateRange.length; i++) {
-        var year = this.dateRange[i].getFullYear()
-        var month = ('0' + (this.dateRange[i].getMonth() + 1)).slice(-2)
-        var day = ('0' + this.dateRange[i].getDate()).slice(-2)
-
-        if (i == 0) {
-          // 构建格式化后的日期字符串
-          var beginData = year + '-' + month + '-' + day
-          searchValue['beginData'] = beginData
-        }
-        if (i == 1) {
-          var endData = year + '-' + month + '-' + day
-          searchValue['endData'] = endData
-        }
-      } //结束for，完成日期的拼接
-
-      // 使用axios发送请求 获取license的申请数据
-      try {
-        const response = await this.$http.get(
-          '/api/CMC/workrecords/analysisselect?beginData=' +
-          searchValue['beginData'] +
-          '&endData=' +
-          searchValue['endData']
-        )
-        console.log('获得this.analysisData为', response.data.data)
-        this.analysisData = []
-        this.analysisData = response.data.data // 这里不能将整个data赋过去，会造成其他数据被覆盖
-        console.log('获得this.analysisData为', this.analysisData)
-
-        // 清空原来数据，根据每一次搜索的数据重新生成
-        this.saasProblemTypeInVersions = [
+    /**
+     * 在查询之后更新版本的数据信息
+     */
+    updateSaasProblemTypeInVersions(){
+      // 清空原来数据，根据每一次搜索的数据重新生成
+      this.saasProblemTypeInVersions = [
         {
           "问题分类": "产品bug",
         },
@@ -538,36 +491,19 @@ export default {
           "问题分类": "异常数据处理",
         },
       ]
+      for (const item of this.analysisData['tableData']) {
+        this.saasProblemTypeInVersions[0][item['softversion'].replace(/\./g, '_')] = item['softbug']
+        this.saasProblemTypeInVersions[1][item['softversion'].replace(/\./g, '_')] = item['sspz']
+        this.saasProblemTypeInVersions[2][item['softversion'].replace(/\./g, '_')] = item['ycsjcl']
+      }
+    },
 
-        for (const item of this.analysisData['tableData']) {
-          this.saasProblemTypeInVersions[0][item['softversion'].replace(/\./g, '_')] = item['softbug']
-          this.saasProblemTypeInVersions[1][item['softversion'].replace(/\./g, '_')] = item['sspz']
-          this.saasProblemTypeInVersions[2][item['softversion'].replace(/\./g, '_')] = item['ycsjcl']
-        }
-
-
-        //for循环计算license申请的 合计数
-        let license_total = 0
-        for (const dict of this.analysisData['licenseData']) {
-          // 遍历字典的键
-          for (const value of Object.values(dict)) {
-            // 遍历字典的值
-            if (typeof value === 'number') {
-              license_total += value
-            } // 如果是数字，则相加, 目的是为排除开汉字 申请单位数
-          }
-        }
-        // this.analysisData['licenseData'][0]['合计'] = license_total //字典加入合计数
-
-        // let sortedEntries = Object.keys(this.analysisData['licenseData']).map(key=>({key, val: String(this.analysisData['licenseData'][key])})).sort((a,b)=>b.val-a.val)
-        // this.analysisData['licenseData']= sortedEntries
-
-        // let sortedData = this.analysisData["licenseData"].sort((a,b) => Object.values(b)[0] - Object.values(a)[0])
-        // this.analysisData['licenseData']= sortedData
-
-
-        // 清空原来的数据，根据每一次搜索重新生成表格
-        this.saasUpgradeData = [
+    /**
+     * 在查询之后更新升级的数据信息
+     */
+    updateSaasUpgradeData(){
+      // 清空原来的数据，根据每一次搜索重新生成表格
+      this.saasUpgradeData = [
         [
           {
             "saas_v4标准产品": "缺陷",
@@ -597,57 +533,38 @@ export default {
           },
         ],
       ]
-
-        let dailyUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '日常')
-        let addedUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '增值')
-
-        // 对日常和增值两个表进行row 和 col的交换
-        for (const item of dailyUpgradeTableData) {
-          this.saasUpgradeData[0][0][item["resourcepool"]] = item['缺陷']
-          this.saasUpgradeData[0][1][item["resourcepool"]] = item['需求']
-          this.saasUpgradeData[0][2][item["resourcepool"]] = item['优化']
-          this.saasUpgradeData[0][3][item["resourcepool"]] = item['升级次数']
-        }
-        for (const item of addedUpgradeTableData) {
-          this.saasUpgradeData[1][0][item["resourcepool"]] = item['缺陷']
-          this.saasUpgradeData[1][1][item["resourcepool"]] = item['需求']
-          this.saasUpgradeData[1][2][item["resourcepool"]] = item['优化']
-          this.saasUpgradeData[1][3][item["resourcepool"]] = item['升级次数']
-        }
-
-      } catch (error) {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
+      let dailyUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '日常')
+      let addedUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '增值')
+      // 对日常和增值两个表进行row 和 col的交换
+      for (const item of dailyUpgradeTableData) {
+        this.saasUpgradeData[0][0][item["resourcepool"]] = item['缺陷']
+        this.saasUpgradeData[0][1][item["resourcepool"]] = item['需求']
+        this.saasUpgradeData[0][2][item["resourcepool"]] = item['优化']
+        this.saasUpgradeData[0][3][item["resourcepool"]] = item['升级次数']
       }
+      for (const item of addedUpgradeTableData) {
+        this.saasUpgradeData[1][0][item["resourcepool"]] = item['缺陷']
+        this.saasUpgradeData[1][1][item["resourcepool"]] = item['需求']
+        this.saasUpgradeData[1][2][item["resourcepool"]] = item['优化']
+        this.saasUpgradeData[1][3][item["resourcepool"]] = item['升级次数']
+      }
+    },
 
-      //成功的消息提示
-      this.$message({
-        message:
-          searchValue['beginData'] +
-          ' 到 ' +
-          searchValue['endData'] +
-          ' 查询成功',
-        type: 'success',
-      })
-
-      //■请求get完成后，就将参数赋到setOption中，如果放到get外面则无效了 调整各个图形的对应参数
-      //受理情况的柱形图 复制修改它的 xAxis 和 series
-      let myChart = echarts.getInstanceByDom(document.getElementById('myChart')) // 获取到当前的myChart实例
-      // console.log('this.analysisData的myChart_xAxis',this.analysisData['myChart_xAxis']);
+    /**
+     * 查询之后，将更新的数据放入SaaS各版本受理汇总的柱状图中然后渲染
+     */
+    updateMyChart(){
+            //受理情况的柱形图 复制修改它的 xAxis 和 series
+            let myChart = echarts.getInstanceByDom(document.getElementById('myChart')) // 获取到当前的myChart实例
       // 计算柱形图的数据总和
       let total = 0
       for (var i = 0; i < this.analysisData['myChart_series'].length; i++) {
         total += parseInt(this.analysisData['myChart_series'][i])
       }
 
-      console.log('总和', this.analysisData['myChart_series'])
-
       // 构造柱形图的 series 数据
       let seriesData = this.analysisData['myChart_series'].map(function (value) {
         let percentage = ((value / total) * 100).toFixed(2) // 计算百分比
-        //弹出提示
-        console.log('数值', value, total)
         return {
           value: value,
           label: {
@@ -668,7 +585,6 @@ export default {
                 // fontWeight: 'bold',
               }
             }
-
           },
         }
       })
@@ -676,47 +592,26 @@ export default {
       let xAxisData = this.analysisData['myChart_xAxis'].map((item, index) => (index%2===0)?item: '\n'+item)
       xAxisData =(this.analysisData['myChart_xAxis'].length > 8)? xAxisData: this.analysisData['myChart_xAxis']
       // 使用构造好的 seriesData 绘制柱形图
-      if (myChart) {
-        // 修改xAxis的data参数
-        myChart.setOption({
+      // 修改xAxis的data参数
+      myChart && myChart.setOption({
           xAxis: { data:  xAxisData},
-          // series: {data: this.analysisData['myChart_series']}
           series: { data: seriesData },
-        })
-      } //结束if判断
+      })
 
+    },
+
+    /**
+     * 查询之后，将更新的数据放入嵌套环形图中然后渲染
+     */
+    updateSaasProblemPieChart(){
       // 嵌套环形图的数据放入
-      let problemDict = {
-        "softversion": "版本号",
-        "total": "受理合计",
-        "report": "报表功能",
-        "openbill": "开票功能",
-        "licenseReset": "license重置",
-        "added": "增值服务",
-        "collection": "收缴业务",
-        "exchange": "通知交互",
-        "writeoff": "核销功能",
-        "billManagement": "票据管理",
-        "security": "安全漏洞",
-        "print": "打印功能",
-        "datasync": "数据同步",
-        "inverse": "反算功能",
-        "opening": "单位开通",
-        "softbug": "缺陷合计",
-        "sspz": "实施配置",
-        "ycsjcl": "异常数据处理"
-      }
-
       let summaryRow = this.analysisData['tableData'].length - 1
       let summaryData = []
       for (let key in this.analysisData['tableData'][summaryRow]) {
-        summaryData.push({ value: this.analysisData['tableData'][summaryRow][key], name: problemDict[key] })
+        summaryData.push({ value: this.analysisData['tableData'][summaryRow][key], name: this.problemDict[key] })
       }
-      let saasProblemPieChart = echarts.getInstanceByDom(
-        document.getElementById('saasProblemPieChart')
-      )
-      if (saasProblemPieChart) {
-        saasProblemPieChart.setOption({
+      let saasProblemPieChart = echarts.getInstanceByDom(document.getElementById('saasProblemPieChart'))
+      saasProblemPieChart && saasProblemPieChart.setOption({
           series: [
             {
               data: summaryData.slice(summaryData.length - 3, summaryData.length)
@@ -725,11 +620,56 @@ export default {
               data: summaryData.slice(2, summaryData.length - 3)
             }
           ]
+      })
+    },
+
+
+    /**
+     * 进行 查询 事件,因为axios是异步的请求，所以会先处理数据，空闲了才处理异步数据
+     */
+    async search() {
+      // 触发查询事件，根据日期条件进行查询
+      var searchValue = {} // 存放筛选条件信息
+      // 获取年、月、日，进行拼接
+      for (let i = 0; i < this.dateRange.length; i++) {
+        var year = this.dateRange[i].getFullYear()
+        var month = ('0' + (this.dateRange[i].getMonth() + 1)).slice(-2)
+        var day = ('0' + this.dateRange[i].getDate()).slice(-2)
+        searchValue[i == 0 ? 'beginData' : 'endData'] = year + '-' + month + '-' + day;
+      } 
+
+      // 使用axios发送请求 获取license的申请数据
+      try {
+        const response = await this.$http.get(
+          '/api/CMC/workrecords/analysisselect?beginData=' +
+          searchValue['beginData'] +
+          '&endData=' +
+          searchValue['endData']
+        )
+        console.log('获得 response data 为', response.data.data)
+        this.analysisData = []
+        this.analysisData = response.data.data // 这里不能将整个data赋过去，会造成其他数据被覆盖
+        console.log('获得 this.analysisData 为', this.analysisData)
+
+        this.updateSaasProblemTypeInVersions()
+        this.updateSaasUpgradeData()
+
+        //成功的消息提示
+        this.$message({
+          message: searchValue['beginData'] + ' 到 ' + searchValue['endData'] + ' 查询成功',
+          type: 'success',
         })
+
+      } catch (error) {
+        console.log(error)
+        this.$message.error('错了哦，仔细看错误信息弹窗')
+        alert('失败' + error)
       }
 
+      //■请求get完成后，就将参数赋到setOption中，如果放到get外面则无效了 调整各个图形的对应参数
+      this.updateMyChart()
+      this.updateSaasProblemPieChart()
     },
-    // 结束 查询 事件
 
     exportAnalysePage(){
       const content = document.getElementById('news')
@@ -761,19 +701,6 @@ export default {
         console.log("error generating pdf: ", error);
       });
     },
-
-    // exportAnalysisPageToPDF(){
-    //   const doc = new PDFDocument();
-    //   const stream = doc.pipe(fs.createWriteStream('saas数据汇报.pdf'));
-    //   doc.fontSize(25).text(document.documentElement.outerHTML, 50, 50);
-    //   doc.end();
-    //   stream.on('finish', function () {
-    //     const link = document.createElement('a');
-    //     liink.href = stream.toBlobURL('application/pdf');
-    //     link.download = 'saas数据汇报.pdf';
-    //     link.click();
-    //   });
-    // }
   },
 }
 </script>

@@ -365,7 +365,8 @@ export default {
      * @param {option} option 柱状图的option
      */
     normalBarChartAddingSeries(barChartData, option) {
-      let colors = ["", "", "", "", "", "", "", "", "", "", "", "", ""]
+      // 指定了柱子的15种颜色，因为不设置的话echarts默认超过9个颜色会开始循环，所以扩大一点，变成15个颜色开始循环
+      let colors = ["#5470C6", "#91CC75", "#FAC858", "#EE6666", "#73C0DE", "#3BA272", "#fc8452", "#a26dba", "#ea7ccc", "#ffe630", "#00A0AF", "#DB643E", "#EA8D89", "#F4B2E5", "#F03A6A"]
       for (let i = 0; i < barChartData.length; i++) {
         let series_1 = {
           name: barChartData[i].seriesName,
@@ -376,9 +377,9 @@ export default {
           },
           // data: barChartData[i].seriesData.map(item=>item.y),
           data: barChartData[i].seriesData.filter((item) => option.xAxis[0].data.includes(item.x)).map(item => item.y),
-          // itemStyle: {
-          //   color : "skyblue"
-          // },
+          itemStyle: {
+            color : colors[i%colors.length]
+          },
           label: {
             // 设置柱形图的数值
             show: true,
