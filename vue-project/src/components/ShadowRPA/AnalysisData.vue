@@ -33,7 +33,7 @@
 
     <div class="clearFloat"></div>
 
-    <div style="height: 20px;"></div>
+    <div style="height: 30px;"></div>
 
     <p class="saasAnalysisTitle"> SaaS各版本处理汇总</p>
     <div style="margin: 15px 20px 15px 0;">
@@ -41,7 +41,15 @@
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
         :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%">
         <el-table-column v-for="(value, key) in saasProblemTypeInVersions[0]" :key="key" :prop="key"
-          :label="key.replace(/\_/g, '.')" :width="columnWidth(key)" align="center">
+          :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
+        </el-table-column>
+      </el-table>
+
+      <el-table v-for="(item) in saasProblemTypeInVersionsDetail" :data="item"
+        :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
+        :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
+        <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
+          :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
         </el-table-column>
       </el-table>
     </div>
@@ -55,7 +63,6 @@
     </div>
 
     <div style="height: 20px;"></div>
-
 
     <!-- 放入upgrade 资源池升级数据组件 -->
     <div style="margin: 5px 20px 5px 0;">
@@ -88,7 +95,6 @@
         </div>
       </div>
     </div>
-
 
   </div>
 </template>
@@ -166,47 +172,12 @@ export default {
         "sspz": "实施配置",
         "ycsjcl": "异常数据处理"
       },
-      saasProblemTypeInVersions: [
-        {
-          "问题分类": "产品bug",
-        },
-        {
-          "问题分类": "实施配置",
-        },
-        {
-          "问题分类": "异常数据处理",
-        },
-      ],
-      saasUpgradeData: [
-        [
-          {
-            "saas_v4标准产品": "缺陷",
-          },
-          {
-            "saas_v4标准产品": "需求",
-          },
-          {
-            "saas_v4标准产品": "优化",
-          },
-          {
-            "saas_v4标准产品": "升级次数合计",
-          },
-        ],
-        [
-          {
-            "saas_v4标准产品": "缺陷",
-          },
-          {
-            "saas_v4标准产品": "需求",
-          },
-          {
-            "saas_v4标准产品": "优化",
-          },
-          {
-            "saas_v4标准产品": "升级次数合计",
-          },
-        ],
-      ],
+      // SaaS各版本处理汇总的表格数据
+      saasProblemTypeInVersions: [],
+      // SaaS各版本 产品bug, 实施配置，异常数据处理 汇总的表格数据
+      saasProblemTypeInVersionsDetail: [ [], [], [] ],
+      // 公有云saas_v4日常和增值升级统计，第一个元素是日常的表格的数据，第二个元素是增值表格的数据
+      saasUpgradeData: [ [], [] ],
       // 通过this.$http.get 请求analysisselect 返回的 分析analysis 数据data
       analysisData: {
         // tableData 受理表格数据
@@ -456,7 +427,7 @@ export default {
     /**
      * 计算el-table列的宽度
      */
-    columnWidth(key) {
+    columnWidth(key, tableName) {
       key= key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
       let widthDict = {
         2: 55,
@@ -467,8 +438,8 @@ export default {
         10: 130,
       }
       let width
-      if (key === "问题分类") {
-        width = 110
+      if (tableName === 'saasProblemTypeInVersions' && (["问题分类" , "产品bug" , "实施配置" , "异常数据处理"].includes(key))) {
+        width = 110 
       } else if (key.length in widthDict){
         width = widthDict[key.length]
       }
@@ -623,6 +594,26 @@ export default {
       })
     },
 
+    async searchSaasProblemTypeInVersions(searchValue){
+      try {
+        const response = await this.$http.get(
+          '/api/CMC/workrecords/analysis_saas_problem_type_in_versions?beginData=' +
+          searchValue['beginData'] +
+          '&endData=' +
+          searchValue['endData']
+        )
+        console.log(response.data.data)
+        this.saasProblemTypeInVersionsDetail = [ [], [], [] ]
+        for ( let i = 0; i < this.saasProblemTypeInVersionsDetail.length; i++) {
+          this.saasProblemTypeInVersionsDetail[i] = response.data.data[i]['problemTypeData']
+        }
+      } catch (error) {
+        console.log(error)
+        this.$message.error('错了哦，仔细看错误信息弹窗')
+        alert('失败' + error)
+      }
+    },
+
 
     /**
      * 进行 查询 事件,因为axios是异步的请求，所以会先处理数据，空闲了才处理异步数据
@@ -638,7 +629,7 @@ export default {
         searchValue[i == 0 ? 'beginData' : 'endData'] = year + '-' + month + '-' + day;
       } 
 
-      // 使用axios发送请求 获取license的申请数据
+      // 使用axios发送请求 
       try {
         const response = await this.$http.get(
           '/api/CMC/workrecords/analysisselect?beginData=' +
@@ -665,6 +656,8 @@ export default {
         this.$message.error('错了哦，仔细看错误信息弹窗')
         alert('失败' + error)
       }
+
+      this.searchSaasProblemTypeInVersions(searchValue)
 
       //■请求get完成后，就将参数赋到setOption中，如果放到get外面则无效了 调整各个图形的对应参数
       this.updateMyChart()
