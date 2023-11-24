@@ -42,6 +42,14 @@
               <AnalysisUpgrade></AnalysisUpgrade>
             </template>
           </el-tab-pane>
+
+          <el-tab-pane label="全国数据统计" overflow-y: auto>
+            <template>
+              <AnalysisCountryData></AnalysisCountryData>
+            </template>
+          </el-tab-pane>
+
+
         </el-tabs>
       </el-main>
     </el-container>
@@ -55,6 +63,7 @@ import AssistSubmit from "@/components/ShadowRPA/AssistSubmit.vue"
 import AnalysisData from "@/components/ShadowRPA/AnalysisData.vue"
 import AnalysisDataTest from "./AnalysisDataTest.vue"
 import AnalysisUpgrade from "@/components/ShadowRPA/AnalysisUpgrade.vue"
+import AnalysisCountryData from "@/components/ShadowRPA/AnalysisCountryData.vue"
 
 export default {
   data() {
@@ -81,7 +90,7 @@ export default {
   },
 
   components: { LeftMenu, RPAHeader, AssistSubmit, AnalysisData, AnalysisDataTest },
-  components: { LeftMenu, RPAHeader, AssistSubmit,AnalysisData,AnalysisUpgrade },
+  components: { LeftMenu, RPAHeader, AssistSubmit,AnalysisData,AnalysisUpgrade, AnalysisCountryData },
 };
 </script>
 

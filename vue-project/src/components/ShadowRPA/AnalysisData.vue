@@ -45,7 +45,7 @@
         </el-table-column>
       </el-table>
 
-      <el-table v-for="(item) in saasProblemTypeInVersionsDetail" :data="item"
+      <el-table v-for="(item, index) in saasProblemTypeInVersionsDetail" :key="index" :data="item"
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
         :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
         <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
@@ -102,7 +102,6 @@
 <script>
 import saasProblemTable from '@/components/ShadowRPA/AnalysisData_saasProblemTable.vue'
 import license from '@/components/ShadowRPA/AnalysisData_license.vue'
-import upgrade from '@/components/ShadowRPA/AnalysisData_upgrade.vue'
 import html2pdf from 'html2pdf.js'
 
 
@@ -121,7 +120,6 @@ export default {
   name: 'AnalysisData',
   components: {
     license,
-    upgrade,
     saasProblemTable
   },
   data() {
