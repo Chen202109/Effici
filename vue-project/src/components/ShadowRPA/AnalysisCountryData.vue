@@ -51,7 +51,7 @@ export default {
                 // geo为地理坐标系组件，用于地图的绘制，支持在地理坐标系上绘制散点图，线集。
                 geo: {
                     map: 'china', // 使用 registerMap 注册的地图名称。
-                    zoom : 1,
+                    zoom : 1.1,
                     label: {
                         show : true,
                     }

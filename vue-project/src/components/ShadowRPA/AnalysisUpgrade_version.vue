@@ -55,6 +55,8 @@
     </div>
     <div class="saasProblemMonthChart" id="saasProblemMonthChart" :style="{ width: getMainPageWidth, height: '400px' }">
     </div>
+    <div class="saasLargeProblemTypeChart" id="saasLargeProblemTypeChart" :style="{ width: getMainPageWidth, height: '500px' }">
+    </div>
 
     <div></div>
 
@@ -102,6 +104,7 @@ export default {
         ),
         new Date(),
       ],
+      // 将省份和出错功能对比的柱形图分割成几个子图
       provinceSplitNum : 2,
 
       // 这个页面各类图的数据
@@ -111,6 +114,7 @@ export default {
       saasProvinceBarChartData: [],
       saasProvinceAndAgencyChartData: [],
       saasProblemMonthChartData: [],
+      saasLargeProblemTypeChartData: [],
     }
   },
   // 计算页面刚加载时候渲染的属性
@@ -151,6 +155,7 @@ export default {
       echarts.init(document.getElementById('saasProvinceAndFunctionChart'))
       echarts.init(document.getElementById('saasProvinceAndAgencyChart'))
       echarts.init(document.getElementById('saasProblemMonthChart'))
+      echarts.init(document.getElementById('saasLargeProblemTypeChart'))
       // 因为是使用v-for生成的元素，所以使用this.$nextTick来进行延迟，否则可能会出现还没渲染元素就init的情况
       this.$nextTick(() => {for (let i = 0; i < this.provinceSplitNum; i++) echarts.init(document.getElementById('saasProvinceAndFunctionChart'+(i+1)))})
     },
@@ -406,7 +411,7 @@ export default {
      */
     updateSaaSProvinceAndAgencyBarChart(barChartData, barChartTitle, xAxisType, xAxisLabelNewLine, chartElementId){
       let xAxisData = this.saasProvinceAndAgencyChartData[0].seriesData.map(item => item.x)
-      let colors = ['#5470C6', '#EE6666'];
+      let colors = ["#5470C6", "#FAC858", "#EE6666"];
       let option = {
         color: colors,
         title: {
@@ -459,7 +464,7 @@ export default {
               axisLine: {
                 show: true,
                 lineStyle: {
-                  color: colors[1]
+                  color: colors[2]
                 }
               },
             }
@@ -473,9 +478,15 @@ export default {
             },
             {
               name: barChartData[1].seriesName,
+              type: 'bar',
+              yAxisIndex: 0,
+              data: barChartData[1].seriesData.map(item=>item.y),
+            },
+            {
+              name: barChartData[2].seriesName,
               type: 'line',
               yAxisIndex: 1,
-              data: barChartData[1].seriesData.map(item=>item.y),
+              data: barChartData[2].seriesData.map(item=>item.y),
             }
         ]
       }
@@ -486,9 +497,91 @@ export default {
 
       let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
       // 现在是添加属性，所以不用replace设成true，直接setOption就行
-      chart.setOption(option, true)
+      chart&&chart.setOption(option, true)
 
       console.log("updated echart saasProvinceAndAgencyChart : ", chart)
+    },
+
+    /**
+     * 当查询之后，数据更新，更新重大事故数量和出错功能的饼状图的数据
+     */
+    updateSaaSLargeProblemTypeChart(chartData, chartTitle, chartElementId){
+      let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
+
+      let option = {
+        title: {
+          text: chartTitle,
+          left: 'left'
+        },
+        tooltip: {
+          trigger: 'item',
+          formatter: '{a} <br/>{b} : {c} ({d}%)'
+        },
+        series: [
+          {
+            name: chartData[0].seriesName,
+            type: 'pie',
+            radius: '55%',
+            center: ['33%', '50%'],
+            data: chartData[0].seriesData,
+            top: '7%',
+            labelLine: {
+              length: 15,
+              maxSurfaceAngle: 80
+            },
+            label: {
+              // alignTo: 'edge',
+              // offset : [-chart.getWidth()*0.17, 0],
+              // width : 250,
+              formatter: '{b|{b}：}{c}次 {per|{d}%}  ',
+              minMargin: 5,
+              lineHeight: 15,
+              // 这个配置不知道为什么，给的值越大，edge distance其实越小
+              edgeDistance: 230,
+              rich: {
+                b: {
+                  color: '#4C5058',
+                  fontSize: 12,
+                  fontWeight: 'bold',
+                  lineHeight: 25
+                },
+                per: {
+                  color: '#fff',
+                  backgroundColor: '#4C5058',
+                  padding: [3, 4],
+                  // borderRadius: 4
+                }
+              }
+            },
+            // 给标签线设置格式
+            labelLayout: function (params) {
+              // 通过标签魔性labelRect的x，查看是在这张图左边还是右边 （不能使用params.label.x直接看label的文字的坐标，不知道为什么直接整个回调所有设置失效）
+              // chart.getWidth 是获取该图的宽度，乘0.33是因为这个series的center的横向设置的是0.33，所以 chart.getWidth() * 0.33是饼图的中心点，这样才是判断标签是在中心点的左侧还是右侧
+              const isLeft = params.labelRect.x < chart.getWidth() * 0.33 / 2;
+              const points = params.labelLinePoints;
+              // 更新水平方向的标签线的末尾坐标，看是左边的标签还是右边的标签，如果是右边的标签的话就取到标签的x值也就是标签最靠左的点然后加上标签宽度
+              points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
+              // 更新竖直方向的标签线的末尾坐标，因为想要label显示在线上方，所以加上label的高度。
+              points[1][1] = params.labelRect.y+params.labelRect.height
+              points[2][1] = params.labelRect.y+params.labelRect.height
+              console.log("points, ", points)
+              console.log("labelRect ", params.labelRect)
+              return {
+                labelLinePoints: points
+              };
+            },
+            emphasis: {
+              itemStyle: {
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+              }
+            }
+          }
+        ]
+      };
+
+      chart&&chart.setOption(option, true)
     },
 
     /**
@@ -521,6 +614,7 @@ export default {
       this.searchSaaSFunctionByProvince(searchValue)
       this.searchSaaSProblemByProvinceAgency(searchValue)
       this.searchSaaSProblemByMonth(searchValue)
+      this.searchSaaSLargeProblemByType(searchValue)
     },
 
     /**
@@ -567,7 +661,7 @@ export default {
           searchValue['function_name']
         )
         this.saasVersionByResoucePoolBarChartData = response.data.data
-        this.updateBarChartBasic(this.saasVersionByResoucePoolBarChartData, searchValue['resourcePool']+'SaaS版本受理统计', "category", false, 'saasVersionTrendByResourcePoolChart')
+        this.updateBarChartBasic(this.saasVersionByResoucePoolBarChartData, searchValue['resourcePool']+'SaaS版本受理及升级统计', "category", false, 'saasVersionTrendByResourcePoolChart')
         console.log('update local month bar chart data: ', this.saasVersionByResoucePoolBarChartData)
 
       } catch (error) {
@@ -692,7 +786,7 @@ export default {
      * @param {searchValue} searchValue 搜索参数的字典
      * @description 对省份受理数量和单位开通数量对比柱状图的后端数据请求
      */
-     async searchSaaSProblemByMonth(searchValue) {
+    async searchSaaSProblemByMonth(searchValue) {
       try {
         const response = await this.$http.get(
           '/api/CMC/workrecords/analysis_saas_problem_by_month?beginData=' +
@@ -703,6 +797,29 @@ export default {
         this.saasProblemMonthChartData = response.data.data
         this.updateBarChartBasic(this.saasProblemMonthChartData, searchValue['beginData'].slice(0,4)+'年SaaS月份受理统计', "category", false, 'saasProblemMonthChart')
         console.log('update local month bar chart data: ', this.saasProblemMonthChartData)
+
+      } catch (error) {
+        console.log(error)
+        this.$message.error('错了哦，仔细看错误信息弹窗')
+        alert('失败' + error)
+      }
+    },
+
+    /**
+     * @param {searchValue} searchValue 搜索参数的字典
+     * @description 对重大事故数量和出错功能的饼状图的后端数据请求
+     */
+    async searchSaaSLargeProblemByType(searchValue) {
+      try {
+        const response = await this.$http.get(
+          '/api/CMC/workrecords/analysis_saas_large_problem_by_province_and_function?beginData=' +
+          searchValue['beginData'] +
+          '&endData=' +
+          searchValue['endData']
+        )
+        this.saasLargeProblemTypeChartData = response.data.data
+        this.updateSaaSLargeProblemTypeChart(this.saasLargeProblemTypeChartData, "私有化重大故障问题分类", "saasLargeProblemTypeChart")
+        console.log('update local saasLargeProblemTypeChartData data: ', this.saasLargeProblemTypeChartData)
 
       } catch (error) {
         console.log(error)

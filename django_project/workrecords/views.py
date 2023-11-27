@@ -11,8 +11,8 @@ import json
 from mydata import mysql_base
 
 
-# Create your views here.
-# 创建处理函数信息
+# ----------------------------------------------------------- AnalysisData.vue 的请求 ----------------------------------------------------
+
 def select(request):
     # 如果请求为post 则进行查询
     # 将接受到的数据放入selet_parme
@@ -243,6 +243,9 @@ def analysis_saas_problem_type_in_versions(request):
             
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
+# ----------------------------------------------------------- AnalysisData.vue 的请求 ----------------------------------------------------
+
+# ----------------------------------------------------------- AnalysisUpgrade_version.vue 的请求 --------------------------------------------
 
 def analysis_service_upgrade_trend(request):
     data = []
@@ -442,9 +445,9 @@ def analysis_saas_function_by_province(request):
 
         db =mysql_base.Db()
 
-        sql = f'SELECT DISTINCT region from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
+        sql = f'SELECT DISTINCT region as x  from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
         region_list = db.select_offset(1, 2000, sql)
-        saas_province_data = [{'x':d["region"], 'y':0} for d in region_list if "region" in d]
+        saas_province_data = [{'x':d["x"], 'y':0} for d in region_list if "x" in d]
 
         for i in range(len(function_name)):
             sql = f' SELECT * from workrecords_2023 '\
@@ -471,22 +474,24 @@ def analysis_saas_problem_by_province_agency(request):
 
         db =mysql_base.Db()
 
-        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":0}]
-        sql = f'SELECT DISTINCT region from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
-        region_list = db.select_offset(1, 2000, sql)
-        saas_province_problem_data = [{'x':d["region"], 'y':0} for d in region_list if "region" in d]
-
-        # 查询这段时间内的受理问题，然后将他们count一遍放入对应省份的数据点的y值
-        sql = f' SELECT * from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
-        saas_function_data = db.select_offset(1, 2000, sql)
-        saas_province_problem_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_problem_data]
+        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
+        sql = f' SELECT distinct region as x, count(*) as y from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by region '
+        saas_province_problem_data = db.select_offset(1, 2000, sql)
         data.append({'seriesName': "问题受理数量", 'seriesData': saas_province_problem_data})
+
+        # 查询这段时间内的线上重大故障，将他们count一遍然后生成和上面一样的格式append到data中
+        sql = f' SELECT distinct region as x, count(*) as y from majorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by region '
+        saas_large_problem_data = db.select_offset(1, 2000, sql)
+        # 生成一个顺序与saas_province_problem_data一致的数组,如果重大故障查询的没有那个省份，则那个省份的y值为0，目的是为了两条series数据里面相同位置的字典对应的x值一致，那样抽取的y的值才一致。
+        saas_province_large_problem_data_inorder = [{'x': prov['x'], 'y': next((value['y'] for value in saas_large_problem_data if value['x'] == prov['x']), 0)} for prov in saas_province_problem_data]
+        data.append({'seriesName': "私有化重大故障数量", 'seriesData': saas_province_large_problem_data_inorder})
 
         import pandas as pd
         # 对上线单位数量统计进行读取
         dataframe = pd.read_csv('./workrecords/existedAgencyAccountByProvince.csv',sep=',').rename(columns={'省份':'x','数量':'y'}).to_dict(orient="records")
         # 生成一个顺序与saas_province_problem_data一致的数组，目的是为了两条series数据里面相同位置的字典对应的x值一致，那样抽取的y的值才一致。
         # 新数组的x值通过saas_province_problem_data获取，y的值通过dataFrame读取的上线单位的数量进行填入。
+        # 如果是这一行报错StopIteration，基本上就是登记的时候省份没有登记对，比如内蒙古写成内蒙，需要去数据库进行调整让省份和workrecords/existedAgencyAccountByProvince.csv的省份名称一致
         saas_province_agency_account_data = [{**prov, 'y': next(filter(lambda ag: ag['x'] == prov['x'], dataframe))['y']} for prov in saas_province_problem_data]
         data.append({'seriesName': "上线单位数量", 'seriesData': saas_province_agency_account_data})
             
@@ -502,19 +507,45 @@ def analysis_saas_problem_by_month(request):
     if request.method == 'GET':
         begin_date = request.GET.get('beginData', default='2023-01-01')
         end_date = request.GET.get('endData', default='2023-12-31')
-
-        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
-        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
-
         saas_month_data = []
 
         db =mysql_base.Db()
+        print("-----------")
         sql = f'SELECT MONTH(createtime) AS Month,COUNT(*) AS ProblemAmount FROM workrecords_2023 WHERE MONTH(createtime) between {datetime.strptime(begin_date, "%Y-%m-%d").month} and {datetime.strptime(end_date, "%Y-%m-%d").month} GROUP BY MONTH(createtime)'
         saas_month_data = db.select_offset(1, 2000, sql)
         seriesData = [{'x':str(d["Month"])+'月', 'y':d["ProblemAmount"]} for d in saas_month_data]
         data.append({'seriesName': "问题受理数量", 'seriesData': seriesData})
             
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+
+def analysis_saas_large_problem_by_province_and_function(request):
+    """
+    分析省份出现的重大生产故障的数量
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        # 查询这段时间内的线上重大故障，将他们count一遍然后生成和上面一样的格式append到data中
+        sql = f' SELECT errortype as name, count(*) as value from majorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by name'
+        saas_large_problem_data = db.select_offset(1, 2000, sql)
+        print()
+        print(saas_large_problem_data)
+        print()
+        data.append({'seriesName': "私有化重大故障数量", 'seriesData': saas_large_problem_data})
+        
+            
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+# ----------------------------------------------------------- AnalysisUpgrade_version.vue 的请求 --------------------------------------------
 
 
 if __name__ == '__main__':
