@@ -449,6 +449,7 @@ def analysis_saas_function_by_province(request):
         region_list = db.select_offset(1, 2000, sql)
         saas_province_data = [{'x':d["x"], 'y':0} for d in region_list if "x" in d]
 
+        # 对每个功能进行查找
         for i in range(len(function_name)):
             sql = f' SELECT * from workrecords_2023 '\
                   f' WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '\
@@ -456,6 +457,25 @@ def analysis_saas_function_by_province(request):
             saas_function_data = db.select_offset(1, 2000, sql)
             saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
             data.append({'seriesName': function_name[i], 'seriesData': saas_province_data})
+        
+        sorted_region = []
+        y_max = 0
+        xAxis = region_list
+
+        for item in xAxis:
+            y_sum = 0
+            for function_data in data:
+                y = next(filter(lambda x: x['x'] == item['x'], function_data['seriesData']))['y']
+                y_sum += y
+                y_max = y if y > y_max else y_max
+            sorted_region.append({'x': item['x'], 'y': y_sum})
+        
+        sorted_region.sort(key=lambda x: x['y'], reverse=True)
+        sorted_region_x = [item['x'] for item in sorted_region]
+        for i in range(len(function_name)):
+            data[i]['seriesData'] = [next(filter(lambda x: x['x'] == region, data[i]['seriesData'])) for region in sorted_region_x]
+
+        data.append({"yMax": y_max})
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 
@@ -541,6 +561,13 @@ def analysis_saas_large_problem_by_province_and_function(request):
         print(saas_large_problem_data)
         print()
         data.append({'seriesName': "私有化重大故障数量", 'seriesData': saas_large_problem_data})
+
+        # 进行排序，找出top10, 并且加上总数
+        total = sum(item['value'] for item in saas_large_problem_data)
+        sorted_data = sorted(saas_large_problem_data, key=lambda x : x['value'], reverse = True)[0:10]
+        for item in sorted_data: item['percent'] = f"{((item['value'] / total) * 100):.2f}%" if total!=0 else 0
+        data.append({'seriesName': "私有化重大故障top10", 'seriesData': sorted_data})
+        data.append({'seriesName': "私有化重大故障数量合计", 'seriesData': total})
         
             
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})

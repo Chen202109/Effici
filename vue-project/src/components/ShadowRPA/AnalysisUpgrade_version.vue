@@ -35,27 +35,44 @@
       </div>
     </div>
 
-    <div class="saasUpgradeTrendChart" id="saasUpgradeTrendChart" :style="{ width: getMainPageWidth, height: '400px' }">
+    <div class="saasUpgradeTrendChart" id="saasUpgradeTrendChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
     </div>
-    <div class="saasVersionTrendByResourcePoolChart" id="saasVersionTrendByResourcePoolChart" :style="{ width: getMainPageWidth, height: '400px' }">
+    <div class="saasVersionTrendByResourcePoolChart" id="saasVersionTrendByResourcePoolChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
     </div>
-    <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getMainPageWidth, height: '400px' }">
+    <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
     </div>
-    <div class="saasProvinceAndFunctionChart" id="saasProvinceAndFunctionChart" :style="{ width: getMainPageWidth, height: '400px' }">
+    <div class="saasProvinceAndFunctionChart" id="saasProvinceAndFunctionChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
     </div>
     <div class="saasProvinceAndFunctionChartSplit" id="saasProvinceAndFunctionChartSplit">
       <!-- 因为省份和功能会产生太多柱子，所以对省份进行一个切割，分成多张图来展现，注意，v-for这边生成的i是从1开始，所以id的末尾是1不是0 -->
       <div v-for="i in provinceSplitNum" 
          :class="'saasProvinceAndFunctionChart' + i" 
          :id="'saasProvinceAndFunctionChart' + i"
-         :style="{ width: getMainPageWidth, height: '400px' }">
+         :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
       </div>
     </div>
-    <div class="saasProvinceAndAgencyChart" id="saasProvinceAndAgencyChart" :style="{ width: getMainPageWidth, height: '400px' }">
+    <div class="saasProvinceAndAgencyChart" id="saasProvinceAndAgencyChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
     </div>
-    <div class="saasProblemMonthChart" id="saasProblemMonthChart" :style="{ width: getMainPageWidth, height: '400px' }">
+    <div class="saasProblemMonthChart" id="saasProblemMonthChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
     </div>
-    <div class="saasLargeProblemTypeChart" id="saasLargeProblemTypeChart" :style="{ width: getMainPageWidth, height: '500px' }">
+    <div>
+      <div class="saasLargeProblemTypeChart" id="saasLargeProblemTypeChart" :style="{ width: getMainPageWidth * 0.65+ 'px', height: '600px' }">
+      </div>
+      <div class="saasLargeProblemTopTable" style="width: 35%;">
+        <p>私有化重大故障问题总计受理: <span style="color: red;">{{ saasLargeProblemTypeChartData[2]['seriesData'] }}</span> 次</p>
+        <el-table
+          :data="saasLargeProblemTypeChartData[1]['seriesData']" 
+          :header-cell-style="{fontSize:'14px',background: 'rgb(64 158 255 / 65%)',color:'#696969',}"
+          :cell-style="{fontSize: 12 + 'px',}"
+           style="width: 100%; margin: auto">
+          <el-table-column label="私有化重大故障Top10分类" align="center">
+            <el-table-column
+              v-for="(item, index) in saasLargeProblemTopTableTitle" :key="index" :prop="item.prop" :label="item.label"
+              :width="columnWidth(item.label, 'saasLargeProblemTopTable')"  align="center">
+            </el-table-column>
+          </el-table-column>  
+        </el-table>
+      </div>
     </div>
 
     <div></div>
@@ -106,6 +123,12 @@ export default {
       ],
       // 将省份和出错功能对比的柱形图分割成几个子图
       provinceSplitNum : 2,
+      // 重大故障的表的数据
+      saasLargeProblemTopTableTitle: [
+        {'prop': "name", "label": "问题分类"},
+        {'prop': "value", "label": "次数"},
+        {'prop': "percent", "label": "百分比"}
+      ],
 
       // 这个页面各类图的数据
       saasUpgradeLineChartData: [],
@@ -114,7 +137,11 @@ export default {
       saasProvinceBarChartData: [],
       saasProvinceAndAgencyChartData: [],
       saasProblemMonthChartData: [],
-      saasLargeProblemTypeChartData: [],
+      saasLargeProblemTypeChartData: [ 
+        {'seriesName': "私有化重大故障数量", 'seriesData': []}, 
+        {'seriesName': "私有化重大故障top10", 'seriesData': []}, 
+        {'seriesName': "私有化重大故障数量合计", 'seriesData': 0}
+      ],
     }
   },
   // 计算页面刚加载时候渲染的属性
@@ -123,7 +150,7 @@ export default {
     getMainPageWidth: function () {
       // windows.screen.width返回屏幕宽度，减去侧边栏240px,减去container模型左右padding各20px和margin-right的10px,
       // 减去主页面各自15px的padding, 减去不知道那里vue自己设的30px, 减去主页面内元素和滚动条保持距离的padding-right的10px,
-      return (window.screen.width - 240 - 20 * 2 - 10 - 15 * 2 - 30 - 10) + 'px'
+      return (window.screen.width - 240 - 20 * 2 - 10 - 15 * 2 - 30 - 10) 
     },
   },
   // 在初始化页面完成后,再对dom节点上图形进行相关绘制
@@ -144,6 +171,28 @@ export default {
         this.businessSelected.splice(0, 1)
       }
       this.functionSelected = this.functionOptions[this.businessSelected];
+    },
+
+/**
+     * 计算el-table列的宽度
+     */
+     columnWidth(key, tableName) {
+      key= key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
+      let widthDict = {
+        2: 57,
+        3: 70,
+        4: 75,
+        5: 85,
+        6: 110,
+        10: 130,
+      }
+      let width
+      if (tableName === 'saasLargeProblemTopTable' && key === '问题分类') {
+        width = 220
+      } else if (key.length in widthDict){
+        width = widthDict[key.length]
+      }
+      return width
     },
 
     // 用于使用echarts进行图标的基础绘制init
@@ -282,7 +331,7 @@ export default {
         saasUpgradeTrendChart.setOption(option, true)
       }
 
-      console.log("updated echart upgrade linechart: ", saasUpgradeTrendChart)
+      console.log("updated updateSaaSUpgradeTrendLineChart : ", saasUpgradeTrendChart)
 
     },
 
@@ -308,7 +357,6 @@ export default {
         barChartData.forEach(({ seriesData }) => { count = (seriesData.find(ele => ele.x === item).y === 0) ? count + 1 : count })
         if (count === barChartData.length) removeList.push(item)
       })
-      console.log("remove: ", removeList)
       xAxisData = xAxisData.filter(item => !removeList.includes(item))
 
       let option = {
@@ -499,7 +547,7 @@ export default {
       // 现在是添加属性，所以不用replace设成true，直接setOption就行
       chart&&chart.setOption(option, true)
 
-      console.log("updated echart saasProvinceAndAgencyChart : ", chart)
+      console.log("updated saasProvinceAndAgencyChart echart: ", chart)
     },
 
     /**
@@ -522,7 +570,6 @@ export default {
             name: chartData[0].seriesName,
             type: 'pie',
             radius: '55%',
-            center: ['33%', '50%'],
             data: chartData[0].seriesData,
             top: '7%',
             labelLine: {
@@ -530,14 +577,12 @@ export default {
               maxSurfaceAngle: 80
             },
             label: {
-              // alignTo: 'edge',
-              // offset : [-chart.getWidth()*0.17, 0],
-              // width : 250,
+              alignTo: 'edge',
               formatter: '{b|{b}：}{c}次 {per|{d}%}  ',
               minMargin: 5,
               lineHeight: 15,
               // 这个配置不知道为什么，给的值越大，edge distance其实越小
-              edgeDistance: 230,
+              edgeDistance: 10,
               rich: {
                 b: {
                   color: '#4C5058',
@@ -556,16 +601,13 @@ export default {
             // 给标签线设置格式
             labelLayout: function (params) {
               // 通过标签魔性labelRect的x，查看是在这张图左边还是右边 （不能使用params.label.x直接看label的文字的坐标，不知道为什么直接整个回调所有设置失效）
-              // chart.getWidth 是获取该图的宽度，乘0.33是因为这个series的center的横向设置的是0.33，所以 chart.getWidth() * 0.33是饼图的中心点，这样才是判断标签是在中心点的左侧还是右侧
-              const isLeft = params.labelRect.x < chart.getWidth() * 0.33 / 2;
+              const isLeft = params.labelRect.x < chart.getWidth() / 2;
               const points = params.labelLinePoints;
               // 更新水平方向的标签线的末尾坐标，看是左边的标签还是右边的标签，如果是右边的标签的话就取到标签的x值也就是标签最靠左的点然后加上标签宽度
               points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
               // 更新竖直方向的标签线的末尾坐标，因为想要label显示在线上方，所以加上label的高度。
               points[1][1] = params.labelRect.y+params.labelRect.height
               points[2][1] = params.labelRect.y+params.labelRect.height
-              console.log("points, ", points)
-              console.log("labelRect ", params.labelRect)
               return {
                 labelLinePoints: points
               };
@@ -582,6 +624,7 @@ export default {
       };
 
       chart&&chart.setOption(option, true)
+      console.log("updated "+chartElementId+" echart: ", chart)
     },
 
     /**
@@ -636,7 +679,6 @@ export default {
         this.saasUpgradeLineChartData = response.data.data
         this.updateSaaSUpgradeTrendLineChart()
         console.log('update local linechart data: ', this.saasUpgradeLineChartData)
-
       } catch (error) {
         console.log(error)
         this.$message.error('错了哦，仔细看错误信息弹窗')
@@ -713,33 +755,17 @@ export default {
           searchValue['function_name']
         )
         this.saasProvinceBarChartData = response.data.data
+        // 将yMax的值取出去除，不让他进入updateBarChartBasic()中，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
+        let yMax = this.saasProvinceBarChartData.pop().yMax
+
         this.updateBarChartBasic(this.saasProvinceBarChartData, 'SaaS省份三线受理统计', "category", true, 'saasProvinceAndFunctionChart')
         console.log('update local province bar chart data: ', this.saasProvinceBarChartData)
-
-        // 将x，省份的信息提取出来，统计所有省份的这几个功能的受理数量，并进行排序
-        let result = []
-        let yMax = 0
-        const xAxis = new Set(this.saasProvinceBarChartData[0].seriesData.map(subItem => subItem.x));
-        xAxis.forEach(x => {
-          let ySum = 0
-          this.saasProvinceBarChartData.forEach((item) => { 
-            const y = item.seriesData.filter(subItem => subItem.x === x)[0].y;
-            ySum += y; 
-            yMax = y > yMax ? y : yMax;
-          })
-          result.push({ x, y: ySum });
-        });
-        result.sort((a, b) => b.y - a.y)
-        console.log('accumulate: ',result) 
-        console.log('yMax', yMax)
         
+        let interval = this.saasProvinceBarChartData[0]["seriesData"].length/this.provinceSplitNum
         // 要分成几张图的数据，进行遍历循环，给柱状图添加数据。
         for (let i = 0; i < this.provinceSplitNum; i++){
-          // 先截取出这一张图的x轴的省份
-          let splitAxis = result.slice(i*result.length/this.provinceSplitNum,(i+1)*result.length/this.provinceSplitNum)
           let splitData = []
-          // 从所有数据saasProvinceBarChartData中抽取这一张图的x轴的省份的相关数据，生成和saasProvinceBarChartData同一格式的数组
-          this.saasProvinceBarChartData.forEach((item) => {splitData.push( {seriesName: item.seriesName, seriesData: item.seriesData.filter( subItem => splitAxis.some(sub => sub.x === subItem.x) )} );});
+          this.saasProvinceBarChartData.forEach((item)=> {splitData.push({seriesName: item.seriesName, seriesData: item.seriesData.slice(i*interval,(i+1)*interval)})})
           // 将数据注入柱状图内，i+1是因为元素在使用v-for生成的时候，v-for的i是从1开始，这里是0开始，所以使用i+1来获取相同的id
           this.updateBarChartBasic(splitData, 'SaaS省份三线受理统计(子集'+(i+1)+')', "category", false, 'saasProvinceAndFunctionChart'+(i+1))
           let chart = echarts.getInstanceByDom(document.getElementById('saasProvinceAndFunctionChart'+(i+1)))
@@ -843,4 +869,13 @@ export default {
 .el-icon-arrow-down {
   font-size: 12px;
 }
+
+.saasLargeProblemTypeChart {
+  display: inline-block;
+}
+
+.saasLargeProblemTopTable {
+  display: inline-block;
+}
+
 </style>

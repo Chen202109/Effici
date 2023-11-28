@@ -426,10 +426,11 @@ export default {
      * 计算el-table列的宽度
      */
     columnWidth(key, tableName) {
+      // 因为当标题是版本号比如V4.3.2.0的时候，表头会显示不完全，所以在生成表格column的时候将版本之中的.给给成了_,如果这时候要计算想要的宽度，就把它给改回来
       key= key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
       let widthDict = {
-        2: 55,
-        3: 65,
+        2: 57,
+        3: 70,
         4: 75,
         5: 85,
         6: 110,

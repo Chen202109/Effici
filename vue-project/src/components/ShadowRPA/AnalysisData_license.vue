@@ -2,16 +2,12 @@
   <el-table
     :data="tableData" 
     :header-cell-style="{fontSize:'14px',background: 'rgb(64 158 255 / 65%)',color:'#696969',}"
-    border 
-    style="width: 100%"
-    :cell-style="licenseTableCellStyle">
+    border style="width: 100%" :cell-style="licenseTableCellStyle">
     <el-table-column
-      v-for="(item, index) in licenseData"
-      :key="index"
-      :prop="Object.keys(item)[0]"
-      :label="Object.keys(item)[0]"
+      v-for="(item, index) in licenseData" :key="index" :prop="Object.keys(item)[0]" :label="Object.keys(item)[0]"
       :width="columnWidth(Object.keys(item)[0])" align="center">
-    </el-table-column>  </el-table>
+    </el-table-column>  
+  </el-table>
 </template>
 
 
