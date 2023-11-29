@@ -1,7 +1,13 @@
 <template>
     <div>
+        <div style="margin: 15px 0">
+            <span class="demonstration" style="margin-left: 15px;">时间范围： </span>
+            <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期">
+            </el-date-picker>
+            <el-button type="primary" @click="search">查询</el-button>
+        </div>
         <!-- 容器 -->
-        <div ref="saasProblemChinaMap" :style="{ width: getPageWidth, height: '600px', margin: 'auto'}"></div>
+        <div id = "saasProblemChinaMap" ref="saasProblemChinaMap" :style="{ width: getPageWidth*0.6+'px', height: '600px', margin: 'auto'}"></div>
     </div>
 </template>
   
@@ -17,6 +23,9 @@ export default {
     data() {
         return {
             chinaMap: null,
+            // 日期查询范围
+            dateRange: [ new Date(new Date().getFullYear() + '-01-01'), new Date() ],
+            chinaMapProvinceSaaSProblemData: [{"seriesName": "全国省份受理数据", "seriesData": 1}],
         }
     },
       // 计算页面刚加载时候渲染的属性
@@ -27,7 +36,7 @@ export default {
         getPageWidth: function(){
             // windows.screen.width返回屏幕宽度，减去侧边栏240px,减去container模型左右padding各20px和margin-right的10px,
             // 减去主页面各自15px的padding, 减去不知道那里vue自己设的30px, 减去主页面内元素和滚动条保持距离的padding-right的10px,
-            return (window.screen.width-240-20*2-10-15*2-30-10)*0.6+'px'
+            return (window.screen.width-240-20*2-10-15*2-30-10)
         },
     },
     mounted() {
@@ -39,7 +48,7 @@ export default {
     methods: {
         drawCharts() {
             // 在 mounted 钩子中初始化 echarts 实例，并获取容器
-            this.saasProblemChinaMap = echarts.init(this.$refs.saasProblemChinaMap);
+            this.saasProblemChinaMap = echarts.init(document.getElementById('saasProblemChinaMap'))
             // ECharts 配置项
             const  option = {
                 tooltip: {
@@ -58,16 +67,84 @@ export default {
                 },
                 series: [
                     {
-                        name: 'chinaMapSeries1',
+                        name: "",
                         type: 'map',
                         geoIndex: 0,
                         data: []
                     }
                 ]
             }
-
             // 使用刚指定的配置项和数据显示图表
             this.saasProblemChinaMap.setOption(option);
+        },
+
+        async search (){
+            var searchValue = {} // 存放筛选条件信息
+            // 获取年、月、日，进行拼接
+            for (let i = 0; i < this.dateRange.length; i++) {
+                var year = this.dateRange[i].getFullYear()
+                var month = ('0' + (this.dateRange[i].getMonth() + 1)).slice(-2)
+                var day = ('0' + this.dateRange[i].getDate()).slice(-2)
+                if (i == 0) {
+                // 构建格式化后的日期字符串
+                var beginData = year + '-' + month + '-' + day
+                searchValue['beginData'] = beginData
+                }
+                if (i == 1) {
+                var endData = year + '-' + month + '-' + day
+                searchValue['endData'] = endData
+                }
+            } 
+            
+            this.searchSaaSCountryData(searchValue)
+
+        },
+
+        /**
+         * 
+         * @param {*} searchValue 
+         */
+        async searchSaaSCountryData(searchValue){
+            try {
+            const response = await this.$http.get(
+                '/api/CMC/workrecords/analysis_saas_problem_by_country?beginData=' +
+                searchValue['beginData'] +
+                '&endData=' +
+                searchValue['endData'] 
+            )
+            this.chinaMapProvinceSaaSProblemData = response.data.data
+            // 把valueMax的值取出来
+            let valueMax = this.chinaMapProvinceSaaSProblemData.pop()
+            let saasProblemChinaMap = echarts.getInstanceByDom(document.getElementById("saasProblemChinaMap"))
+            // 现在是添加属性，所以不用replace设成true，直接setOption就行
+            saasProblemChinaMap&&saasProblemChinaMap.setOption({
+                visualMap: {//左下角的渐变颜色条
+	                min: 0,
+	                max: valueMax.valueMax,
+	                left: 'left',
+	                top: 'bottom',
+	                text: [valueMax.valueMax+"",0+""],
+	                inRange: {
+	                    color: ['#FCF7F6', '#FD2C05 ']
+	                },
+	                show:true
+	            },
+                series: [
+                    {
+                        name: this.chinaMapProvinceSaaSProblemData[0]["seriesName"],
+                        type: 'map',
+                        geoIndex: 0,
+                        data: this.chinaMapProvinceSaaSProblemData[0]["seriesData"]
+                    }
+                ]
+            })
+            console.log('update local map data: ', this.chinaMapProvinceSaaSProblemData)
+
+        } catch (error) {
+            console.log(error)
+            this.$message.error('错了哦，仔细看错误信息弹窗')
+            alert('失败' + error)
+      }
         }
     },
 };

@@ -458,10 +458,12 @@ def analysis_saas_function_by_province(request):
             saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
             data.append({'seriesName': function_name[i], 'seriesData': saas_province_data})
         
+        # 对省份按受理数量进行排序
         sorted_region = []
         y_max = 0
         xAxis = region_list
 
+        # 统计省份对应的几个功能加起来的受理数量
         for item in xAxis:
             y_sum = 0
             for function_data in data:
@@ -470,11 +472,15 @@ def analysis_saas_function_by_province(request):
                 y_max = y if y > y_max else y_max
             sorted_region.append({'x': item['x'], 'y': y_sum})
         
+        # 排序并取出省份的list
         sorted_region.sort(key=lambda x: x['y'], reverse=True)
         sorted_region_x = [item['x'] for item in sorted_region]
+
+        # 根据排序好的省份，重新将数据根据顺序装填如每一个function的seriesData中
         for i in range(len(function_name)):
             data[i]['seriesData'] = [next(filter(lambda x: x['x'] == region, data[i]['seriesData'])) for region in sorted_region_x]
 
+        # 加上yMax的值，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
         data.append({"yMax": y_max})
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
@@ -557,9 +563,6 @@ def analysis_saas_large_problem_by_province_and_function(request):
         # 查询这段时间内的线上重大故障，将他们count一遍然后生成和上面一样的格式append到data中
         sql = f' SELECT errortype as name, count(*) as value from majorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by name'
         saas_large_problem_data = db.select_offset(1, 2000, sql)
-        print()
-        print(saas_large_problem_data)
-        print()
         data.append({'seriesName': "私有化重大故障数量", 'seriesData': saas_large_problem_data})
 
         # 进行排序，找出top10, 并且加上总数
@@ -573,6 +576,41 @@ def analysis_saas_large_problem_by_province_and_function(request):
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 # ----------------------------------------------------------- AnalysisUpgrade_version.vue 的请求 --------------------------------------------
+
+# ----------------------------------------------------------- AnalysisCountryData.vue 的请求 --------------------------------------------
+
+def analysis_saas_problem_by_country(request):
+    """
+    分析每个省份的受理数量，给全国地图使用
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+        # 查询数据库的所有region并放入数组中
+        sql = f' SELECT distinct region as name, count(*) as value from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by region '
+        saas_province_problem_data = db.select_offset(1, 2000, sql)
+        
+        # 生成关于全国省份的数据
+        saas_country_data = []
+        # 用于visualMap使用，显示颜色渐变，给这个组件提供一个数据的最大值
+        value_max = 0
+        for prov in constant.china_province_list:
+            value = next((item['value'] for item in saas_province_problem_data if item['name'] == prov), 0)
+            value_max = value if value > value_max else value_max
+            #  数组格式为[{"name":"省份名称","value":受理问题的数量}] ， 因为echarts地图他使用的数据格式是name和value，所以得对应上不能自定义值
+            saas_country_data.append({'name':prov, 'value': value})
+        data.append({'seriesName': "全国省份受理数据", 'seriesData': saas_country_data})
+        data.append({"valueMax": value_max})
+            
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+# ----------------------------------------------------------- AnalysisCountryData.vue 的请求 --------------------------------------------
 
 
 if __name__ == '__main__':
