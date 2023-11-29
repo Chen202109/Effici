@@ -22,19 +22,7 @@ export default {
     return {
 	    showForm: false,
       tableData: [
-        {
-		      index: 1,
-          issolve: '是',
-          agentype: '医疗',
-          environment: '私有化',
-          createtime: '2023-07-03',
-          errortype: '产品BUG',
-          errorfunction: '开票功能',
-          softversion: 'V4.3.1.2',
-          problem: "【单位】广西壮族自治区亭凉医院\n[程序版本】4312\n【问题描述】审验申请提示未查询到日结任务进度信息，参数：tenantCode=0,regionCode=450000,agencyIdCode=3a0ef31528674588915d9b801575a19b,name=DailyUseMergeRecordJob",
-          solveway: "une_ebill fremitPayState字段改为0",
-          reason:"已汇缴。此BUG已经修复"
-        },
+        
       ]
     }
   },
@@ -72,7 +60,7 @@ export default {
     }
   }
 }
-</script
+</script>
 
 <style scoped>
 .component-wrapper {

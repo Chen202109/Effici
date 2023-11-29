@@ -11,29 +11,9 @@
       <!-- el-main自带padding上下左右20，为了和leftMenu平齐，所以将上下的padding消除 -->
       <el-main style="padding: 0 10px">
         <!-- 放入动态选项卡tagsView -->
-        <el-tabs type="border-card" closable @tab-remove="removeTab" class="main-el-tab-pane">
-          <el-tab-pane>
-            <template>
-              <AssistSubmit></AssistSubmit>
-            </template>
-          </el-tab-pane>
-
-          <el-tab-pane label="数据汇报" overflow-y: auto class="main-el-tab-pane">
-            <template>
-              <AnalysisData></AnalysisData>
-            </template>
-          </el-tab-pane>
-
-          <el-tab-pane label="升级汇报" overflow-y: auto>
-            <template>
-              <AnalysisUpgrade></AnalysisUpgrade>
-            </template>
-          </el-tab-pane>
-
-          <el-tab-pane label="全国数据统计" overflow-y: auto>
-            <template>
-              <AnalysisCountryData></AnalysisCountryData>
-            </template>
+        <el-tabs type="border-card" v-model="activeTab" @tab-remove="removeTab" @tab-click="tabClick" class="main-el-tab-pane">
+          <el-tab-pane v-for="item in tabsItem" :key="item.name" :label="item.title" :name="item.name" :closable="item.closable" :ref="item.ref">
+            <component :is="item.content"></component>
           </el-tab-pane>
 
         </el-tabs>
@@ -50,30 +30,115 @@ import AnalysisUpgrade from "@/components/ShadowRPA/AnalysisUpgrade.vue"
 import AnalysisCountryData from "@/components/ShadowRPA/AnalysisCountryData.vue"
 
 export default {
+  components: { LeftMenu, AssistSubmit, AnalysisData, AnalysisUpgrade, AnalysisCountryData },
+
   data() {
-    return {};
+    return {
+      // 被激活的连接地址
+      activePath: '',
+      activeTab: '1', //默认显示的tab
+      tabIndex: 1, //tab目前显示数
+      tabsItem: [
+        {
+          title: '受理明细',
+          name: '1',
+          closable: false,
+          ref: 'tabs',
+          content: AssistSubmit
+        }
+      ],
+      tabsPath: [
+        {
+          name: "1",
+          path: '/AssistSubmit'
+        }
+      ]
+  }
+
   },
 
   methods: {
-    removeTab(targetName) {
-      let tabs = this.editableTabs;
-      let activeName = this.editableTabsValue;
+
+    /**
+     * 删除Tab
+     * @param {*} targetName 
+     */
+    removeTab(targetName) { 
+      let tabs = this.tabsItem; //当前显示的tab数组
+      let activeName = this.activeTab; //点前活跃的tab
+
+      //如果当前tab正活跃 被删除时执行
       if (activeName === targetName) {
         tabs.forEach((tab, index) => {
           if (tab.name === targetName) {
             let nextTab = tabs[index + 1] || tabs[index - 1];
             if (nextTab) {
-              activeName = nextTab.name;
+                activeName = nextTab.name;
+                this.tabClick(nextTab)
             }
           }
         });
       }
-      this.editableTabsValue = activeName;
-      this.editableTabs = tabs.filter((tab) => tab.name !== targetName);
+      this.activeTab = activeName;
+      this.tabsItem = tabs.filter(tab => tab.name !== targetName);
+      //在tabsPath中删除当前被删除tab的path
+      this.tabsPath = this.tabsPath.filter(item => item.name !== targetName)
     },
+
+
+   /**
+    * 通过当前选中tabs的实例获得当前实例的path 重新定位路由
+    * @param {*} thisTab 当前选中的tabs的实例
+    */
+    tabClick(thisTab) {
+        
+        let val = this.tabsPath.filter(item => thisTab.name == item.name)
+        this.$router.push({
+          path: val[0].path
+        })
+    }
+
   },
 
-  components: { LeftMenu, AssistSubmit, AnalysisData, AnalysisUpgrade, AnalysisCountryData },
+  watch: {
+    '$route': function (to) {  //监听路由的变化，动态生成tabs
+      let flag = true //判断是否需要新增页面
+      const path = to.path
+      if (Object.keys(to.meta).length != 0) {
+        for (let i = 0; i < this.$refs.tabs.length; i++) {
+          if (this.$refs.tabs[i].label == to.meta.title) {
+            this.activeTab = this.$refs.tabs[i].name  //定位到已打开页面
+            flag = false
+            break
+          }
+        }
+        //新增页面
+        if (flag) {
+          //获得路由元数据的name和组件名
+          const thisName = to.meta.title
+          const thisComp = to.meta.comp
+          //对tabs的当前激活下标和tabs数量进行自加
+          let newActiveIndex = ++this.tabIndex + ''
+          //动态双向追加tabs
+          this.tabsItem.push({
+            title: thisName,
+            name: String(newActiveIndex),
+            closable: true,
+            ref: 'tabs',
+            content: thisComp
+          })
+          this.activeTab = newActiveIndex
+          if (this.tabsPath.indexOf(path) == -1) {
+            this.tabsPath.push({
+              name: newActiveIndex,
+              path: path
+            })
+          }
+        }
+      }
+    }
+  }
+
 };
 </script>
 

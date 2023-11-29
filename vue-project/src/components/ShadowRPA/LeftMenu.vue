@@ -4,17 +4,17 @@
     <el-container style="height: 100%;">
       <el-aside style="width: 220px">
 		    <!-- <el-menu :default-active="$route.path" class="el-menu-vertical-demo" router> -->
-        <el-menu :default-active="$route.path" class="el-menu-vertical-demo">
+        <el-menu :default-active="$route.path" router class="el-menu-vertical-demo">
           <el-submenu index="1">
             <template slot="title">
               <i class="el-icon-location"></i>
               <span>SaaS运营</span>
             </template>
             <el-menu-item-group>
-              <el-menu-item index="new">受理明细</el-menu-item>
-              <el-menu-item index="/navigatorTwo/index">数据汇报</el-menu-item>
-              <el-menu-item index="/navigatorTherr/index">升级汇报</el-menu-item>
-              <el-menu-item index="/navigatorFour/index">全国数据统计</el-menu-item>
+              <el-menu-item index="/AssistSubmit">受理明细</el-menu-item>
+              <el-menu-item index="/AnalysisData">数据汇报</el-menu-item>
+              <el-menu-item index="/AnalysisUpgrade">升级汇报</el-menu-item>
+              <el-menu-item index="/AnalysisCountryData">全国数据统计</el-menu-item>
             </el-menu-item-group>
           </el-submenu>
         </el-menu>
@@ -22,6 +22,22 @@
     </el-container>
   </div>
 </template>
+
+
+<script>
+  export default {
+    computed: {
+    /**
+     * 当前激活的导航
+     */
+    activeNav() { 
+      return this.$route.path
+    }
+  },
+  }
+
+</script>
+
 <style scoped>
 .el-header {
   background-color: #d3dce6;
