@@ -103,7 +103,7 @@ export default {
         // 如果符合验证规则
         if (valid) {
 		  console.log('submit begin!! this.loading = true')
-          this.loading = true
+      this.loading = true
 		  //this.$store.commit('modify',"改变值！") //vuex 状态管理 https://blog.51cto.com/wangjinchan/4935025
 		  window.sessionStorage.setItem('token','token保存成功'); // 取出变量var tokenStr = window.sessionStorage.getItem('token')
 		  //this.$router.push("/CMC/main"); //跳转到对应页面

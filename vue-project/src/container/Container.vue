@@ -3,7 +3,7 @@
 <el-container>
   <el-header style="background-color: #545c64">
 	<el-row type="flex" justify="center" align="middle">
-		<el-col :span="5"><div class="grid-content bg-purple">1</div></el-col>
+		<el-col :span="5"><div class="grid-content bg-purple"></div></el-col>
 		<el-col :span="14">
 			<div class="grid-content bg-purple-light" style="background-color: #545c64">
 				<template>
@@ -11,7 +11,7 @@
 				</template>
 			</div>
 		</el-col>
-		<el-col :span="5"><div class="grid-content bg-purple">3</div></el-col>
+		<el-col :span="5"><div class="grid-content bg-purple"></div></el-col>
 	</el-row>
   </el-header>
   

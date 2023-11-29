@@ -1,39 +1,26 @@
 <template>
   <el-container>
     <!-- aside左侧 -->
-    <el-aside width="200px">
+    <el-aside style="width: 220px">
       <template>
         <LeftMenu></LeftMenu>
       </template>
     </el-aside>
     <!-- 主体右侧 -->
     <el-container>
-      <!-- 可以添加  style='height: 30px;' 来控制高度，默认60-->
-      <el-header style="height: 5px">
-        <template>
-          <RPAHeader></RPAHeader>
-        </template>
-      </el-header>
-
-      <el-main>
+      <!-- el-main自带padding上下左右20，为了和leftMenu平齐，所以将上下的padding消除 -->
+      <el-main style="padding: 0 10px">
         <!-- 放入动态选项卡tagsView -->
         <el-tabs type="border-card" closable @tab-remove="removeTab" class="main-el-tab-pane">
           <el-tab-pane>
-            <span slot="label"><i class="el-icon-date"></i>受理明细</span>
             <template>
               <AssistSubmit></AssistSubmit>
-              <!-- 放入Pagination 分页组件 -->
-              <div class="block" align="right">
-                <span class="demonstration">分页的效果</span>
-                <el-pagination background layout="prev, pager, next" :total="500"> </el-pagination>
-              </div>
             </template>
           </el-tab-pane>
 
           <el-tab-pane label="数据汇报" overflow-y: auto class="main-el-tab-pane">
             <template>
               <AnalysisData></AnalysisData>
-              
             </template>
           </el-tab-pane>
 
@@ -49,7 +36,6 @@
             </template>
           </el-tab-pane>
 
-
         </el-tabs>
       </el-main>
     </el-container>
@@ -58,10 +44,8 @@
 
 <script>
 import LeftMenu from "@/components/ShadowRPA/LeftMenu.vue"
-import RPAHeader from "@/components/ShadowRPA/RPAHeader.vue"
 import AssistSubmit from "@/components/ShadowRPA/AssistSubmit.vue"
 import AnalysisData from "@/components/ShadowRPA/AnalysisData.vue"
-import AnalysisDataTest from "./AnalysisDataTest.vue"
 import AnalysisUpgrade from "@/components/ShadowRPA/AnalysisUpgrade.vue"
 import AnalysisCountryData from "@/components/ShadowRPA/AnalysisCountryData.vue"
 
@@ -89,8 +73,7 @@ export default {
     },
   },
 
-  components: { LeftMenu, RPAHeader, AssistSubmit, AnalysisData, AnalysisDataTest },
-  components: { LeftMenu, RPAHeader, AssistSubmit,AnalysisData,AnalysisUpgrade, AnalysisCountryData },
+  components: { LeftMenu, AssistSubmit, AnalysisData, AnalysisUpgrade, AnalysisCountryData },
 };
 </script>
 
