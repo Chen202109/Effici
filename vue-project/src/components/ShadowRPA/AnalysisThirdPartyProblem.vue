@@ -13,8 +13,24 @@
         </div>
 
         <div>
-
-        </div>
+            <div class="saasMonitorProblemTypeChart" id="saasMonitorProblemTypeChart" :style="{ width: getPageWidth * 0.65+ 'px', height: '600px' }">
+            </div>
+            <div class="saasMonitorProblemTopTable" style="width: 35%;">
+                <p>生产监控异常问题合计: <span style="color: red;">{{ saasMonitorProblemTypeChartData[2]['seriesData'] }}</span> 次</p>
+                <el-table
+                :data="saasMonitorProblemTypeChartData[1]['seriesData']" 
+                :header-cell-style="{fontSize:'14px',background: 'rgb(64 158 255 / 65%)',color:'#696969',}"
+                :cell-style="{fontSize: 12 + 'px',}"
+                style="width: 100%; margin: auto">
+                <el-table-column label="生产监控异常问题top10" align="center">
+                    <el-table-column
+                    v-for="(item, index) in saasMonitorProblemTopTableTitle" :key="index" :prop="item.prop" :label="item.label"
+                    :width="columnWidth(item.label, 'saasMonitorProblemTopTable')"  align="center">
+                    </el-table-column>
+                </el-table-column>  
+                </el-table>
+            </div>
+    </div>
     </div>
 </template>
   
@@ -31,7 +47,19 @@ export default {
         return {
             // 日期查询范围
             dateRange: [new Date(new Date().getFullYear() + '-01-01'), new Date()],
+            // 重大故障的表的数据
+            saasMonitorProblemTopTableTitle: [
+                {'prop': "name", "label": "问题分类"},
+                {'prop': "value", "label": "次数"},
+                {'prop': "percent", "label": "百分比"}
+            ],
+
             saasThirdPartyProblemProvinceChartData: [],
+            saasMonitorProblemTypeChartData: [ 
+                {'seriesName': "生产监控异常问题分类", 'seriesData': []}, 
+                {'seriesName': "生产监控异常问题top10", 'seriesData': []}, 
+                {'seriesName': "生产监控异常问题合计", 'seriesData': 0}
+            ],
         }
     },
     // 计算页面刚加载时候渲染的属性
@@ -50,10 +78,33 @@ export default {
     },
     methods: {
         /**
+         * 计算el-table列的宽度
+         */
+        columnWidth(key, tableName) {
+            key= key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
+            let widthDict = {
+                2: 57,
+                3: 70,
+                4: 75,
+                5: 85,
+                6: 110,
+                10: 130,
+            }
+            let width
+            if (tableName === 'saasMonitorProblemTopTable' && key === '问题分类') {
+                width = 220
+            } else if (key.length in widthDict){
+                width = widthDict[key.length]
+            }
+            return width
+        },
+
+        /**
          * 用于使用echarts进行图标的基础绘制init
          */
         drawLine() {
             echarts.init(document.getElementById('saasThirdPartyProblemProvinceChart'))
+            echarts.init(document.getElementById('saasMonitorProblemTypeChart'))
         },
 
         /**
@@ -174,6 +225,83 @@ export default {
         },
 
         /**
+         * 当查询之后，数据更新，更新重大事故数量和出错功能的饼状图的数据
+         */
+         updateSaaSMonitorProblemTypeChart(chartData, chartTitle, chartElementId){
+        let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
+
+        let option = {
+            title: {
+            text: chartTitle,
+            left: 'left'
+            },
+            tooltip: {
+            trigger: 'item',
+            formatter: '{a} <br/>{b} : {c} ({d}%)'
+            },
+            series: [
+            {
+                name: chartData[0].seriesName,
+                type: 'pie',
+                radius: '55%',
+                data: chartData[0].seriesData,
+                top: '7%',
+                labelLine: {
+                length: 15,
+                maxSurfaceAngle: 80
+                },
+                label: {
+                alignTo: 'edge',
+                formatter: '{b|{b}：}{c}次 {per|{d}%}  ',
+                minMargin: 5,
+                lineHeight: 15,
+                // 这个配置不知道为什么，给的值越大，edge distance其实越小
+                edgeDistance: 10,
+                rich: {
+                    b: {
+                    color: '#4C5058',
+                    fontSize: 12,
+                    fontWeight: 'bold',
+                    lineHeight: 25
+                    },
+                    per: {
+                    color: '#fff',
+                    backgroundColor: '#4C5058',
+                    padding: [3, 4],
+                    // borderRadius: 4
+                    }
+                }
+                },
+                // 给标签线设置格式
+                labelLayout: function (params) {
+                // 通过标签魔性labelRect的x，查看是在这张图左边还是右边 （不能使用params.label.x直接看label的文字的坐标，不知道为什么直接整个回调所有设置失效）
+                const isLeft = params.labelRect.x < chart.getWidth() / 2;
+                const points = params.labelLinePoints;
+                // 更新水平方向的标签线的末尾坐标，看是左边的标签还是右边的标签，如果是右边的标签的话就取到标签的x值也就是标签最靠左的点然后加上标签宽度
+                points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
+                // 更新竖直方向的标签线的末尾坐标，因为想要label显示在线上方，所以加上label的高度。
+                points[1][1] = params.labelRect.y+params.labelRect.height
+                points[2][1] = params.labelRect.y+params.labelRect.height
+                return {
+                    labelLinePoints: points
+                };
+                },
+                emphasis: {
+                itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+                }
+            }
+            ]
+        };
+
+        chart&&chart.setOption(option, true)
+        console.log("updated "+chartElementId+" echart: ", chart)
+        },
+
+        /**
          * 按下查询按钮之后异步查询更新页面图标数据。
          */
         async search() {
@@ -196,6 +324,7 @@ export default {
             } //结束for，完成日期的拼接
 
             this.saasThirdPartyProblemProvince(searchValue)
+            this.searchSaaSMonitorProblemByType(searchValue)
         },
 
         /**
@@ -220,6 +349,40 @@ export default {
                 alert('失败' + error)
             }
         },
+
+
+        /**
+         * @param {searchValue} searchValue 搜索参数的字典
+         * @description 对重大事故数量和出错功能的饼状图的后端数据请求
+         */
+        async searchSaaSMonitorProblemByType(searchValue) {
+            try {
+                const response = await this.$http.get(
+                '/api/CMC/workrecords/analysis_saas_minitor_problem_by_function?beginData=' +
+                searchValue['beginData'] +
+                '&endData=' +
+                searchValue['endData']
+                )
+                this.saasMonitorProblemTypeChartData = response.data.data
+                this.updateSaaSMonitorProblemTypeChart(this.saasMonitorProblemTypeChartData, "生产监控异常问题分类", "saasMonitorProblemTypeChart")
+                console.log('update local saasMonitorProblemTypeChart data: ', this.saasMonitorProblemTypeChartData)
+
+            } catch (error) {
+                console.log(error)
+                this.$message.error('错了哦，仔细看错误信息弹窗')
+                alert('失败' + error)
+            }
+        },
     },
 };
 </script>
+
+<style>
+.saasMonitorProblemTypeChart {
+  display: inline-block;
+}
+
+.saasMonitorProblemTopTable {
+  display: inline-block;
+}
+</style>

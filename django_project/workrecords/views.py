@@ -544,9 +544,9 @@ def analysis_saas_problem_by_month(request):
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 
-def analysis_saas_large_problem_by_province_and_function(request):
+def analysis_saas_large_problem_by_function(request):
     """
-    分析省份出现的重大生产故障的数量
+    分析出现的重大生产故障的问题分类
     """
     data = []
 
@@ -562,7 +562,7 @@ def analysis_saas_large_problem_by_province_and_function(request):
         # 查询这段时间内的线上重大故障，将他们count一遍然后生成和上面一样的格式append到data中
         sql = f' SELECT errortype as name, count(*) as value from majorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by name'
         saas_large_problem_data = db.select_offset(1, 2000, sql)
-        data.append({'seriesName': "私有化重大故障数量", 'seriesData': saas_large_problem_data})
+        data.append({'seriesName': "私有化重大故障问题分类", 'seriesData': saas_large_problem_data})
 
         # 进行排序，找出top10, 并且加上总数
         total = sum(item['value'] for item in saas_large_problem_data)
@@ -602,7 +602,35 @@ def analysis_saas_monitor_problem_by_province(request):
             
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
+def analysis_saas_minitor_problem_by_function(request):
+    """
+    分析省份出现的重大生产故障的数量
+    """
+    data = []
 
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        # 查询这段时间内的线上重大故障，将他们count一遍然后生成和上面一样的格式append到data中
+        sql = f' SELECT errortype as name, count(*) as value from monitorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by name'
+        saas_monitor_problem_data = db.select_offset(1, 2000, sql)
+        data.append({'seriesName': "生产监控异常问题分类", 'seriesData': saas_monitor_problem_data})
+
+        # 进行排序，找出top10, 并且加上总数
+        total = sum(item['value'] for item in saas_monitor_problem_data)
+        sorted_data = sorted(saas_monitor_problem_data, key=lambda x : x['value'], reverse = True)[0:10]
+        for item in sorted_data: item['percent'] = f"{((item['value'] / total) * 100):.2f}%" if total!=0 else 0
+        data.append({'seriesName': "生产监控异常问题top10", 'seriesData': sorted_data})
+        data.append({'seriesName': "生产监控异常问题合计", 'seriesData': total})
+        
+            
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 # ----------------------------------------------------------- AnalysisThirdPartyProblem.vue 的请求 --------------------------------------------
 

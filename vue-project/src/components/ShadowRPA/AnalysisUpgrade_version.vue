@@ -173,7 +173,7 @@ export default {
       this.functionSelected = this.functionOptions[this.businessSelected];
     },
 
-/**
+    /**
      * 计算el-table列的宽度
      */
      columnWidth(key, tableName) {
@@ -840,7 +840,7 @@ export default {
     async searchSaaSLargeProblemByType(searchValue) {
       try {
         const response = await this.$http.get(
-          '/api/CMC/workrecords/analysis_saas_large_problem_by_province_and_function?beginData=' +
+          '/api/CMC/workrecords/analysis_saas_large_problem_by_function?beginData=' +
           searchValue['beginData'] +
           '&endData=' +
           searchValue['endData']
