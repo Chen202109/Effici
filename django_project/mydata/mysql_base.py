@@ -113,7 +113,7 @@ class Db(object):
     # INSERT INTO table_name (列1, 列2,...) VALUES (值1, 值2,....)
     def insert(self,table,final_key,final_value):
         sql = "INSERT INTO " + table + " (" + final_key + ")" + " VALUES (" + final_value + ")"
-        # print(f'即将执行sql为{sql}')
+        #print(f'即将执行sql为{sql}')
         try:
             self.configure.ping(reconnect=True)
             self.begin.execute(sql)

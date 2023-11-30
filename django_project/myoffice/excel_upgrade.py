@@ -39,9 +39,9 @@ def upgrade_inster_sql(filePath):
         if i>0: #vlaue数据从第二行开始，# 2. 获取inster into 的字段名
             for n in range(len(sql_key_col)):
                 # 也可以通过判断单元格类型是否为日期时间类型   # if worksheet.cell_type(rowx=0, colx=0) == xlrd.XL_CELL_DATE:
-
+                print(f'sql_key_col[n]为第{n + 1}行')
                 if '时间' in sheet.cell_value(0,sql_key_col[n]): # 如果是 某某日期，那么需要用xldate_as_datetime将float转成日期
-                    #excel中，格式必须为 yyyy-m-d h:mm 才不会报错，print(f'sql_key_col[n]为{sql_key_col[n]}')
+                    #excel中，格式必须为 yyyy-m-d h:mm 才不会报错，
                     xldate_str = xlrd.xldate.xldate_as_datetime(sheet.cell_value(i, sql_key_col[n]), 0).strftime('%Y-%m-%d %H:%M:%S')
                     sql_value_str = sql_value_str + "'" + xldate_str + "'" + ","
 
