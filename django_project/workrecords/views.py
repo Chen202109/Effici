@@ -581,7 +581,7 @@ def analysis_saas_large_problem_by_function(request):
 
 def analysis_saas_monitor_problem_by_province(request):
     """
-    分析某一年月份受理的问题数量的对比。
+    分析生产环境监控异常的问题数量的省份对比。
     """
     data = []
 
@@ -633,6 +633,64 @@ def analysis_saas_minitor_problem_by_function(request):
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 # ----------------------------------------------------------- AnalysisThirdPartyProblem.vue 的请求 --------------------------------------------
+
+
+# ----------------------------------------------------------- AnalysisAddedServiceData.vue 的请求 --------------------------------------------
+
+def analysis_saas_added_service_by_province(request):
+    """
+    分析增值服务开通的省份对比。
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
+        sql = f' SELECT distinct region as x, count(*) as y from orderprodct_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by region '
+        saas_minitor_province_problem_data = db.select_offset(1, 2000, sql)
+        data.append({'seriesName': "增值服务开通数量", 'seriesData': saas_minitor_province_problem_data})
+
+            
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+def analysis_saas_added_service_by_function(request):
+    """
+    分析增值服务的服务分类对比
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        # 查询这段时间内的线上重大故障，将他们count一遍然后生成和上面一样的格式append到data中
+        sql = f' SELECT ordername as name, count(*) as value from orderprodct_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by name'
+        saas_monitor_problem_data = db.select_offset(1, 2000, sql)
+        data.append({'seriesName': "增值服务分类", 'seriesData': saas_monitor_problem_data})
+
+        # 进行排序，找出top10, 并且加上总数
+        total = sum(item['value'] for item in saas_monitor_problem_data)
+        sorted_data = sorted(saas_monitor_problem_data, key=lambda x : x['value'], reverse = True)[0:10]
+        for item in sorted_data: item['percent'] = f"{((item['value'] / total) * 100):.2f}%" if total!=0 else 0
+        data.append({'seriesName': "增值服务top10", 'seriesData': sorted_data})
+        data.append({'seriesName': "增值服务合计", 'seriesData': total})
+        
+            
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+# ----------------------------------------------------------- AnalysisAddedServiceData.vue 的请求 --------------------------------------------
 
 
 # ----------------------------------------------------------- AnalysisCountryData.vue 的请求 --------------------------------------------

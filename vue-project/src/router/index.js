@@ -14,6 +14,7 @@ import AnalysisData from "@/components/ShadowRPA/AnalysisData.vue"
 import AnalysisUpgrade from "@/components/ShadowRPA/AnalysisUpgrade.vue"
 import AnalysisCountryData from "@/components/ShadowRPA/AnalysisCountryData.vue"
 import AnalysisThirdPartyProblem from "@/components/ShadowRPA/AnalysisThirdPartyProblem.vue"
+import AnalysisAddedServiceData from "@/components/ShadowRPA/AnalysisAddedServiceData.vue"
 
 Vue.use(Router)
 
@@ -41,7 +42,8 @@ export default new Router({
             { path: '/AnalysisData', component: AnalysisData, meta: {keepAlive: true, comp: AnalysisData, name: 'AnalysisData', title:"数据汇报"}},
             { path: '/AnalysisUpgrade', component: AnalysisUpgrade, meta: {keepAlive: true, comp: AnalysisUpgrade, name: 'AnalysisUpgrade', title:"升级汇报"}},
             { path: '/AnalysisCountryData', component: AnalysisCountryData, meta: {keepAlive: true, comp: AnalysisCountryData, name: 'AnalysisCountryData', title:"全国数据统计"}},
-            { path: '/AnalysisThirdPartyProblem', component: AnalysisThirdPartyProblem, meta: {keepAlive: true, comp: AnalysisThirdPartyProblem, name: 'AnalysisThirdPartyProblem', title:"生产监控异常统计"}}
+            { path: '/AnalysisThirdPartyProblem', component: AnalysisThirdPartyProblem, meta: {keepAlive: true, comp: AnalysisThirdPartyProblem, name: 'AnalysisThirdPartyProblem', title:"生产监控异常统计"}},
+            { path: '/AnalysisAddedServiceData', component: AnalysisAddedServiceData, meta: {keepAlive: true, comp: AnalysisAddedServiceData, name: 'AnalysisAddedServiceData', title:"增值服务开通统计"}}
           ]
         },
         { path: '/CMC/ew', name: '新页面', component: New, },

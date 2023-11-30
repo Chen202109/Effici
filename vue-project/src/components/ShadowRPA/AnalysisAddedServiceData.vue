@@ -8,24 +8,24 @@
             <el-button type="primary" @click="search">查询</el-button>
         </div>
 
-        <div class="saasMonitorProblemProvinceChart" id="saasMonitorProblemProvinceChart"
+        <div class="saasAddedServiceProvinceChart" id="saasAddedServiceProvinceChart"
             :style="{ width: getPageWidth + 'px', height: '400px' }">
         </div>
 
         <div>
-            <div class="saasMonitorProblemTypeChart" id="saasMonitorProblemTypeChart" :style="{ width: getPageWidth * 0.65+ 'px', height: '600px' }">
+            <div class="saasAddedServiceTypeChart" id="saasAddedServiceTypeChart" :style="{ width: getPageWidth * 0.65+ 'px', height: '600px' }">
             </div>
-            <div class="saasMonitorProblemTopTable" style="width: 35%;">
-                <p>{{ saasMonitorProblemTypeChartData[2]['seriesName'] }}: <span style="color: red;">{{ saasMonitorProblemTypeChartData[2]['seriesData'] }}</span> 次</p>
+            <div class="saasAddedServiceTopTable" style="width: 35%;">
+                <p>{{ saasAddedServiceTypeChartData[2]['seriesName'] }}: <span style="color: red;">{{ saasAddedServiceTypeChartData[2]['seriesData'] }}</span> 次</p>
                 <el-table
-                :data="saasMonitorProblemTypeChartData[1]['seriesData']" 
+                :data="saasAddedServiceTypeChartData[1]['seriesData']" 
                 :header-cell-style="{fontSize:'14px',background: 'rgb(64 158 255 / 65%)',color:'#696969',}"
                 :cell-style="{fontSize: 12 + 'px',}"
                 style="width: 100%; margin: auto">
-                <el-table-column :label="saasMonitorProblemTypeChartData[1].seriesName" align="center">
+                <el-table-column :label="saasAddedServiceTypeChartData[1].seriesName" align="center">
                     <el-table-column
-                    v-for="(item, index) in saasMonitorProblemTopTableTitle" :key="index" :prop="item.prop" :label="item.label"
-                    :width="columnWidth(item.label, 'saasMonitorProblemTopTable')"  align="center">
+                    v-for="(item, index) in saasAddedServiceTopTableTitle" :key="index" :prop="item.prop" :label="item.label"
+                    :width="columnWidth(item.label, 'saasAddedServiceTopTable')"  align="center">
                     </el-table-column>
                 </el-table-column>  
                 </el-table>
@@ -42,23 +42,23 @@ require("echarts/lib/component/tooltip");
 require("echarts/lib/component/title");
 
 export default {
-    name: 'AnalysisThirdPartyProblem',
+    name: 'AnalysisAddedServiceData',
     data() {
         return {
             // 日期查询范围
             dateRange: [new Date(new Date().getFullYear() + '-01-01'), new Date()],
             // 重大故障的表的数据
-            saasMonitorProblemTopTableTitle: [
-                {'prop': "name", "label": "问题分类"},
+            saasAddedServiceTopTableTitle: [
+                {'prop': "name", "label": "增值服务分类"},
                 {'prop': "value", "label": "次数"},
                 {'prop': "percent", "label": "百分比"}
             ],
 
-            saasMonitorProblemProvinceChartData: [],
-            saasMonitorProblemTypeChartData: [ 
-                {'seriesName': "生产监控异常问题分类", 'seriesData': []}, 
-                {'seriesName': "生产监控异常问题top10", 'seriesData': []}, 
-                {'seriesName': "生产监控异常问题合计", 'seriesData': 0}
+            saasAddedServiceProvinceChartData: [],
+            saasAddedServiceTypeChartData: [ 
+                {'seriesName': "增值服务分类", 'seriesData': []}, 
+                {'seriesName': "增值服务top10", 'seriesData': []}, 
+                {'seriesName': "增值服务合计", 'seriesData': 0}
             ],
         }
     },
@@ -91,7 +91,7 @@ export default {
                 10: 130,
             }
             let width
-            if (tableName === 'saasMonitorProblemTopTable' && key === '问题分类') {
+            if (tableName === 'saasAddedServiceTopTable' && key === '增值服务分类') {
                 width = 220
             } else if (key.length in widthDict){
                 width = widthDict[key.length]
@@ -103,8 +103,8 @@ export default {
          * 用于使用echarts进行图标的基础绘制init
          */
         drawLine() {
-            echarts.init(document.getElementById('saasMonitorProblemProvinceChart'))
-            echarts.init(document.getElementById('saasMonitorProblemTypeChart'))
+            echarts.init(document.getElementById('saasAddedServiceProvinceChart'))
+            echarts.init(document.getElementById('saasAddedServiceTypeChart'))
         },
 
         /**
@@ -227,7 +227,7 @@ export default {
         /**
          * 当查询之后，数据更新，更新重大事故数量和出错功能的饼状图的数据
          */
-         updateSaaSMonitorProblemTypeChart(chartData, chartTitle, chartElementId){
+         updateSaaSAddedServiceTypeChart(chartData, chartTitle, chartElementId){
         let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
 
         let option = {
@@ -323,25 +323,25 @@ export default {
                 }
             } //结束for，完成日期的拼接
 
-            this.saasMonitorProblemProvince(searchValue)
-            this.searchSaaSMonitorProblemByType(searchValue)
+            this.saasAddedServiceProvince(searchValue)
+            this.searchSaaSAddedServiceByType(searchValue)
         },
 
         /**
          * @param {searchValue} searchValue 搜索参数的字典
          * @description 对第三方出错的关于省份的受理数量的后端数据请求
          */
-        async saasMonitorProblemProvince(searchValue) {
+        async saasAddedServiceProvince(searchValue) {
             try {
                 const response = await this.$http.get(
-                '/api/CMC/workrecords/analysis_saas_monitor_problem_by_province?beginData=' +
+                '/api/CMC/workrecords/analysis_saas_added_service_by_province?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData']
                 )
-                this.saasMonitorProblemProvinceChartData = response.data.data
-                this.updateBarChartBasic(this.saasMonitorProblemProvinceChartData, '省份生产监控异常统计', "category", false, 'saasMonitorProblemProvinceChart')
-                console.log('update local saasMonitorProblemProvinceChart data: ', this.saasMonitorProblemProvinceChartData)
+                this.saasAddedServiceProvinceChartData = response.data.data
+                this.updateBarChartBasic(this.saasAddedServiceProvinceChartData, '省份增值服务统计', "category", false, 'saasAddedServiceProvinceChart')
+                console.log('update local saasAddedServiceProvinceChart data: ', this.saasAddedServiceProvinceChartData)
 
             } catch (error) {
                 console.log(error)
@@ -355,17 +355,17 @@ export default {
          * @param {searchValue} searchValue 搜索参数的字典
          * @description 对重大事故数量和出错功能的饼状图的后端数据请求
          */
-        async searchSaaSMonitorProblemByType(searchValue) {
+        async searchSaaSAddedServiceByType(searchValue) {
             try {
                 const response = await this.$http.get(
-                '/api/CMC/workrecords/analysis_saas_minitor_problem_by_function?beginData=' +
+                '/api/CMC/workrecords/analysis_saas_added_service_by_function?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData']
                 )
-                this.saasMonitorProblemTypeChartData = response.data.data
-                this.updateSaaSMonitorProblemTypeChart(this.saasMonitorProblemTypeChartData, "生产监控异常问题分类", "saasMonitorProblemTypeChart")
-                console.log('update local saasMonitorProblemTypeChart data: ', this.saasMonitorProblemTypeChartData)
+                this.saasAddedServiceTypeChartData = response.data.data
+                this.updateSaaSAddedServiceTypeChart(this.saasAddedServiceTypeChartData, "增值服务分类", "saasAddedServiceTypeChart")
+                console.log('update local saasAddedServiceTypeChart data: ', this.saasAddedServiceTypeChartData)
 
             } catch (error) {
                 console.log(error)
@@ -378,11 +378,11 @@ export default {
 </script>
 
 <style>
-.saasMonitorProblemTypeChart {
+.saasAddedServiceTypeChart {
   display: inline-block;
 }
 
-.saasMonitorProblemTopTable {
+.saasAddedServiceTopTable {
   display: inline-block;
 }
 </style>
