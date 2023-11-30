@@ -14,5 +14,6 @@ urlpatterns = [
     path('analysis_saas_problem_by_province_agency',views.analysis_saas_problem_by_province_agency),
     path('analysis_saas_problem_by_month',views.analysis_saas_problem_by_month),
     path('analysis_saas_large_problem_by_province_and_function',views.analysis_saas_large_problem_by_province_and_function),
+    path('analysis_saas_monitor_problem_by_province',views.analysis_saas_monitor_problem_by_province),
     path('analysis_saas_problem_by_country',views.analysis_saas_problem_by_country),
 ]

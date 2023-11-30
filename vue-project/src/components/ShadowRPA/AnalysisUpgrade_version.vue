@@ -195,7 +195,9 @@ export default {
       return width
     },
 
-    // 用于使用echarts进行图标的基础绘制init
+    /**
+     * 用于使用echarts进行图标的基础绘制init
+     */
     drawLine() {
       // saas 升级，版本更新和bug的折线图的init
       echarts.init(document.getElementById('saasUpgradeTrendChart'))

@@ -536,7 +536,6 @@ def analysis_saas_problem_by_month(request):
         saas_month_data = []
 
         db =mysql_base.Db()
-        print("-----------")
         sql = f'SELECT MONTH(createtime) AS Month,COUNT(*) AS ProblemAmount FROM workrecords_2023 WHERE MONTH(createtime) between {datetime.strptime(begin_date, "%Y-%m-%d").month} and {datetime.strptime(end_date, "%Y-%m-%d").month} GROUP BY MONTH(createtime)'
         saas_month_data = db.select_offset(1, 2000, sql)
         seriesData = [{'x':str(d["Month"])+'月', 'y':d["ProblemAmount"]} for d in saas_month_data]
@@ -576,6 +575,37 @@ def analysis_saas_large_problem_by_province_and_function(request):
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 # ----------------------------------------------------------- AnalysisUpgrade_version.vue 的请求 --------------------------------------------
+
+
+# ----------------------------------------------------------- AnalysisThirdPartyProblem.vue 的请求 --------------------------------------------
+
+def analysis_saas_monitor_problem_by_province(request):
+    """
+    分析某一年月份受理的问题数量的对比。
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
+        sql = f' SELECT distinct region as x, count(*) as y from monitorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by region '
+        saas_minitor_province_problem_data = db.select_offset(1, 2000, sql)
+        data.append({'seriesName': "问题受理数量", 'seriesData': saas_minitor_province_problem_data})
+
+            
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+
+
+# ----------------------------------------------------------- AnalysisThirdPartyProblem.vue 的请求 --------------------------------------------
+
 
 # ----------------------------------------------------------- AnalysisCountryData.vue 的请求 --------------------------------------------
 
