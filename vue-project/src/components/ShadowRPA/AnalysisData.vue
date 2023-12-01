@@ -415,9 +415,9 @@ export default {
 
     upgradeTableCellStyle(row) {
       let style = ''
-      if (row.rowIndex === this.saasUpgradeData[0].length - 1) {
-        style = 'background: rgb(253 238 32 / 20%);'
-      }
+      // if (row.rowIndex === this.saasUpgradeData[0].length - 1) {
+      //   style = 'background: rgb(253 238 32 / 20%);'
+      // }
       style += 'font-size: 14px; '
       return style
     },
@@ -484,9 +484,9 @@ export default {
           {
             "saas_v4标准产品": "优化",
           },
-          {
-            "saas_v4标准产品": "升级次数合计",
-          },
+          // {
+          //   "saas_v4标准产品": "升级次数合计",
+          // },
         ],
         [
           {
@@ -498,9 +498,9 @@ export default {
           {
             "saas_v4增值产品": "优化",
           },
-          {
-            "saas_v4增值产品": "升级次数合计",
-          },
+          // {
+          //   "saas_v4增值产品": "升级次数合计",
+          // },
         ],
       ]
       let dailyUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '日常')
@@ -510,13 +510,13 @@ export default {
         this.saasUpgradeData[0][0][item["resourcepool"]] = item['缺陷']
         this.saasUpgradeData[0][1][item["resourcepool"]] = item['需求']
         this.saasUpgradeData[0][2][item["resourcepool"]] = item['优化']
-        this.saasUpgradeData[0][3][item["resourcepool"]] = item['升级次数']
+        // this.saasUpgradeData[0][3][item["resourcepool"]] = item['升级次数']
       }
       for (const item of addedUpgradeTableData) {
         this.saasUpgradeData[1][0][item["resourcepool"]] = item['缺陷']
         this.saasUpgradeData[1][1][item["resourcepool"]] = item['需求']
         this.saasUpgradeData[1][2][item["resourcepool"]] = item['优化']
-        this.saasUpgradeData[1][3][item["resourcepool"]] = item['升级次数']
+        // this.saasUpgradeData[1][3][item["resourcepool"]] = item['升级次数']
       }
     },
 

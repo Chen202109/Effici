@@ -579,6 +579,52 @@ def analysis_saas_large_problem_by_function(request):
 
 # ----------------------------------------------------------- AnalysisThirdPartyProblem.vue 的请求 --------------------------------------------
 
+def analysis_saas_monitor_province_list(request):
+    """
+    获取监控异常这边的省份
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
+        sql = f' SELECT distinct region from monitorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
+        saas_minitor_province_list = db.select_offset(1, 2000, sql)
+        data.append({'seriesName': "监控出错省份", 'seriesData': saas_minitor_province_list})
+ 
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+def analysis_saas_monitor_problem_by_function_and_province(request):
+    """
+    分析生产环境监控异常的出错功能和省份的对比
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+        province = request.GET.get('provinceSelected', default='')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
+        sql = f' SELECT distinct errortype as x, count(*) as y from monitorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" and region = "{province}" group by errortype '
+        saas_minitor_function_problem_by_province_data = db.select_offset(1, 2000, sql)
+        data.append({'seriesName': province+"监控出错功能", 'seriesData': saas_minitor_function_problem_by_province_data})
+
+            
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
 def analysis_saas_monitor_problem_by_province(request):
     """
     分析生产环境监控异常的问题数量的省份对比。

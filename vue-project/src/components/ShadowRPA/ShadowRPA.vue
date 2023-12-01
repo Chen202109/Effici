@@ -28,10 +28,10 @@ import AssistSubmit from "@/components/ShadowRPA/AssistSubmit.vue"
 import AnalysisData from "@/components/ShadowRPA/AnalysisData.vue"
 import AnalysisUpgrade from "@/components/ShadowRPA/AnalysisUpgrade.vue"
 import AnalysisCountryData from "@/components/ShadowRPA/AnalysisCountryData.vue"
-import AnalysisThirdPartyProblem from "@/components/ShadowRPA/AnalysisThirdPartyProblem.vue"
+import AnalysisMonitorProblem from "@/components/ShadowRPA/AnalysisMonitorProblem.vue"
 
 export default {
-  components: { LeftMenu, AssistSubmit, AnalysisData, AnalysisUpgrade, AnalysisCountryData, AnalysisThirdPartyProblem },
+  components: { LeftMenu, AssistSubmit, AnalysisData, AnalysisUpgrade, AnalysisCountryData, AnalysisMonitorProblem },
 
   data() {
     return {
