@@ -43,6 +43,8 @@
 </template>
   
 <script>
+import { updateBarChartBasic } from '@/utils/echartBasic'
+
 import * as echarts from 'echarts'; // 引入 ECharts 库, 该项目安装的是5.4.3版本的echarts
 // 这个chinaMap.json是有完全版本的是从 https://datav.aliyun.com/portal/school/atlas/area_selector 进行获取的
 // 仿照从 https://www.cnblogs.com/CandyDChen/p/13889761.html 弄下来的格式进行优化 （因为它的数据可能是筛选的数据，边境线显示太过广泛，显示不完全，台湾周围的岛也没有）
@@ -142,125 +144,6 @@ export default {
             // 因为是使用v-for生成的元素，所以使用this.$nextTick来进行延迟，否则可能会出现还没渲染元素就init的情况
             this.$nextTick(() => { for (let i = 0; i < this.provinceSplitNum; i++) echarts.init(document.getElementById('saasProvinceAndFunctionChart' + (i + 1))) })
 
-        },
-
-        /**
-         * @param barChartData 整个图的数据数组
-         * @param barChartTitle 这张图的标题
-         * @param xAxisType x轴的坐标类型，有date，value，category等等
-         * @param xAxisLabelNewLine 因为有些时候，x轴的坐标分类太多，比如当有30个以上的category的时候，导致x轴的有些标签会缺失，这个输入如果为true,会将偶数的label换行形成更多空间展示
-         * @param chartElementId 对应的要更新的图表元素id
-         * @description 当查询之后，数据更新，根据新的数据更新柱状图的基础配置。
-         * 整个图的数据是一个大数组，里面包含的每个字典是：有属性seriesName, data。这里seriesName是该series的名字，data是该series的数据。
-         * data是一个数组，里面同样也是多个字典，每个字典代表着一个数据点，格式为 {‘x’: "xxx", "y": "xxx", "aaa":"aaa", "bbb":"bbb"}
-         * x和y的值是用于对应图的x和y轴的值，剩下的aaa，bbb等是其他可能多的需要添加的数据标签，但是再本基础配置方法中不做处理，只做x和y的对应。
-         * xAxis的type为传入的参数，有date，value，category等等，yAxis的type默认为value,因为y轴一般是数值。
-         */
-        updateBarChartBasic(barChartData, barChartTitle, xAxisType, xAxisLabelNewLine, chartElementId) {
-            // 拿到x轴的数据
-            let xAxisData = barChartData[0].seriesData.map(item => item.x)
-            // 将如果所有项都是0的x轴的值去掉
-            let removeList = []
-            xAxisData.forEach((item) => {
-                let count = 0
-                barChartData.forEach(({ seriesData }) => { count = (seriesData.find(ele => ele.x === item).y === 0) ? count + 1 : count })
-                if (count === barChartData.length) removeList.push(item)
-            })
-            xAxisData = xAxisData.filter(item => !removeList.includes(item))
-
-            let option = {
-                title: {
-                    top: '1%',
-                    left: '5%',
-                    text: barChartTitle,
-                    left: 'left'
-                },
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: {
-                        type: 'shadow'
-                    }
-                },
-                legend: {
-                    top: '8%',
-                },
-                grid: {
-                    left: '3%',
-                    right: '3%',
-                    top: '23%',
-                    bottom: '15%',
-                    containLabel: true
-                },
-                xAxis: [
-                    {
-                        type: xAxisType,
-                        axisLabel: { interval: 0 },
-                        data: xAxisData
-                    }
-                ],
-                yAxis: [
-                    {
-                        type: 'value'
-                    }
-                ],
-                series: []
-            };
-
-            // 根据数据对图标添加series
-            this.normalBarChartAddingSeries(barChartData, option)
-
-            // 看看是否要给x轴数据添加换行
-            xAxisData = (xAxisLabelNewLine) ? xAxisData.map((item, index) => (index % 2 === 0) ? item : '\n' + item) : xAxisData
-            option.xAxis[0].data = xAxisData
-
-            let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
-            if (chart) {
-                chart.setOption(option, true)
-            }
-
-            console.log("updated " + chartElementId + " echart : ", chart)
-        },
-
-        /**
-         * 将柱状图的数组信息循环添加进入柱状图的series中
-         * @param {barChartData} barChartData 后端返回的包含柱状图所有信息的一个数组
-         * @param {option} option 柱状图的option
-         */
-        normalBarChartAddingSeries(barChartData, option) {
-            // 指定了柱子的15种颜色，因为不设置的话echarts默认超过9个颜色会开始循环，所以扩大一点，变成15个颜色开始循环
-            let colors = ["#5470C6", "#91CC75", "#FAC858", "#EE6666", "#73C0DE", "#3BA272", "#fc8452", "#a26dba", "#ea7ccc", "#ffe630", "#00A0AF", "#DB643E", "#EA8D89", "#F4B2E5", "#F03A6A"]
-            for (let i = 0; i < barChartData.length; i++) {
-                let series_1 = {
-                    name: barChartData[i].seriesName,
-                    type: 'bar',
-                    barMaxWidth: 30,
-                    emphasis: {
-                        focus: 'series'
-                    },
-                    // data: barChartData[i].seriesData.map(item=>item.y),
-                    data: barChartData[i].seriesData.filter((item) => option.xAxis[0].data.includes(item.x)).map(item => item.y),
-                    itemStyle: {
-                        color: colors[i % colors.length]
-                    },
-                    label: {
-                        // 设置柱形图的数值
-                        show: true,
-                        position: 'top',
-                        align: 'center',
-                        // formatter: function (params){
-                        //   return (params.value===0)?"":params.value+"次"
-                        // },
-                        formatter: '{c|{c}}次',
-                        rich: {
-                            c: {
-                                // color: '#4C5058',
-                                fontSize: 10,
-                            },
-                        }
-                    },
-                }
-                option.series.push(series_1)
-            }
         },
 
         /**
@@ -378,7 +261,6 @@ export default {
                 }
             }
             
-
             this.searchSaaSCountryData(searchValue)
             this.searchSaaSFunctionByProvince(searchValue)
             this.searchSaaSProblemByProvinceAgency(searchValue)
@@ -449,7 +331,7 @@ export default {
                 // 将yMax的值取出去除，不让他进入updateBarChartBasic()中，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
                 let yMax = this.saasProvinceBarChartData.pop().yMax
 
-                this.updateBarChartBasic(this.saasProvinceBarChartData, 'SaaS省份三线受理统计', "category", true, 'saasProvinceAndFunctionChart')
+                updateBarChartBasic(document, this.saasProvinceBarChartData, 'SaaS省份三线受理统计', "category", true, 'saasProvinceAndFunctionChart')
                 console.log('update local province bar chart data: ', this.saasProvinceBarChartData)
 
                 let interval = this.saasProvinceBarChartData[0]["seriesData"].length / this.provinceSplitNum
@@ -458,7 +340,7 @@ export default {
                     let splitData = []
                     this.saasProvinceBarChartData.forEach((item) => { splitData.push({ seriesName: item.seriesName, seriesData: item.seriesData.slice(i * interval, (i + 1) * interval) }) })
                     // 将数据注入柱状图内，i+1是因为元素在使用v-for生成的时候，v-for的i是从1开始，这里是0开始，所以使用i+1来获取相同的id
-                    this.updateBarChartBasic(splitData, 'SaaS省份三线受理统计(子集' + (i + 1) + ')', "category", false, 'saasProvinceAndFunctionChart' + (i + 1))
+                    updateBarChartBasic(document, splitData, 'SaaS省份三线受理统计(子集' + (i + 1) + ')', "category", false, 'saasProvinceAndFunctionChart' + (i + 1))
                     let chart = echarts.getInstanceByDom(document.getElementById('saasProvinceAndFunctionChart' + (i + 1)))
                     chart.setOption({
                         yAxis: {
@@ -488,7 +370,6 @@ export default {
                     searchValue['endData']
                 )
                 this.saasProvinceAndAgencyChartData = response.data.data
-                // this.updateBarChartBasic(this.saasProvinceAndAgencyChartData, 'SaaS全国各省受理统计', "category", true, 'saasProvinceAndAgencyChart')
                 this.updateSaaSProvinceAndAgencyBarChart(this.saasProvinceAndAgencyChartData, 'SaaS全国各省受理统计', "category", true, 'saasProvinceAndAgencyChart')
                 console.log('update local province and angency bar chart data: ', this.saasProvinceAndAgencyChartData)
 

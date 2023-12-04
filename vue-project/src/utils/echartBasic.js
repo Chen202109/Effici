@@ -5,6 +5,7 @@ require("echarts/lib/component/tooltip");
 require("echarts/lib/component/title");
 
 /**
+ * @param currDocument 页面的document对象
  * @param barChartData 整个图的数据数组
  * @param barChartTitle 这张图的标题
  * @param xAxisType x轴的坐标类型，有date，value，category等等

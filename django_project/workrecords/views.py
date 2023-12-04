@@ -239,7 +239,8 @@ def analysis_saas_problem_type_in_versions(request):
 
 # ----------------------------------------------------------- AnalysisData.vue 的请求 ----------------------------------------------------
 
-# ----------------------------------------------------------- AnalysisUpgrade_version.vue 的请求 --------------------------------------------
+
+# ----------------------------------------------------------- AnalysisUpgradeTrend.vue 的请求 --------------------------------------------
 
 def analysis_service_upgrade_trend(request):
     data = []
@@ -423,105 +424,6 @@ def analysis_version_upgrade_trend(request):
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 
-def analysis_saas_function_by_province(request):
-    """
-    分析省份受理的功能的问题数量的对比。
-    """
-    data = []
-
-    if request.method == 'GET':
-        begin_date = request.GET.get('beginData', default='2023-01-01')
-        end_date = request.GET.get('endData', default='2023-12-31')
-        function_name = request.GET.get('function_name').split(',')
-
-        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
-        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
-
-        db =mysql_base.Db()
-
-        sql = f'SELECT DISTINCT region as x  from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" '
-        region_list = db.select_offset(1, 2000, sql)
-        saas_province_data = [{'x':d["x"], 'y':0} for d in region_list if "x" in d]
-
-        # 对每个功能进行查找
-        for i in range(len(function_name)):
-            sql = f' SELECT * from workrecords_2023 '\
-                  f' WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" '\
-                  f' AND errorfunction = "{function_name[i]}" '
-            saas_function_data = db.select_offset(1, 2000, sql)
-            saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
-            data.append({'seriesName': function_name[i], 'seriesData': saas_province_data})
-        
-        # 对省份按受理数量进行排序
-        sorted_region = []
-        y_max = 0
-        xAxis = region_list
-
-        # 统计省份对应的几个功能加起来的受理数量
-        for item in xAxis:
-            y_sum = 0
-            for function_data in data:
-                y = next(filter(lambda x: x['x'] == item['x'], function_data['seriesData']))['y']
-                y_sum += y
-                y_max = y if y > y_max else y_max
-            sorted_region.append({'x': item['x'], 'y': y_sum})
-        
-        # 排序并取出省份的list
-        sorted_region.sort(key=lambda x: x['y'], reverse=True)
-        sorted_region_x = [item['x'] for item in sorted_region]
-
-        # 根据排序好的省份，重新将数据根据顺序装填如每一个function的seriesData中
-        for i in range(len(function_name)):
-            data[i]['seriesData'] = [next(filter(lambda x: x['x'] == region, data[i]['seriesData'])) for region in sorted_region_x]
-
-        # 加上yMax的值，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
-        data.append({"yMax": y_max})
-    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
-
-
-def analysis_saas_problem_by_province_agency(request):
-    """
-    分析省份受理的问题数量的对比。
-    """
-    data = []
-
-    if request.method == 'GET':
-        begin_date = request.GET.get('beginData', default='2023-01-01')
-        end_date = request.GET.get('endData', default='2023-12-31')
-
-        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
-        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
-
-        db =mysql_base.Db()
-
-        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
-        sql = f' SELECT distinct region as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by region '
-        saas_province_problem_data = db.select_offset(1, 2000, sql)
-        data.append({'seriesName': "问题受理数量", 'seriesData': saas_province_problem_data})
-
-        # 查询这段时间内的线上重大故障，将他们count一遍然后生成和上面一样的格式append到data中
-        sql = f' SELECT distinct region as x, count(*) as y from majorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by region '
-        saas_large_problem_data = db.select_offset(1, 2000, sql)
-        # 生成一个顺序与saas_province_problem_data一致的数组,如果重大故障查询的没有那个省份，则那个省份的y值为0，目的是为了两条series数据里面相同位置的字典对应的x值一致，那样抽取的y的值才一致。
-        saas_province_large_problem_data_inorder = [{'x': prov['x'], 'y': next((value['y'] for value in saas_large_problem_data if value['x'] == prov['x']), 0)} for prov in saas_province_problem_data]
-        data.append({'seriesName': "私有化重大故障数量", 'seriesData': saas_province_large_problem_data_inorder})
-
-        import pandas as pd
-        # 对上线单位数量统计进行读取
-        dataframe = pd.read_csv('./workrecords/existedAgencyAccountByProvince.csv',sep=',').rename(columns={'省份':'x','数量':'y'}).to_dict(orient="records")
-        # 生成一个顺序与saas_province_problem_data一致的数组，目的是为了两条series数据里面相同位置的字典对应的x值一致，那样抽取的y的值才一致。
-        # 新数组的x值通过saas_province_problem_data获取，y的值通过dataFrame读取的上线单位的数量进行填入。
-        # 如果是这一行报错StopIteration，基本上就是登记的时候省份没有登记对，比如内蒙古写成内蒙，需要去数据库进行调整让省份和workrecords/existedAgencyAccountByProvince.csv的省份名称一致
-        print()
-        print(saas_province_problem_data)
-        print(dataframe)
-        print()
-        saas_province_agency_account_data = [{**prov, 'y': next(filter(lambda ag: ag['x'] == prov['x'], dataframe))['y']} for prov in saas_province_problem_data]
-        data.append({'seriesName': "上线单位数量", 'seriesData': saas_province_agency_account_data})
-            
-    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
-
-
 def analysis_saas_problem_by_month(request):
     """
     分析某一年月份受理的问题数量的对比。
@@ -572,7 +474,7 @@ def analysis_saas_large_problem_by_function(request):
             
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
-# ----------------------------------------------------------- AnalysisUpgrade_version.vue 的请求 --------------------------------------------
+# ----------------------------------------------------------- AnalysisUpgradeTrend.vue 的请求 --------------------------------------------
 
 
 # ----------------------------------------------------------- AnalysisThirdPartyProblem.vue 的请求 --------------------------------------------
@@ -703,6 +605,7 @@ def analysis_saas_added_service_province_list(request):
  
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
+
 def analysis_saas_added_service_by_function_and_province(request):
     """
     分析增值服务订购的的服务类别和省份的对比
@@ -750,6 +653,7 @@ def analysis_saas_added_service_by_province(request):
 
             
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
 
 def analysis_saas_added_service_by_function(request):
     """
@@ -817,8 +721,139 @@ def analysis_saas_problem_by_country(request):
             
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
+
+def analysis_saas_function_by_province(request):
+    """
+    分析省份受理的功能的问题数量的对比。
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+        function_name = request.GET.get('function_name').split(',')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        sql = f'SELECT DISTINCT region as x  from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" '
+        region_list = db.select_offset(1, 2000, sql)
+        saas_province_data = [{'x':d["x"], 'y':0} for d in region_list if "x" in d]
+
+        # 对每个功能进行查找
+        for i in range(len(function_name)):
+            sql = f' SELECT * from workrecords_2023 '\
+                  f' WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" '\
+                  f' AND errorfunction = "{function_name[i]}" '
+            saas_function_data = db.select_offset(1, 2000, sql)
+            saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
+            data.append({'seriesName': function_name[i], 'seriesData': saas_province_data})
+        
+        # 对省份按受理数量进行排序
+        sorted_region = []
+        y_max = 0
+        xAxis = region_list
+
+        # 统计省份对应的几个功能加起来的受理数量
+        for item in xAxis:
+            y_sum = 0
+            for function_data in data:
+                y = next(filter(lambda x: x['x'] == item['x'], function_data['seriesData']))['y']
+                y_sum += y
+                y_max = y if y > y_max else y_max
+            sorted_region.append({'x': item['x'], 'y': y_sum})
+        
+        # 排序并取出省份的list
+        sorted_region.sort(key=lambda x: x['y'], reverse=True)
+        sorted_region_x = [item['x'] for item in sorted_region]
+
+        # 根据排序好的省份，重新将数据根据顺序装填如每一个function的seriesData中
+        for i in range(len(function_name)):
+            data[i]['seriesData'] = [next(filter(lambda x: x['x'] == region, data[i]['seriesData'])) for region in sorted_region_x]
+
+        # 加上yMax的值，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
+        data.append({"yMax": y_max})
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+
+def analysis_saas_problem_by_province_agency(request):
+    """
+    分析省份受理的问题数量的对比。
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
+        sql = f' SELECT distinct region as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by region '
+        saas_province_problem_data = db.select_offset(1, 2000, sql)
+        data.append({'seriesName': "问题受理数量", 'seriesData': saas_province_problem_data})
+
+        # 查询这段时间内的线上重大故障，将他们count一遍然后生成和上面一样的格式append到data中
+        sql = f' SELECT distinct region as x, count(*) as y from majorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by region '
+        saas_large_problem_data = db.select_offset(1, 2000, sql)
+        # 生成一个顺序与saas_province_problem_data一致的数组,如果重大故障查询的没有那个省份，则那个省份的y值为0，目的是为了两条series数据里面相同位置的字典对应的x值一致，那样抽取的y的值才一致。
+        saas_province_large_problem_data_inorder = [{'x': prov['x'], 'y': next((value['y'] for value in saas_large_problem_data if value['x'] == prov['x']), 0)} for prov in saas_province_problem_data]
+        data.append({'seriesName': "私有化重大故障数量", 'seriesData': saas_province_large_problem_data_inorder})
+
+        import pandas as pd
+        # 对上线单位数量统计进行读取
+        dataframe = pd.read_csv('./workrecords/existedAgencyAccountByProvince.csv',sep=',').rename(columns={'省份':'x','数量':'y'}).to_dict(orient="records")
+        # 生成一个顺序与saas_province_problem_data一致的数组，目的是为了两条series数据里面相同位置的字典对应的x值一致，那样抽取的y的值才一致。
+        # 新数组的x值通过saas_province_problem_data获取，y的值通过dataFrame读取的上线单位的数量进行填入。
+        # 如果是这一行报错StopIteration，基本上就是登记的时候省份没有登记对，比如内蒙古写成内蒙，需要去数据库进行调整让省份和workrecords/existedAgencyAccountByProvince.csv的省份名称一致
+        print()
+        print(saas_province_problem_data)
+        print(dataframe)
+        print()
+        saas_province_agency_account_data = [{**prov, 'y': next(filter(lambda ag: ag['x'] == prov['x'], dataframe))['y']} for prov in saas_province_problem_data]
+        data.append({'seriesName': "上线单位数量", 'seriesData': saas_province_agency_account_data})
+            
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
 # ----------------------------------------------------------- AnalysisCountryData.vue 的请求 --------------------------------------------
 
+
+# ----------------------------------------------------------- AnalysisPrivatizationLicense.vue 的请求 --------------------------------------------
+
+def analysis_saas_privatization_license_register_province(request):
+    """
+    分析私有化license开通数量的省份的数据
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+
+        db =mysql_base.Db()
+        sql = f'select DISTINCT region,COUNT(DISTINCT agenname) as count from license_2023 where authorizeddate>="{begin_date}" and authorizeddate<="{end_date}" GROUP BY region'
+        license_register_province_data = db.select_offset(1, 1000, sql)
+        # 这个是查询后返回的数据，类似 [{'region': '上海', 'count': 2}, {'region': '北京', 'count': 1}]
+        # 将上面的转成下面这种，这样前端才能挂到license_data里面
+        # [{'上海': 2, '北京':3, '广东':3}]  
+        # 生成要转化成的数据类型并进行倒序排序
+        license_data = [{k: v} for k, v in sorted({d["region"] : d["count"] for d in license_register_province_data}.items(), key=lambda item:item[1], reverse=True)]
+        # 因为加入头部的表头和合计的表尾
+        license_data.insert(0, {"省份": "单位申请数"})
+        license_data.append({"合计": sum(item["count"] for item in license_register_province_data)})
+
+        data.append({'seriesName': "v4 license受理数据统计", 'seriesData': license_data})
+
+            
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+
+# ----------------------------------------------------------- AnalysisPrivatizationLicense.vue 的请求 --------------------------------------------
 
 if __name__ == '__main__':
     pass

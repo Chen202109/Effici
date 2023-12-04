@@ -26,12 +26,13 @@
 import LeftMenu from "@/components/ShadowRPA/LeftMenu.vue"
 import AssistSubmit from "@/components/ShadowRPA/AssistSubmit.vue"
 import AnalysisData from "@/components/ShadowRPA/AnalysisData.vue"
-import AnalysisUpgrade from "@/components/ShadowRPA/AnalysisUpgrade.vue"
+import AnalysisUpgradeTrend from "@/components/ShadowRPA/AnalysisUpgradeTrend.vue"
 import AnalysisCountryData from "@/components/ShadowRPA/AnalysisCountryData.vue"
 import AnalysisMonitorProblem from "@/components/ShadowRPA/AnalysisMonitorProblem.vue"
+import AnalysisPrivatizationLicense from "@/components/ShadowRPA/AnalysisPrivatizationLicense.vue"
 
 export default {
-  components: { LeftMenu, AssistSubmit, AnalysisData, AnalysisUpgrade, AnalysisCountryData, AnalysisMonitorProblem },
+  components: { LeftMenu, AssistSubmit, AnalysisData, AnalysisUpgradeTrend, AnalysisCountryData, AnalysisMonitorProblem, AnalysisPrivatizationLicense },
 
   data() {
     return {

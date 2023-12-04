@@ -56,14 +56,6 @@
 
     <div style="height: 20px;"></div>
 
-    <p class="saasAnalysisTitle"> saas_v4 license受理数据统计</p>
-    <!-- 放入license的数据组件 -->
-    <div style="margin: 15px 0">
-      <license :licenseData="analysisData['licenseData']"></license>
-    </div>
-
-    <div style="height: 20px;"></div>
-
     <!-- 放入upgrade 资源池升级数据组件 -->
     <div style="margin: 5px 20px 5px 0;">
       <div>
@@ -101,7 +93,6 @@
 
 <script>
 import saasProblemTable from '@/components/ShadowRPA/AnalysisData_saasProblemTable.vue'
-import license from '@/components/ShadowRPA/AnalysisData_license.vue'
 import html2pdf from 'html2pdf.js'
 
 
@@ -119,7 +110,6 @@ require('echarts/lib/component/title')
 export default {
   name: 'AnalysisData',
   components: {
-    license,
     saasProblemTable
   },
   data() {
@@ -143,12 +133,7 @@ export default {
         { prop: 'softbug', label: '缺陷合计' },
       ],
       //查询日期
-      dateRange: [
-        new Date(
-          new Date().getFullYear() + '-' + (new Date().getMonth() + 1) + '-01'
-        ),
-        new Date(),
-      ],
+      dateRange: [new Date(new Date().getFullYear() + '-' + (new Date().getMonth() + 1) + '-01'),new Date()],
       // 出错功能的key的对照，因为后台返回的数据的key是缩写，所以需要一个对照
       problemDict : {
         "softversion": "版本号",
@@ -201,8 +186,6 @@ export default {
         ],
         // upgradeData 升级计划表格的数据
         upgradeData: [],
-        // licenseData license表格的数据
-        licenseData: [], 
       },
 
     }
@@ -710,7 +693,6 @@ export default {
   display: block
 }
  
-/* 通过设置div class对应的float方向，可以让两个div在同一行 */
 .saasAnalysisTitle {
   color: #3398DB;
   font-size: 18;
