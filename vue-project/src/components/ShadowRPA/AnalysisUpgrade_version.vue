@@ -16,6 +16,7 @@
           <el-button type="primary" @click="search">查询</el-button>
         </div>
 
+        <!-- 功能分类 -->
         <div>
           <div style="margin-bottom: 10px;">
             <span class="demonstration">业务分类： </span>
@@ -40,18 +41,6 @@
     <div class="saasVersionTrendByResourcePoolChart" id="saasVersionTrendByResourcePoolChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
     </div>
     <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
-    </div>
-    <div class="saasProvinceAndFunctionChart" id="saasProvinceAndFunctionChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
-    </div>
-    <div class="saasProvinceAndFunctionChartSplit" id="saasProvinceAndFunctionChartSplit">
-      <!-- 因为省份和功能会产生太多柱子，所以对省份进行一个切割，分成多张图来展现，注意，v-for这边生成的i是从1开始，所以id的末尾是1不是0 -->
-      <div v-for="i in provinceSplitNum" 
-         :class="'saasProvinceAndFunctionChart' + i" 
-         :id="'saasProvinceAndFunctionChart' + i"
-         :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
-      </div>
-    </div>
-    <div class="saasProvinceAndAgencyChart" id="saasProvinceAndAgencyChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
     </div>
     <div class="saasProblemMonthChart" id="saasProblemMonthChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
     </div>
@@ -121,8 +110,6 @@ export default {
         ),
         new Date(),
       ],
-      // 将省份和出错功能对比的柱形图分割成几个子图
-      provinceSplitNum : 2,
       // 重大故障的表的数据
       saasLargeProblemTopTableTitle: [
         {'prop': "name", "label": "问题分类"},
@@ -203,12 +190,8 @@ export default {
       echarts.init(document.getElementById('saasUpgradeTrendChart'))
       echarts.init(document.getElementById('saasVersionTrendByResourcePoolChart'))
       echarts.init(document.getElementById('saasVersionTrendChart'))
-      echarts.init(document.getElementById('saasProvinceAndFunctionChart'))
-      echarts.init(document.getElementById('saasProvinceAndAgencyChart'))
       echarts.init(document.getElementById('saasProblemMonthChart'))
       echarts.init(document.getElementById('saasLargeProblemTypeChart'))
-      // 因为是使用v-for生成的元素，所以使用this.$nextTick来进行延迟，否则可能会出现还没渲染元素就init的情况
-      this.$nextTick(() => {for (let i = 0; i < this.provinceSplitNum; i++) echarts.init(document.getElementById('saasProvinceAndFunctionChart'+(i+1)))})
     },
 
     /**
@@ -457,102 +440,6 @@ export default {
     },
 
     /**
-     * 当查询之后，数据更新，更新省份受理与单位数量对比的省份数据柱状图和单位数量的折线数据更新
-     */
-    updateSaaSProvinceAndAgencyBarChart(barChartData, barChartTitle, xAxisType, xAxisLabelNewLine, chartElementId){
-      let xAxisData = this.saasProvinceAndAgencyChartData[0].seriesData.map(item => item.x)
-      let colors = ["#5470C6", "#FAC858", "#EE6666"];
-      let option = {
-        color: colors,
-        title: {
-          top: '1%',
-          left: '5%',
-          text: barChartTitle,
-          left: 'left'
-        },
-        tooltip: {
-          trigger: 'axis',
-          axisPointer: {
-            type: 'shadow'
-          }
-        },
-        legend: {
-          top: '8%',
-        },
-        grid: {
-          left: '3%',
-          right: '3%',
-          top: '23%',
-          bottom: '15%',
-          containLabel: true
-        },
-        xAxis: [
-          {
-            type: xAxisType,
-            axisLabel: { interval: 0 },
-            data: xAxisData
-          }
-        ],
-        yAxis: [
-            {
-              type: 'value',
-              name: '受理数量',
-              alignTicks: true,
-              position: 'left',
-              axisLine: {
-                show: true,
-                lineStyle: {
-                  color: colors[0]
-                }
-              },
-            },
-            {
-              type: 'value',
-              name: '单位数量',
-              position: 'right',
-              alignTicks: true,
-              axisLine: {
-                show: true,
-                lineStyle: {
-                  color: colors[2]
-                }
-              },
-            }
-        ],
-        series: [
-            {
-              name: barChartData[0].seriesName,
-              type: 'bar',
-              // 这里可以直接map把y的值取出来，因为这里就一组series，y为0的x过滤就不会存在，xAxis还是原来的不会有x的值被去除，使用这里并不需要让y再去对应xAxis的进行过滤
-              data: barChartData[0].seriesData.map(item=>item.y),
-            },
-            {
-              name: barChartData[1].seriesName,
-              type: 'bar',
-              yAxisIndex: 0,
-              data: barChartData[1].seriesData.map(item=>item.y),
-            },
-            {
-              name: barChartData[2].seriesName,
-              type: 'line',
-              yAxisIndex: 1,
-              data: barChartData[2].seriesData.map(item=>item.y),
-            }
-        ]
-      }
-
-      // 看看是否要给x轴数据添加换行
-      xAxisData = (xAxisLabelNewLine) ? xAxisData.map((item, index) => (index % 2 === 0) ? item : '\n' + item) : xAxisData
-      option.xAxis[0].data = xAxisData
-
-      let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
-      // 现在是添加属性，所以不用replace设成true，直接setOption就行
-      chart&&chart.setOption(option, true)
-
-      console.log("updated saasProvinceAndAgencyChart echart: ", chart)
-    },
-
-    /**
      * 当查询之后，数据更新，更新重大事故数量和出错功能的饼状图的数据
      */
     updateSaaSLargeProblemTypeChart(chartData, chartTitle, chartElementId){
@@ -656,8 +543,6 @@ export default {
       this.searchSaaSServiceUpgradeTrend(searchValue)
       this.searchSaaSVersionUpgradeTrendByResoucePool(searchValue)
       this.searchSaaSVersionUpgradeTrend(searchValue)
-      this.searchSaaSFunctionByProvince(searchValue)
-      this.searchSaaSProblemByProvinceAgency(searchValue)
       this.searchSaaSProblemByMonth(searchValue)
       this.searchSaaSLargeProblemByType(searchValue)
     },
@@ -734,74 +619,6 @@ export default {
         this.saasVersionBarChartData = response.data.data
         this.updateBarChartBasic(this.saasVersionBarChartData, 'SaaS全版本受理趋势', "category", false, 'saasVersionTrendChart')
         console.log('update local version linechart data: ', this.saasVersionBarChartData)
-
-      } catch (error) {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
-      }
-    },
-
-    /**
-     * @param {searchValue} searchValue 搜索参数的字典
-     * @description 对省份受理数量柱状图的后端数据请求
-     */
-    async searchSaaSFunctionByProvince(searchValue) {
-      try {
-        const response = await this.$http.get(
-          '/api/CMC/workrecords/analysis_saas_function_by_province?beginData=' +
-          searchValue['beginData'] +
-          '&endData=' +
-          searchValue['endData'] +
-          '&function_name=' +
-          searchValue['function_name']
-        )
-        this.saasProvinceBarChartData = response.data.data
-        // 将yMax的值取出去除，不让他进入updateBarChartBasic()中，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
-        let yMax = this.saasProvinceBarChartData.pop().yMax
-
-        this.updateBarChartBasic(this.saasProvinceBarChartData, 'SaaS省份三线受理统计', "category", true, 'saasProvinceAndFunctionChart')
-        console.log('update local province bar chart data: ', this.saasProvinceBarChartData)
-        
-        let interval = this.saasProvinceBarChartData[0]["seriesData"].length/this.provinceSplitNum
-        // 要分成几张图的数据，进行遍历循环，给柱状图添加数据。
-        for (let i = 0; i < this.provinceSplitNum; i++){
-          let splitData = []
-          this.saasProvinceBarChartData.forEach((item)=> {splitData.push({seriesName: item.seriesName, seriesData: item.seriesData.slice(i*interval,(i+1)*interval)})})
-          // 将数据注入柱状图内，i+1是因为元素在使用v-for生成的时候，v-for的i是从1开始，这里是0开始，所以使用i+1来获取相同的id
-          this.updateBarChartBasic(splitData, 'SaaS省份三线受理统计(子集'+(i+1)+')', "category", false, 'saasProvinceAndFunctionChart'+(i+1))
-          let chart = echarts.getInstanceByDom(document.getElementById('saasProvinceAndFunctionChart'+(i+1)))
-          chart.setOption({
-            yAxis : {
-              type : "value",
-              max: Math.ceil( yMax/10 ) *10
-            }
-          })
-        }
-        
-      } catch (error) {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
-      }
-    },
-
-    /**
-     * @param {searchValue} searchValue 搜索参数的字典
-     * @description 对省份受理数量和单位开通数量对比柱状图的后端数据请求
-     */
-    async searchSaaSProblemByProvinceAgency(searchValue) {
-      try {
-        const response = await this.$http.get(
-          '/api/CMC/workrecords/analysis_saas_problem_by_province_agency?beginData=' +
-          searchValue['beginData'] +
-          '&endData=' +
-          searchValue['endData']
-        )
-        this.saasProvinceAndAgencyChartData = response.data.data
-        // this.updateBarChartBasic(this.saasProvinceAndAgencyChartData, 'SaaS全国各省受理统计', "category", true, 'saasProvinceAndAgencyChart')
-        this.updateSaaSProvinceAndAgencyBarChart(this.saasProvinceAndAgencyChartData, 'SaaS全国各省受理统计', "category", true, 'saasProvinceAndAgencyChart')
-        console.log('update local province and angency bar chart data: ', this.saasProvinceAndAgencyChartData)
 
       } catch (error) {
         console.log(error)

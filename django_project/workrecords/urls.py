@@ -18,6 +18,8 @@ urlpatterns = [
     path('analysis_saas_monitor_problem_by_function_and_province',views.analysis_saas_monitor_problem_by_function_and_province),
     path('analysis_saas_monitor_problem_by_province',views.analysis_saas_monitor_problem_by_province),
     path('analysis_saas_minitor_problem_by_function',views.analysis_saas_minitor_problem_by_function),
+    path('analysis_saas_added_service_province_list',views.analysis_saas_added_service_province_list),
+    path('analysis_saas_added_service_by_function_and_province',views.analysis_saas_added_service_by_function_and_province),
     path('analysis_saas_added_service_by_province',views.analysis_saas_added_service_by_province),
     path('analysis_saas_added_service_by_function',views.analysis_saas_added_service_by_function),
     path('analysis_saas_problem_by_country',views.analysis_saas_problem_by_country),

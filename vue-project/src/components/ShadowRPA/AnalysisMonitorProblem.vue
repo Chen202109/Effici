@@ -114,9 +114,9 @@ export default {
          * 用于使用echarts进行图标的基础绘制init
          */
         drawLine() {
+            echarts.init(document.getElementById('saasMonitorProblemTypeProvinceChart'))
             echarts.init(document.getElementById('saasMonitorProblemProvinceChart'))
             echarts.init(document.getElementById('saasMonitorProblemTypeChart'))
-            echarts.init(document.getElementById('saasMonitorProblemTypeProvinceChart'))
         },
 
         /**
@@ -335,6 +335,7 @@ export default {
                     searchValue['endData'] = endData
                 }
             } //结束for，完成日期的拼接
+            
             this.saasMonitorProblemTypeProvince(searchValue)
             this.saasMonitorProblemProvince(searchValue)
             this.searchSaaSMonitorProblemByType(searchValue)

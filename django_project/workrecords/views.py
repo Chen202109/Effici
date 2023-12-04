@@ -681,6 +681,53 @@ def analysis_saas_minitor_problem_by_function(request):
 
 # ----------------------------------------------------------- AnalysisAddedServiceData.vue 的请求 --------------------------------------------
 
+def analysis_saas_added_service_province_list(request):
+    """
+    获取增值服务这边的省份
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
+        sql = f' SELECT distinct region from orderprodct_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
+        saas_added_service_province_list = db.select_offset(1, 2000, sql)
+        data.append({'seriesName': "增值服务订购省份", 'seriesData': saas_added_service_province_list})
+ 
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+def analysis_saas_added_service_by_function_and_province(request):
+    """
+    分析增值服务订购的的服务类别和省份的对比
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+        province = request.GET.get('provinceSelected', default='')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+
+        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
+        sql = f' SELECT distinct ordername as x, count(*) as y from orderprodct_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" and region = "{province}" group by ordername '
+        saas_added_service_function_problem_by_province_data = db.select_offset(1, 2000, sql)
+        data.append({'seriesName': province+"增值服务类别", 'seriesData': saas_added_service_function_problem_by_province_data})
+
+            
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+
 def analysis_saas_added_service_by_province(request):
     """
     分析增值服务开通的省份对比。
