@@ -39,7 +39,7 @@ export default new Router({
           component: ShadowRPA,
           children: [
             { path: '/AssistSubmit', component: AssistSubmit, meta: {keepAlive: true, comp: AssistSubmit, name: 'AssistSubmit', title:"受理明细"}},
-            { path: '/AnalysisData', component: AnalysisData, meta: {keepAlive: true, comp: AnalysisData, name: 'AnalysisData', title:"数据汇报"}},
+            { path: '/AnalysisData', component: AnalysisData, meta: {keepAlive: true, comp: AnalysisData, name: 'AnalysisData', title:"工单受理数据分析"}},
             { path: '/AnalysisUpgrade', component: AnalysisUpgrade, meta: {keepAlive: true, comp: AnalysisUpgrade, name: 'AnalysisUpgrade', title:"升级汇报"}},
             { path: '/AnalysisCountryData', component: AnalysisCountryData, meta: {keepAlive: true, comp: AnalysisCountryData, name: 'AnalysisCountryData', title:"全国数据统计"}},
             { path: '/AnalysisMonitorProblem', component: AnalysisMonitorProblem, meta: {keepAlive: true, comp: AnalysisMonitorProblem, name: 'AnalysisMonitorProblem', title:"生产监控异常统计"}},

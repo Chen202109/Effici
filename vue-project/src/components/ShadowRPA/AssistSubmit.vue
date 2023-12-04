@@ -27,37 +27,34 @@ export default {
     }
   },
     methods: {
-    onSearch(filter) {
-      // 根据筛选条件筛选数据并渲染表格
-      // ...
-      console.log('父组件接到了数据',filter)
-      console.log('打印出父组件接收到的起始日期',filter['beginData'])
-      this.$http.get("/api/CMC/workrecords/select?beginData="+filter['beginData']+"&endData="+filter['endData']+"&problem="+filter['problem']+"&errortype="+filter['errortype']).then((response) => {
-        //this.templates= response.data.data;
-        console.log(response.data.data);
-        this.tableData = response.data.data;
-        //成功的消息提示
-        this.$message({
-          message: filter['beginData']+' 到 '+filter['endData']+' 查询成功',
-          type: 'success'
+      onSearch(filter) {
+        // 根据筛选条件筛选数据并渲染表格
+        console.log('父组件接到了数据',filter)
+        console.log('打印出父组件接收到的起始日期',filter['beginData'])
+        this.$http.get(
+          '/api/CMC/workrecords/work_record_detail_search?searchFilter='+JSON.stringify(filter)
+        ).then((response) => {
+          console.log("work record detail search result: ", response.data.data);
+          this.tableData = response.data.data;
+          //成功的消息提示
+          this.$message({
+            message: filter['beginData']+' 到 '+filter['endData']+' 查询成功',
+            type: 'success'
+          });
+        }).catch(function (error) {
+          console.log(error);
+          this.$message.error('错了哦，仔细看错误信息弹窗');
+          alert("失败" + error);
         });
-      })
-      .catch(function (error) {
-        console.log(error);
-        this.$message.error('错了哦，仔细看错误信息弹窗');
-        alert("失败" + error);
-      });
-      //this.tableData = filteredData
-    },
-    onSubmit(form) {
-      // 将表单数据保存到数据库
-      // ...
-      this.showForm = false
-      this.$message({
-        message: '添加成功',
-        type: 'success'
-      })
-    }
+      },
+      onSubmit(form) {
+        // 将表单数据保存到数据库
+        this.showForm = false
+        this.$message({
+          message: '添加成功',
+          type: 'success'
+        })
+      }
   }
 }
 </script>

@@ -68,7 +68,7 @@
     <div style="margin: 5px 20px 5px 0;">
       <div>
         <div class="dailyUpgradeTable">
-          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4日常升级统计</p>
+          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4日常升级次数统计</p>
           <el-table :data="this.saasUpgradeData[0]"
             :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
             :row-style="{ height: '35px' }" 
@@ -81,7 +81,7 @@
           </el-table>
         </div>
         <div class="addedUpgradeTable">
-          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4增值升级统计</p>
+          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4增值升级次数统计</p>
           <el-table :data="this.saasUpgradeData[1]"
             :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
             :row-style="{ height: '35px' }" 

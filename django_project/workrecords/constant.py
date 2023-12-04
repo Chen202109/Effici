@@ -2,6 +2,9 @@ china_province_list = ['北京','天津','上海','重庆','河北','山西','�
                        '四川', '宁夏', '黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','海南', '贵州', '青海', 
                        '台湾', '香港', '澳门']
 
+work_record_error_function_list = ["开票功能","核销功能","收缴业务","通知交互","报表功能","数据同步","票据管理","license重置","单位开通","增值服务","打印功能","安全漏洞","反算功能"]
+
+
 saas_service_function_map = {
     'saas-invoice-ebill-server' : '开票功能',
     'saas-billcollection-server': '报表功能',

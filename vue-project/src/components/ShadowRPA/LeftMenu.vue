@@ -12,7 +12,7 @@
             </template>
             <el-menu-item-group>
               <el-menu-item index="/AssistSubmit">受理明细</el-menu-item>
-              <el-menu-item index="/AnalysisData">数据汇报</el-menu-item>
+              <el-menu-item index="/AnalysisData">工单受理数据分析</el-menu-item>
               <el-menu-item index="/AnalysisUpgrade">升级汇报</el-menu-item>
               <el-menu-item index="/AnalysisMonitorProblem">生产监控异常统计</el-menu-item>
               <el-menu-item index="/AnalysisAddedServiceData">增值服务开通统计</el-menu-item>

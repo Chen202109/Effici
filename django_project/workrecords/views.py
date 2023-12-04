@@ -13,8 +13,8 @@ from mydata import mysql_base
 
 # ----------------------------------------------------------- AnalysisData.vue 的请求 ----------------------------------------------------
 
-def select(request):
-    # 如果请求为post 则进行查询
+def work_record_detail_search(request):
+    # 如果请求为get 则进行查询
     # 将接受到的数据放入selet_parme
     # select_prame = {
     #     'page': 1,  # 第几页
@@ -26,23 +26,26 @@ def select(request):
     # 判断请求类型
     if request.method == 'GET':
         # 获得GET请求后面的参数信息
-        beginData = request.GET.get('beginData',default='2023-07-01')
-        endData = request.GET.get('endData', default='2023-07-31')
-        problem = request.GET.get('problem', default='')
-        errortype = request.GET.get('errortype',default='')
+        search_filter = request.GET.get('searchFilter')
+        search_filter = json.loads(search_filter)
+        print(f'收到的参数为{search_filter}')
+        print(f'收到的起始：{search_filter["beginData"]} 和结尾 {search_filter["endData"]}')
 
-        print(f'收到的problem为{problem}')
-        if problem != "":
-            problem = f'and problem like "%{problem}%"'
+        realdate_begin = datetime.strptime(search_filter["beginData"], '%Y-%m-%d')
+        realdate_end = datetime.strptime(search_filter["endData"], '%Y-%m-%d') + timedelta(days=1)
+        
+        isSolvedSql = "" if search_filter["isSolved"] == "" else f'AND issolve = "{search_filter["isSolved"]}"'
+        errorFunctionSql = "" if search_filter["errorFunction"] == "" else f'AND errorfunction = "{search_filter["errorFunction"]}"'
+        errorTypeSql = "" if search_filter["errorType"] == "" else f'AND errortype = "{search_filter["errorType"]}"'
+        softVersionSql = "" if search_filter["softVersion"] == "" else f'AND softversion = "{search_filter["softVersion"]}"'
+        problemDescriptionSql = "" if search_filter["problemDescription"] == "" else f'AND problem LIKE "%{search_filter["problemDescription"]}%"'
 
-        if errortype != "":
-            errortype = f'and errortype = "{errortype}"'
-
-        # 分页查询
         db =mysql_base.Db()
-        sql = f'select * from workrecords_2023 where createtime>="{beginData}" and createtime<="{endData}" {problem} {errortype}order by createtime'
+        sql = f' SELECT * from workrecords_2023 ' \
+              f' WHERE createtime>="{realdate_begin}" and createtime<="{realdate_end}" '\
+              f' {isSolvedSql} {errorFunctionSql} {errorTypeSql} {softVersionSql} {problemDescriptionSql} '\
+              f' ORDER BY createtime'
         results = db.select_offset(1, 1000, sql)
-        # print(type(results), len(results),results)
 
     return JsonResponse({'data': results}, json_dumps_params={'ensure_ascii': False})
 
@@ -189,9 +192,6 @@ def analysis_saas_problem_type_in_versions(request):
         begin_date = request.GET.get('beginData', default='2023-01-01')
         end_date = request.GET.get('endData', default='2023-12-31')
 
-        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
-        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
-
         db =mysql_base.Db()
 
         for problem_type in problem_type_list:
@@ -221,11 +221,8 @@ def analysis_saas_problem_type_in_versions(request):
             # [{'异常数据处理': '报表功能', 'V3': 1, 'V4_3_1_2': 0, 'V4_3_1_3': 0, 'V4_3_2_0': 2, 'V4_3_2_1': 0}, 
             # {'异常数据处理': '开票功能', 'V3': 3, 'V4_3_1_2': 1, 'V4_3_1_3': 3, 'V4_3_2_0': 7, 'V4_3_2_1': 0},]
             saas_problem_type_and_function_data_in_version = []
-            # 对功能进行选取，因为select出来的里面有softversion，去掉
-            function_types = list(saas_problem_type_and_function_data[0].keys())
-            function_types.remove("softversion")
             # 对每个功能生成一条这样的数据{'异常数据处理': '报表功能', 'V3': 1, 'V4_3_1_2': 0, 'V4_3_1_3': 0, 'V4_3_2_0': 2, 'V4_3_2_1': 0}
-            for function_type in function_types:
+            for function_type in constant.work_record_error_function_list:
                 new_item = { problem_type : function_type }
                 total = 0 
                 for item in saas_problem_type_and_function_data:
@@ -234,11 +231,8 @@ def analysis_saas_problem_type_in_versions(request):
                     total += int(item[function_type])
                 new_item["合计"] = total
                 saas_problem_type_and_function_data_in_version.append(new_item)
-            
-            print()
-            print(saas_problem_type_and_function_data_in_version)
-            print()
-
+                
+                
             data.append({'problemType': problem_type, 'problemTypeData': saas_problem_type_and_function_data_in_version})
             
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
@@ -358,7 +352,7 @@ def analysis_version_problem_by_resource_pool(request):
         db =mysql_base.Db()
 
         # 先获取这段时间内的有哪些版本
-        sql = f'SELECT DISTINCT softversion from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" AND softversion != "V3"  ORDER BY softversion '
+        sql = f'SELECT DISTINCT softversion from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" AND softversion != "V3"  ORDER BY softversion '
         soft_version_list = db.select_offset(1, 2000, sql)
         saas_version_data = [{'x':d["softversion"], 'y':0} for d in soft_version_list if "softversion" in d]
 
@@ -415,7 +409,7 @@ def analysis_version_upgrade_trend(request):
 
         db =mysql_base.Db()
 
-        sql = f'SELECT DISTINCT softversion from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" ORDER BY softversion '
+        sql = f'SELECT DISTINCT softversion from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" ORDER BY softversion '
         soft_version_list = db.select_offset(1, 2000, sql)
         saas_version_data = [{'x':d["softversion"], 'y':0} for d in soft_version_list if "softversion" in d]
 
@@ -445,14 +439,14 @@ def analysis_saas_function_by_province(request):
 
         db =mysql_base.Db()
 
-        sql = f'SELECT DISTINCT region as x  from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
+        sql = f'SELECT DISTINCT region as x  from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" '
         region_list = db.select_offset(1, 2000, sql)
         saas_province_data = [{'x':d["x"], 'y':0} for d in region_list if "x" in d]
 
         # 对每个功能进行查找
         for i in range(len(function_name)):
             sql = f' SELECT * from workrecords_2023 '\
-                  f' WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '\
+                  f' WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" '\
                   f' AND errorfunction = "{function_name[i]}" '
             saas_function_data = db.select_offset(1, 2000, sql)
             saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
@@ -501,7 +495,7 @@ def analysis_saas_problem_by_province_agency(request):
         db =mysql_base.Db()
 
         # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
-        sql = f' SELECT distinct region as x, count(*) as y from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by region '
+        sql = f' SELECT distinct region as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by region '
         saas_province_problem_data = db.select_offset(1, 2000, sql)
         data.append({'seriesName': "问题受理数量", 'seriesData': saas_province_problem_data})
 
@@ -518,6 +512,10 @@ def analysis_saas_problem_by_province_agency(request):
         # 生成一个顺序与saas_province_problem_data一致的数组，目的是为了两条series数据里面相同位置的字典对应的x值一致，那样抽取的y的值才一致。
         # 新数组的x值通过saas_province_problem_data获取，y的值通过dataFrame读取的上线单位的数量进行填入。
         # 如果是这一行报错StopIteration，基本上就是登记的时候省份没有登记对，比如内蒙古写成内蒙，需要去数据库进行调整让省份和workrecords/existedAgencyAccountByProvince.csv的省份名称一致
+        print()
+        print(saas_province_problem_data)
+        print(dataframe)
+        print()
         saas_province_agency_account_data = [{**prov, 'y': next(filter(lambda ag: ag['x'] == prov['x'], dataframe))['y']} for prov in saas_province_problem_data]
         data.append({'seriesName': "上线单位数量", 'seriesData': saas_province_agency_account_data})
             
@@ -755,7 +753,7 @@ def analysis_saas_problem_by_country(request):
 
         db =mysql_base.Db()
         # 查询数据库的所有region并放入数组中
-        sql = f' SELECT distinct region as name, count(*) as value from workrecords_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by region '
+        sql = f' SELECT distinct region as name, count(*) as value from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by region '
         saas_province_problem_data = db.select_offset(1, 2000, sql)
         
         # 生成关于全国省份的数据
