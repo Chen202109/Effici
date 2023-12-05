@@ -15,7 +15,6 @@
           <el-tab-pane v-for="item in tabsItem" :key="item.name" :label="item.title" :name="item.name" :closable="item.closable" :ref="item.ref">
             <component :is="item.content"></component>
           </el-tab-pane>
-
         </el-tabs>
       </el-main>
     </el-container>

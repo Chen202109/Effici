@@ -7,6 +7,7 @@ urlpatterns = [
     path('work_record_detail_search',views.work_record_detail_search),
     path('analysisselect',views.analysisselect),
     path('analysis_saas_problem_type_in_versions',views.analysis_saas_problem_type_in_versions),
+    path('analysis_saas_upgrade_problem_type',views.analysis_saas_upgrade_problem_type),
     path('analysis_service_upgrade_trend',views.analysis_service_upgrade_trend),
     path('analysis_version_problem_by_resource_pool',views.analysis_version_problem_by_resource_pool),
     path('analysis_version_upgrade_trend',views.analysis_version_upgrade_trend),

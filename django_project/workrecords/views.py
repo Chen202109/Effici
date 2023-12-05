@@ -60,23 +60,7 @@ def analysisselect(request):
         beginData = request.GET.get('beginData', default='2023-07-01')
         endData = request.GET.get('endData', default='2023-07-31')
 
-        #■■■ 开始分页查询，获得对应时间范围内，license的申请数据
         db =mysql_base.Db()
-        sql = f'select DISTINCT region,COUNT(DISTINCT agenname) as count from license_2023 where authorizeddate>="{beginData}" and authorizeddate<="{endData}" GROUP BY region'
-        licenseData_list = db.select_offset(1, 1000, sql)
-        # 这个是查询后返回的数据，类似 [{'region': '上海', 'count': 2}, {'region': '北京', 'count': 1}]
-        # 将上面的转成下面这种，这样前端才能挂到license_data里面
-        # [{'上海': 2, '北京':3, '广东':3}]  注：license_data数组只是 前端的analysisData字典的一部分 analysisData['license_data']
-
-        # 生成要转化成的数据类型并进行倒序排序
-        license_data = [{k: v} for k, v in sorted({d["region"] : d["count"] for d in licenseData_list}.items(), key=lambda item:item[1], reverse=True)]
-        # 因为加入头部的表头和合计的表尾
-        license_data.insert(0, {"省份": "单位申请数"})
-        license_data.append({"合计": sum(item["count"] for item in licenseData_list)})
-        analysisData['licenseData'] = license_data
-        
-        # ■■■ 结束license的数据获取
-
 
         # ■■■ 开始分页查询，获得对应时间范围内，【数据汇报】--->受理问题的表格数据
         # total是每个版本的受理数量合计，其他用了 列传行 的办法
@@ -241,6 +225,51 @@ def analysis_saas_problem_type_in_versions(request):
 
 
 # ----------------------------------------------------------- AnalysisUpgradeTrend.vue 的请求 --------------------------------------------
+
+def analysis_saas_upgrade_problem_type(request):
+    """
+    分析升级数据和所属问题分类的对比
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+
+        # 由于realdate日期是2023-08-01 18:00:00 这种格式，所以对比时不等于2023-08-01 00:00:00，于是终止要+1天
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+        
+        db =mysql_base.Db()
+
+        sql = 'SELECT '\
+              ' upgradetype, resourcepool, SUM(case when questiontype like "%bug%" then 1 else 0 end) AS 缺陷, '\
+              ' SUM(case when questiontype like "%需求%" then 1 else 0 end) AS 需求, '\
+              ' SUM(case when questiontype like "%优化%" then 1 else 0 end) AS 优化 '\
+              ' FROM upgradeplan_2023 ' \
+              f' WHERE realdate >= "{realdate_begin}" AND realdate <= "{realdate_end}" '\
+              ' GROUP BY upgradetype, resourcepool'
+        saas_upgrade_problem_type_data = db.select_offset(1, 1000, sql)
+
+        # 查出来格式是这样的：{'upgradetype': '增值', 'resourcepool': '01资源池', '缺陷': Decimal('31'), '需求': Decimal('13'), '优化': Decimal('2')}
+        # 要进行转换成这样: {"saas_v4产品": "缺陷", '01资源池': '31', '02资源池': 'xx', '03资源池': 'xx', '04资源池': 'xx', '运营支撑平台': 'xx' }
+        saas_daily_upgrade_problem_type_data  = [{"saas_v4标准产品": "缺陷"}, {"saas_v4标准产品": "需求"}, {"saas_v4标准产品": "优化"}]
+        saas_added_upgrade_problem_type_data  = [{"saas_v4增值产品": "缺陷"}, {"saas_v4增值产品": "需求"}, {"saas_v4增值产品": "优化"}]
+        for item in saas_upgrade_problem_type_data:
+            if item['upgradetype'] == '日常':
+                saas_daily_upgrade_problem_type_data[0][item["resourcepool"]] = item['缺陷']
+                saas_daily_upgrade_problem_type_data[1][item["resourcepool"]] = item['需求']
+                saas_daily_upgrade_problem_type_data[2][item["resourcepool"]] = item['优化']
+            else:
+                saas_added_upgrade_problem_type_data[0][item["resourcepool"]] = item['缺陷']
+                saas_added_upgrade_problem_type_data[1][item["resourcepool"]] = item['需求']
+                saas_added_upgrade_problem_type_data[2][item["resourcepool"]] = item['优化']
+
+        data.append({'seriesName': "公有云saas_v4日常升级次数统计", 'seriesData': saas_daily_upgrade_problem_type_data})
+        data.append({'seriesName': "公有云saas_v4增值升级次数统计", 'seriesData': saas_added_upgrade_problem_type_data})
+            
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
 
 def analysis_service_upgrade_trend(request):
     data = []
@@ -836,22 +865,24 @@ def analysis_saas_privatization_license_register_province(request):
         end_date = request.GET.get('endData', default='2023-12-31')
 
         db =mysql_base.Db()
-        sql = f'select DISTINCT region,COUNT(DISTINCT agenname) as count from license_2023 where authorizeddate>="{begin_date}" and authorizeddate<="{end_date}" GROUP BY region'
+        sql = f'select DISTINCT region,COUNT(DISTINCT agenname) as count from license_2023 where authorizeddate>="{begin_date}" and authorizeddate<="{end_date}" GROUP BY region ORDER BY count desc'
         license_register_province_data = db.select_offset(1, 1000, sql)
         # 这个是查询后返回的数据，类似 [{'region': '上海', 'count': 2}, {'region': '北京', 'count': 1}]
         # 将上面的转成下面这种，这样前端才能挂到license_data里面
         # [{'上海': 2, '北京':3, '广东':3}]  
-        # 生成要转化成的数据类型并进行倒序排序
-        license_data = [{k: v} for k, v in sorted({d["region"] : d["count"] for d in license_register_province_data}.items(), key=lambda item:item[1], reverse=True)]
-        # 因为加入头部的表头和合计的表尾
-        license_data.insert(0, {"省份": "单位申请数"})
-        license_data.append({"合计": sum(item["count"] for item in license_register_province_data)})
+        # 生成要转化成的数据类型, 并加入表头表尾
+        license_data = [{"省份": "单位申请数"}]
+        sumLicenseRegister = 0
+        for item in license_register_province_data:
+            sumLicenseRegister += item["count"]
+            license_data.append({item["region"]: item["count"]})
+        license_data.append({"合计": sumLicenseRegister})
+
 
         data.append({'seriesName': "v4 license受理数据统计", 'seriesData': license_data})
 
             
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
-
 
 # ----------------------------------------------------------- AnalysisPrivatizationLicense.vue 的请求 --------------------------------------------
 

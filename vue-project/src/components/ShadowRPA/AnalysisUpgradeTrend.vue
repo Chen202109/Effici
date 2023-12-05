@@ -36,6 +36,37 @@
       </div>
     </div>
 
+    <div style="margin: 5px 20px 5px 0;">
+      <div class="dailyUpgradeTable">
+          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4日常升级次数统计</p>
+          <el-table :data="this.saasUpgradeProblemTypeTableData[0]['seriesData']"
+            :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
+            :row-style="{ height: '35px' }" 
+            :cell-style="upgradeTableCellStyle" 
+            border
+            style="width: 100%">
+            <el-table-column v-for="(value, key) in this.saasUpgradeProblemTypeTableData[0]['seriesData'][0]" :key="key" :prop="key" :label="key"
+              :width="columnWidth(key)" align="center">
+            </el-table-column>
+          </el-table>
+      </div>
+      <div class="addedUpgradeTable">
+        <p class="saasAnalysisTitle" style="margin: 10px 0;"> {{ this.saasUpgradeProblemTypeTableData[1]["seriesName"] }}</p>
+        <el-table :data="this.saasUpgradeProblemTypeTableData[1]['seriesData']"
+          :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
+          :row-style="{ height: '35px' }" 
+          :cell-style="upgradeTableCellStyle" 
+          border
+          style="width: 100%">
+          <el-table-column v-for="(value, key) in this.saasUpgradeProblemTypeTableData[1]['seriesData'][0]" :key="key" :prop="key" :label="key"
+            :width="columnWidth(key)" align="center">
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+
+    <div style="height: 20px;"></div>
+
     <div class="saasUpgradeTrendChart" id="saasUpgradeTrendChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
     </div>
     <div class="saasVersionTrendByResourcePoolChart" id="saasVersionTrendByResourcePoolChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
@@ -81,15 +112,6 @@ require("echarts/lib/component/title");
 
 export default {
   name: 'AnalysisUpgradeTrend',
-  props: {
-    versionData: {
-      type: Array,
-      default() {
-        return [];
-      },
-    },
-  },
-
   data() {
     return {
       // 资源池选择
@@ -113,6 +135,8 @@ export default {
         {'prop': "percent", "label": "百分比"}
       ],
 
+      // 公有云saas_v4日常和增值升级统计，第一个元素是日常的表格的数据，第二个元素是增值表格的数据
+      saasUpgradeProblemTypeTableData: [ {'seriesName': "", 'seriesData': []}, {'seriesName': "", 'seriesData': []} ],
       // 这个页面各类图的数据
       saasUpgradeLineChartData: [],
       saasVersionByResoucePoolBarChartData: [],
@@ -138,7 +162,6 @@ export default {
   },
   // 在初始化页面完成后,再对dom节点上图形进行相关绘制
   mounted() {
-    console.log('升级汇报-分析升级', this.versionData);
     // 页面初始化后对checkbox,下拉列表组件添加初始值
     this.resourcePoolSelected = this.resourcePoolOptions[0];
     this.businessSelected.push(this.businessOptions[0]);
@@ -176,6 +199,15 @@ export default {
         width = widthDict[key.length]
       }
       return width
+    },
+
+    upgradeTableCellStyle(row) {
+      let style = ''
+      // if (row.rowIndex === this.saasUpgradeData[0].length - 1) {
+      //   style = 'background: rgb(253 238 32 / 20%);'
+      // }
+      style += 'font-size: 14px; '
+      return style
     },
 
     /**
@@ -417,11 +449,33 @@ export default {
         }
       } //结束for，完成日期的拼接
       
+      this.searchSaasUpgradeProblemTypeTable(searchValue)
       this.searchSaaSServiceUpgradeTrend(searchValue)
       this.searchSaaSVersionUpgradeTrendByResoucePool(searchValue)
       this.searchSaaSVersionUpgradeTrend(searchValue)
       this.searchSaaSProblemByMonth(searchValue)
       this.searchSaaSLargeProblemByType(searchValue)
+    },
+
+    /**
+     * @param {searchValue} searchValue 搜索参数的字典
+     * @description 查询更新升级和所属问题分类的数据信息的后端数据请求
+     */
+    async searchSaasUpgradeProblemTypeTable(searchValue) {
+      try {
+        const response = await this.$http.get(
+          '/api/CMC/workrecords/analysis_saas_upgrade_problem_type?beginData=' +
+          searchValue['beginData'] +
+          '&endData=' +
+          searchValue['endData']
+        )
+        this.saasUpgradeProblemTypeTableData = response.data.data
+        console.log('update local saasUpgradeProblemTypeTableData data: ', response.data.data)
+      } catch (error) {
+        console.log(error)
+        this.$message.error('错了哦，仔细看错误信息弹窗')
+        alert('失败' + error)
+      }
     },
 
     /**
@@ -557,6 +611,25 @@ export default {
 
 
 <style>
+.saasAnalysisTitle {
+  color: #3398DB;
+  font-size: 18;
+  margin: 5px 10px 5px 0;
+}
+
+.dailyUpgradeTable {
+  width: 50%;
+  display: inline-block;
+  margin: 0 10px 0 0;
+}
+
+.addedUpgradeTable {
+  width: 48%;
+  display: inline-block;
+  margin: 0 0 0 10px;
+  float: right;
+}
+
 .el-dropdown-link {
   cursor: pointer;
   color: #409EFF;

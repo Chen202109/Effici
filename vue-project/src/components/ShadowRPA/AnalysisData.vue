@@ -54,40 +54,6 @@
       </el-table>
     </div>
 
-    <div style="height: 20px;"></div>
-
-    <!-- 放入upgrade 资源池升级数据组件 -->
-    <div style="margin: 5px 20px 5px 0;">
-      <div>
-        <div class="dailyUpgradeTable">
-          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4日常升级次数统计</p>
-          <el-table :data="this.saasUpgradeData[0]"
-            :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
-            :row-style="{ height: '35px' }" 
-            :cell-style="upgradeTableCellStyle" 
-            border
-            style="width: 100%">
-            <el-table-column v-for="(value, key) in this.saasUpgradeData[0][0]" :key="key" :prop="key" :label="key"
-              :width="columnWidth(key)" align="center">
-            </el-table-column>
-          </el-table>
-        </div>
-        <div class="addedUpgradeTable">
-          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4增值升级次数统计</p>
-          <el-table :data="this.saasUpgradeData[1]"
-            :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
-            :row-style="{ height: '35px' }" 
-            :cell-style="upgradeTableCellStyle" 
-            border
-            style="width: 100%">
-            <el-table-column v-for="(value, key) in this.saasUpgradeData[1][0]" :key="key" :prop="key" :label="key"
-              :width="columnWidth(key)" align="center">
-            </el-table-column>
-          </el-table>
-        </div>
-      </div>
-    </div>
-
   </div>
 </template>
 
@@ -159,8 +125,6 @@ export default {
       saasProblemTypeInVersions: [],
       // SaaS各版本 产品bug, 实施配置，异常数据处理 汇总的表格数据
       saasProblemTypeInVersionsDetail: [ [], [], [] ],
-      // 公有云saas_v4日常和增值升级统计，第一个元素是日常的表格的数据，第二个元素是增值表格的数据
-      saasUpgradeData: [ [], [] ],
       // 通过this.$http.get 请求analysisselect 返回的 分析analysis 数据data
       analysisData: {
         // tableData 受理表格数据
@@ -184,8 +148,6 @@ export default {
             softbug: '0',
           },
         ],
-        // upgradeData 升级计划表格的数据
-        upgradeData: [],
       },
 
     }
@@ -244,7 +206,7 @@ export default {
         grid: {
           left: '5%',
           right: '5%',
-          top: '11%',
+          top: '15%',
           bottom: '10%',
         },
         series: [
@@ -396,15 +358,6 @@ export default {
       return style
     },
 
-    upgradeTableCellStyle(row) {
-      let style = ''
-      // if (row.rowIndex === this.saasUpgradeData[0].length - 1) {
-      //   style = 'background: rgb(253 238 32 / 20%);'
-      // }
-      style += 'font-size: 14px; '
-      return style
-    },
-
     /**
      * 计算el-table列的宽度
      */
@@ -452,63 +405,11 @@ export default {
     },
 
     /**
-     * 在查询之后更新升级的数据信息
-     */
-    updateSaasUpgradeData(){
-      // 清空原来的数据，根据每一次搜索重新生成表格
-      this.saasUpgradeData = [
-        [
-          {
-            "saas_v4标准产品": "缺陷",
-          },
-          {
-            "saas_v4标准产品": "需求",
-          },
-          {
-            "saas_v4标准产品": "优化",
-          },
-          // {
-          //   "saas_v4标准产品": "升级次数合计",
-          // },
-        ],
-        [
-          {
-            "saas_v4增值产品": "缺陷",
-          },
-          {
-            "saas_v4增值产品": "需求",
-          },
-          {
-            "saas_v4增值产品": "优化",
-          },
-          // {
-          //   "saas_v4增值产品": "升级次数合计",
-          // },
-        ],
-      ]
-      let dailyUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '日常')
-      let addedUpgradeTableData = this.analysisData["upgradeData"].filter(item => item.upgradetype === '增值')
-      // 对日常和增值两个表进行row 和 col的交换
-      for (const item of dailyUpgradeTableData) {
-        this.saasUpgradeData[0][0][item["resourcepool"]] = item['缺陷']
-        this.saasUpgradeData[0][1][item["resourcepool"]] = item['需求']
-        this.saasUpgradeData[0][2][item["resourcepool"]] = item['优化']
-        // this.saasUpgradeData[0][3][item["resourcepool"]] = item['升级次数']
-      }
-      for (const item of addedUpgradeTableData) {
-        this.saasUpgradeData[1][0][item["resourcepool"]] = item['缺陷']
-        this.saasUpgradeData[1][1][item["resourcepool"]] = item['需求']
-        this.saasUpgradeData[1][2][item["resourcepool"]] = item['优化']
-        // this.saasUpgradeData[1][3][item["resourcepool"]] = item['升级次数']
-      }
-    },
-
-    /**
      * 查询之后，将更新的数据放入SaaS各版本受理汇总的柱状图中然后渲染
      */
     updateMyChart(){
-            //受理情况的柱形图 复制修改它的 xAxis 和 series
-            let myChart = echarts.getInstanceByDom(document.getElementById('myChart')) // 获取到当前的myChart实例
+      //受理情况的柱形图 复制修改它的 xAxis 和 series
+      let myChart = echarts.getInstanceByDom(document.getElementById('myChart')) // 获取到当前的myChart实例
       // 计算柱形图的数据总和
       let total = 0
       for (var i = 0; i < this.analysisData['myChart_series'].length; i++) {
@@ -547,7 +448,7 @@ export default {
       // 使用构造好的 seriesData 绘制柱形图
       // 修改xAxis的data参数
       myChart && myChart.setOption({
-          xAxis: { data:  xAxisData},
+          xAxis: { data: xAxisData},
           series: { data: seriesData },
       })
 
@@ -576,6 +477,10 @@ export default {
       })
     },
 
+    /**
+     * 查询指定时间内的工单记录的问题类别与出错功能的对比数据
+     * @param {*} searchValue 
+     */
     async searchSaasProblemTypeInVersions(searchValue){
       try {
         const response = await this.$http.get(
@@ -595,7 +500,6 @@ export default {
         alert('失败' + error)
       }
     },
-
 
     /**
      * 进行 查询 事件,因为axios是异步的请求，所以会先处理数据，空闲了才处理异步数据
@@ -625,7 +529,6 @@ export default {
         console.log('获得 this.analysisData 为', this.analysisData)
 
         this.updateSaasProblemTypeInVersions()
-        this.updateSaasUpgradeData()
 
         //成功的消息提示
         this.$message({
@@ -709,19 +612,6 @@ export default {
 
 .clearFloat {
   clear: both;
-}
-
-.dailyUpgradeTable {
-  width: 50%;
-  display: inline-block;
-  margin: 0 10px 0 0;
-}
-
-.addedUpgradeTable {
-  width: 45%;
-  display: inline-block;
-  margin: 0 0 0 10px;
-  float: right;
 }
 </style>
 
