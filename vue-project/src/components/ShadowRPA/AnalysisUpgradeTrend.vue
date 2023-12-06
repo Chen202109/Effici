@@ -75,27 +75,6 @@
     </div>
     <div class="saasProblemMonthChart" id="saasProblemMonthChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
     </div>
-    <div>
-      <div class="saasLargeProblemTypeChart" id="saasLargeProblemTypeChart" :style="{ width: getMainPageWidth * 0.65+ 'px', height: '600px' }">
-      </div>
-      <div class="saasLargeProblemTopTable" style="width: 35%;">
-        <p>私有化重大故障问题总计受理: <span style="color: red;">{{ saasLargeProblemTypeChartData[2]['seriesData'] }}</span> 次</p>
-        <el-table
-          :data="saasLargeProblemTypeChartData[1]['seriesData']" 
-          :header-cell-style="{fontSize:'14px',background: 'rgb(64 158 255 / 65%)',color:'#696969',}"
-          :cell-style="{fontSize: 12 + 'px',}"
-           style="width: 100%; margin: auto">
-          <el-table-column label="私有化重大故障Top10分类" align="center">
-            <el-table-column
-              v-for="(item, index) in saasLargeProblemTopTableTitle" :key="index" :prop="item.prop" :label="item.label"
-              :width="columnWidth(item.label, 'saasLargeProblemTopTable')"  align="center">
-            </el-table-column>
-          </el-table-column>  
-        </el-table>
-      </div>
-    </div>
-
-    <div></div>
 
   </div>
 </template>
@@ -128,12 +107,6 @@ export default {
       functionSelected: '',
       // 日期查询范围
       dateRange: [new Date(new Date().getFullYear() + '-01-01'), new Date()],
-      // 重大故障的表的数据
-      saasLargeProblemTopTableTitle: [
-        {'prop': "name", "label": "问题分类"},
-        {'prop': "value", "label": "次数"},
-        {'prop': "percent", "label": "百分比"}
-      ],
 
       // 公有云saas_v4日常和增值升级统计，第一个元素是日常的表格的数据，第二个元素是增值表格的数据
       saasUpgradeProblemTypeTableData: [ {'seriesName': "", 'seriesData': []}, {'seriesName': "", 'seriesData': []} ],
@@ -144,11 +117,6 @@ export default {
       saasProvinceBarChartData: [],
       saasProvinceAndAgencyChartData: [],
       saasProblemMonthChartData: [],
-      saasLargeProblemTypeChartData: [ 
-        {'seriesName': "私有化重大故障数量", 'seriesData': []}, 
-        {'seriesName': "私有化重大故障top10", 'seriesData': []}, 
-        {'seriesName': "私有化重大故障数量合计", 'seriesData': 0}
-      ],
     }
   },
   // 计算页面刚加载时候渲染的属性
@@ -193,9 +161,7 @@ export default {
         10: 130,
       }
       let width
-      if (tableName === 'saasLargeProblemTopTable' && key === '问题分类') {
-        width = 220
-      } else if (key.length in widthDict){
+      if (key.length in widthDict){
         width = widthDict[key.length]
       }
       return width
@@ -219,7 +185,6 @@ export default {
       echarts.init(document.getElementById('saasVersionTrendByResourcePoolChart'))
       echarts.init(document.getElementById('saasVersionTrendChart'))
       echarts.init(document.getElementById('saasProblemMonthChart'))
-      echarts.init(document.getElementById('saasLargeProblemTypeChart'))
     },
 
     /**
@@ -349,83 +314,6 @@ export default {
     },
 
     /**
-     * 当查询之后，数据更新，更新重大事故数量和出错功能的饼状图的数据
-     */
-    updateSaaSLargeProblemTypeChart(chartData, chartTitle, chartElementId){
-      let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
-
-      let option = {
-        title: {
-          text: chartTitle,
-          left: 'left'
-        },
-        tooltip: {
-          trigger: 'item',
-          formatter: '{a} <br/>{b} : {c} ({d}%)'
-        },
-        series: [
-          {
-            name: chartData[0].seriesName,
-            type: 'pie',
-            radius: '55%',
-            data: chartData[0].seriesData,
-            top: '7%',
-            labelLine: {
-              length: 15,
-              maxSurfaceAngle: 80
-            },
-            label: {
-              alignTo: 'edge',
-              formatter: '{b|{b}：}{c}次 {per|{d}%}  ',
-              minMargin: 5,
-              lineHeight: 15,
-              // 这个配置不知道为什么，给的值越大，edge distance其实越小
-              edgeDistance: 10,
-              rich: {
-                b: {
-                  color: '#4C5058',
-                  fontSize: 12,
-                  fontWeight: 'bold',
-                  lineHeight: 25
-                },
-                per: {
-                  color: '#fff',
-                  backgroundColor: '#4C5058',
-                  padding: [3, 4],
-                  // borderRadius: 4
-                }
-              }
-            },
-            // 给标签线设置格式
-            labelLayout: function (params) {
-              // 通过标签魔性labelRect的x，查看是在这张图左边还是右边 （不能使用params.label.x直接看label的文字的坐标，不知道为什么直接整个回调所有设置失效）
-              const isLeft = params.labelRect.x < chart.getWidth() / 2;
-              const points = params.labelLinePoints;
-              // 更新水平方向的标签线的末尾坐标，看是左边的标签还是右边的标签，如果是右边的标签的话就取到标签的x值也就是标签最靠左的点然后加上标签宽度
-              points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
-              // 更新竖直方向的标签线的末尾坐标，因为想要label显示在线上方，所以加上label的高度。
-              points[1][1] = params.labelRect.y+params.labelRect.height
-              points[2][1] = params.labelRect.y+params.labelRect.height
-              return {
-                labelLinePoints: points
-              };
-            },
-            emphasis: {
-              itemStyle: {
-                shadowBlur: 10,
-                shadowOffsetX: 0,
-                shadowColor: 'rgba(0, 0, 0, 0.5)'
-              }
-            }
-          }
-        ]
-      };
-
-      chart&&chart.setOption(option, true)
-      console.log("updated "+chartElementId+" echart: ", chart)
-    },
-
-    /**
      * 按下查询按钮之后异步查询更新页面图标数据。
      */
     async search() {
@@ -454,7 +342,6 @@ export default {
       this.searchSaaSVersionUpgradeTrendByResoucePool(searchValue)
       this.searchSaaSVersionUpgradeTrend(searchValue)
       this.searchSaaSProblemByMonth(searchValue)
-      this.searchSaaSLargeProblemByType(searchValue)
     },
 
     /**
@@ -581,28 +468,6 @@ export default {
       }
     },
 
-    /**
-     * @param {searchValue} searchValue 搜索参数的字典
-     * @description 对重大事故数量和出错功能的饼状图的后端数据请求
-     */
-    async searchSaaSLargeProblemByType(searchValue) {
-      try {
-        const response = await this.$http.get(
-          '/api/CMC/workrecords/analysis_saas_large_problem_by_function?beginData=' +
-          searchValue['beginData'] +
-          '&endData=' +
-          searchValue['endData']
-        )
-        this.saasLargeProblemTypeChartData = response.data.data
-        this.updateSaaSLargeProblemTypeChart(this.saasLargeProblemTypeChartData, "私有化重大故障问题分类", "saasLargeProblemTypeChart")
-        console.log('update local saasLargeProblemTypeChartData data: ', this.saasLargeProblemTypeChartData)
-
-      } catch (error) {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
-      }
-    },
 
 
   }
@@ -637,14 +502,6 @@ export default {
 
 .el-icon-arrow-down {
   font-size: 12px;
-}
-
-.saasLargeProblemTypeChart {
-  display: inline-block;
-}
-
-.saasLargeProblemTopTable {
-  display: inline-block;
 }
 
 </style>

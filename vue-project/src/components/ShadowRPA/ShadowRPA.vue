@@ -29,9 +29,11 @@ import AnalysisUpgradeTrend from "@/components/ShadowRPA/AnalysisUpgradeTrend.vu
 import AnalysisCountryData from "@/components/ShadowRPA/AnalysisCountryData.vue"
 import AnalysisMonitorProblem from "@/components/ShadowRPA/AnalysisMonitorProblem.vue"
 import AnalysisPrivatizationLicense from "@/components/ShadowRPA/AnalysisPrivatizationLicense.vue"
+import AnalysisLargeProblemData from "@/components/ShadowRPA/AnalysisLargeProblemData.vue"
 
 export default {
-  components: { LeftMenu, AssistSubmit, AnalysisData, AnalysisUpgradeTrend, AnalysisCountryData, AnalysisMonitorProblem, AnalysisPrivatizationLicense },
+  components: { LeftMenu, AssistSubmit, AnalysisData, AnalysisUpgradeTrend, 
+    AnalysisCountryData, AnalysisMonitorProblem, AnalysisPrivatizationLicense, AnalysisLargeProblemData},
 
   data() {
     return {

@@ -210,15 +210,7 @@ export default {
                 var year = this.dateRange[i].getFullYear()
                 var month = ('0' + (this.dateRange[i].getMonth() + 1)).slice(-2)
                 var day = ('0' + this.dateRange[i].getDate()).slice(-2)
-                if (i == 0) {
-                    // 构建格式化后的日期字符串
-                    var beginData = year + '-' + month + '-' + day
-                    searchValue['beginData'] = beginData
-                }
-                if (i == 1) {
-                    var endData = year + '-' + month + '-' + day
-                    searchValue['endData'] = endData
-                }
+                searchValue[i == 0 ? 'beginData' : 'endData'] = year + '-' + month + '-' + day;
             } //结束for，完成日期的拼接
             
             this.saasMonitorProblemTypeProvince(searchValue)

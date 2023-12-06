@@ -29,6 +29,11 @@ export function updateBarChartBasic(currDocument, barChartData, barChartTitle, x
     })
     xAxisData = xAxisData.filter(item => !removeList.includes(item))
 
+    // 统计x轴所有标签的长度，用于判断是否需要x轴进行分行
+    let labelTotalLength = 0
+    xAxisData.forEach((item) => { labelTotalLength += countLabelLength(item) })
+    if (!xAxisLabelNewLine && labelTotalLength>55) xAxisLabelNewLine = true
+
     let option = {
         title: {
             top: '1%',
@@ -106,10 +111,11 @@ export function normalBarChartAddingSeries(barChartData, option) {
             show: true,
             position: 'top',
             align: 'center',
-            // formatter: function (params){
-            //   return (params.value===0)?"":params.value+"次"
-            // },
-            formatter: '{c|{c}}次',
+            // 将是0的值的label去掉
+            formatter: function (params){
+              return (params.value===0)?"":params.value+"次"
+            },
+            // formatter: '{c|{c}}次',
             rich: {
                 c: {
                     // color: '#4C5058',
@@ -120,4 +126,17 @@ export function normalBarChartAddingSeries(barChartData, option) {
         }
         option.series.push(series_1)
     }
+}
+
+/**
+ * 统计x轴所有标签的长度，避免x轴坐标标签过长，用于判断是否需要x轴进行分行，给每个substring配上权重进行计算，因为中文占得宽度长所以权重高。
+ * @param {*} label 
+ * @returns 这个标签经过计算之后的"长度"
+ */
+function countLabelLength(label) {
+    let chineseSubstring = label.match(/[\u4e00-\u9fa5]/g)
+    let letterSubstring = label.match(/[a-zA-Z]/g)
+    let digitSubstring = label.match(/[0-9]/g)
+    let punctuationSubstring = label.match(/[\s\.,\?\!]+/g)
+    return (chineseSubstring ? chineseSubstring.length : 0) + (letterSubstring ? letterSubstring.length *0.7 : 0) + (digitSubstring ? digitSubstring.length *0.7 : 0) + (punctuationSubstring ? punctuationSubstring.length *0.2 : 0)
 }
