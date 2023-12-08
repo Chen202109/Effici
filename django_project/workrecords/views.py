@@ -9,7 +9,7 @@ from datetime import datetime,timedelta # 用于传入的字符串转换成日�
 
 import json
 from mydata import mysql_base
-
+import pandas as pd
 
 # ----------------------------------------------------------- AnalysisData.vue 的请求 ----------------------------------------------------
 
@@ -798,7 +798,7 @@ def analysis_saas_added_service_by_function(request):
 
 def analysis_saas_problem_by_country(request):
     """
-    分析每个省份的受理数量，给全国地图使用
+    分析每个省份的数据，给全国地图使用
     """
     data = []
 
@@ -806,71 +806,111 @@ def analysis_saas_problem_by_country(request):
         begin_date = request.GET.get('beginData', default='2023-01-01')
         end_date = request.GET.get('endData', default='2023-12-31')
 
-        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
-        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
-
         db =mysql_base.Db()
-        # 查询数据库的所有region并放入数组中
+
+        # 查询数据库的workrecord表然后所有region并放入数组中
         sql = f' SELECT distinct region as name, count(*) as value from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by region '
         saas_province_problem_data = db.select_offset(1, 2000, sql)
-        
-        # 生成关于全国省份的数据
+
+        # 对上线单位数量统计进行读取, 因为是地图，所以把key给改成name和value, 而不是柱状图的x和y
+        saas_province_agency_account_data = pd.read_csv('./workrecords/existedAgencyAccountByProvince.csv',sep=',').rename(columns={'省份':'name','数量':'value'}).to_dict(orient="records")
+
+        # 生成关于全国省份的数据, 这里因为saas_province_problem_data和saas_province_agency_account_data查询的地区的顺序不一致，
+        # 所以全部以constant.china_province_list顺序为基准往里面填数据
         saas_country_data = []
         # 用于visualMap使用，显示颜色渐变，给这个组件提供一个数据的最大值
         value_max = 0
         for prov in constant.china_province_list:
             value = next((item['value'] for item in saas_province_problem_data if item['name'] == prov), 0)
             value_max = value if value > value_max else value_max
+            agency_value = next((item['value'] for item in saas_province_agency_account_data if item['name'] == prov), 0)
             #  数组格式为[{"name":"省份名称","value":受理问题的数量}] ， 因为echarts地图他使用的数据格式是name和value，所以得对应上不能自定义值
-            saas_country_data.append({'name':prov, 'value': value, 'temp': 1})
-        map_graph = []
-        map_graph.append({'seriesName': "全国"+"受理数量", 'seriesData': saas_country_data})
-        map_graph.append({"valueMax": value_max})
-        data.append(map_graph)
+            saas_country_data.append({'name':prov, 'value': value, 'agencyValue': agency_value})
+        data.append({'seriesName': "全国"+"受理数量", 'seriesData': saas_country_data})
+        data.append({"valueMax": value_max})
+        
+    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+
+def analysis_saas_problem_by_country_region(request):
+    """
+    分析每个省份的数据统计，给全国地图周围的几张表使用
+    """
+    data = []
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+        province = request.GET.get('province', default='全国')
+
+        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
+        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+
+        db =mysql_base.Db()
+        province_condition_sql = "" if province=='全国' else f' AND region = "{province}" '
 
         # 对出错问题（开票，核销，数据同步等）进行统计Top5
-        sql = f' SELECT distinct errorfunction as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by errorfunction '
+        sql = f' SELECT distinct errorfunction as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} group by errorfunction '
         saas_function_type_data = db.select_offset(1, 2000, sql)
         # 排序并找出前五
         sorted_saas_function_type_data = sorted(saas_function_type_data, key=lambda x : x['y'], reverse = True)[0:5]
         function_type_bar_gragh = []
-        function_type_bar_gragh.append({'seriesName': "全国"+"受理功能分类", 'seriesData': sorted_saas_function_type_data})
+        function_type_bar_gragh.append({'seriesName': province+"出错功能Top5", 'seriesData': sorted_saas_function_type_data})
         data.append(function_type_bar_gragh)
 
         # 对问题分类（实施配置，异常数据处理等）进行统计排序
-        sql = f' SELECT distinct errorType as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by errorType '
+        sql = f' SELECT distinct errorType as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} group by errorType '
         saas_problem_type_data = db.select_offset(1, 2000, sql)
         # 排序并找出前五
         sorted_saas_problem_type_data = sorted(saas_problem_type_data, key=lambda x : x['y'], reverse = True)[0:5]
         problem_type_bar_gragh = []
-        problem_type_bar_gragh.append({'seriesName': "全国"+"受理问题分类", 'seriesData': sorted_saas_problem_type_data})
+        problem_type_bar_gragh.append({'seriesName': province+"问题分类Top5", 'seriesData': sorted_saas_problem_type_data})
         data.append(problem_type_bar_gragh)
 
         # 对版本号和受理进行查询
-        sql = f' SELECT distinct softversion as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by softversion order by softversion '
+        sql = f' SELECT distinct softversion as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} group by softversion order by softversion '
         saas_soft_version_amount_data = db.select_offset(1, 2000, sql)
-        print(f"12222222222222222 {saas_soft_version_amount_data}")
         soft_version_amount_bar_gragh = []
-        soft_version_amount_bar_gragh.append({'seriesName': "全国"+"版本受理统计", 'seriesData': saas_soft_version_amount_data})
+        soft_version_amount_bar_gragh.append({'seriesName': province+"版本受理统计", 'seriesData': saas_soft_version_amount_data})
         data.append(soft_version_amount_bar_gragh)
 
         # 对产品分类（医疗，通用，高校等）进行统计
-        sql = f' SELECT distinct agentype as name, count(*) as value from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by agentype '
+        sql = f' SELECT distinct agentype as name, count(*) as value from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} group by agentype '
         saas_agency_type_data = db.select_offset(1, 2000, sql)
         agency_type_pie_gragh = []
-        agency_type_pie_gragh.append({'seriesName': "全国"+"受理行业种类", 'seriesData': saas_agency_type_data})
+        agency_type_pie_gragh.append({'seriesName': province+"受理行业种类", 'seriesData': saas_agency_type_data})
         data.append(agency_type_pie_gragh)
 
         # 对重大故障的问题分类进行统计排序
-        sql = f' SELECT distinct errorType as x, count(*) as y from majorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by errorType '
+        sql = f' SELECT distinct errorType as x, count(*) as y from majorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" {province_condition_sql} group by errorType '
         saas_large_problem_type_data = db.select_offset(1, 2000, sql)
         # 排序并找出前五, 这里reverse为false是因为前端使用的是横向的柱状图，他会把排序完的第一个的放在最底下，想要数值高的放在上方，reverse为false
         sorted_saas_large_problem_type_data = sorted(saas_large_problem_type_data, key=lambda x : x['y'], reverse = False)[-6:-1]
         large_problem_type_bar_gragh = []
-        large_problem_type_bar_gragh.append({'seriesName': "全国"+"私有化重大故障问题分类", 'seriesData': sorted_saas_large_problem_type_data})
+        large_problem_type_bar_gragh.append({'seriesName': province+"私有化重大故障问题分类", 'seriesData': sorted_saas_large_problem_type_data})
         data.append(large_problem_type_bar_gragh)
 
+        # 对合计的数据进行统计添加
+        sql = f'SELECT "受理问题合计" as name, count(*) as value from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} '\
+              f'UNION ALL '\
+              f'SELECT "V4 license受理合计" as name, count(*) from license_2023 WHERE authorizeddate >= "{begin_date}" AND authorizeddate <= "{end_date}" {province_condition_sql} '\
+              f'UNION ALL '\
+              f'select "私有化重大故障合计" as name, count(*) from majorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" {province_condition_sql} '\
+              f'UNION ALL '\
+              f'select "生产监控问题合计" as name, count(*) from monitorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" {province_condition_sql} '\
+              f'UNION ALL '\
+              f'select "增值服务开通合计" as name, count(*) from orderprodct_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" {province_condition_sql} '
+        saas_country_summary_table_data = db.select_offset(1, 2000, sql)
+        # 对上线单位数量统计进行读取和插入到summary table中
+        saas_province_agency_account_data = pd.read_csv('./workrecords/existedAgencyAccountByProvince.csv',sep=',').rename(columns={'省份':'name','数量':'value'}).to_dict(orient="records")
+        agency_amount = sum(item["value"] for item in saas_province_agency_account_data) if province=="全国" else next((item['value'] for item in saas_province_agency_account_data if item['name'] == province), 0)
+        saas_country_summary_table_data.insert(0, { "name":'上线单位合计', "value" : agency_amount })
+        saas_country_summary_table = []
+        saas_country_summary_table.append({'seriesName': province+"合计数据", 'seriesData': saas_country_summary_table_data})
+        data.append(saas_country_summary_table)
+        
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
 
 
 def analysis_saas_function_by_province(request):
@@ -956,16 +996,11 @@ def analysis_saas_problem_by_province_agency(request):
         saas_province_large_problem_data_inorder = [{'x': prov['x'], 'y': next((value['y'] for value in saas_large_problem_data if value['x'] == prov['x']), 0)} for prov in saas_province_problem_data]
         data.append({'seriesName': "私有化重大故障数量", 'seriesData': saas_province_large_problem_data_inorder})
 
-        import pandas as pd
         # 对上线单位数量统计进行读取
         dataframe = pd.read_csv('./workrecords/existedAgencyAccountByProvince.csv',sep=',').rename(columns={'省份':'x','数量':'y'}).to_dict(orient="records")
         # 生成一个顺序与saas_province_problem_data一致的数组，目的是为了两条series数据里面相同位置的字典对应的x值一致，那样抽取的y的值才一致。
         # 新数组的x值通过saas_province_problem_data获取，y的值通过dataFrame读取的上线单位的数量进行填入。
         # 如果是这一行报错StopIteration，基本上就是登记的时候省份没有登记对，比如内蒙古写成内蒙，需要去数据库进行调整让省份和workrecords/existedAgencyAccountByProvince.csv的省份名称一致
-        print()
-        print(saas_province_problem_data)
-        print(dataframe)
-        print()
         saas_province_agency_account_data = [{**prov, 'y': next(filter(lambda ag: ag['x'] == prov['x'], dataframe))['y']} for prov in saas_province_problem_data]
         data.append({'seriesName': "上线单位数量", 'seriesData': saas_province_agency_account_data})
             

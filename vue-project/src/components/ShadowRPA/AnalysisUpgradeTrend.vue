@@ -73,8 +73,6 @@
     </div>
     <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
     </div>
-    <div class="saasProblemMonthChart" id="saasProblemMonthChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
-    </div>
 
   </div>
 </template>
@@ -116,7 +114,6 @@ export default {
       saasVersionBarChartData: [],
       saasProvinceBarChartData: [],
       saasProvinceAndAgencyChartData: [],
-      saasProblemMonthChartData: [],
     }
   },
   // 计算页面刚加载时候渲染的属性
@@ -184,7 +181,6 @@ export default {
       echarts.init(document.getElementById('saasUpgradeTrendChart'))
       echarts.init(document.getElementById('saasVersionTrendByResourcePoolChart'))
       echarts.init(document.getElementById('saasVersionTrendChart'))
-      echarts.init(document.getElementById('saasProblemMonthChart'))
     },
 
     /**
@@ -341,7 +337,6 @@ export default {
       this.searchSaaSServiceUpgradeTrend(searchValue)
       this.searchSaaSVersionUpgradeTrendByResoucePool(searchValue)
       this.searchSaaSVersionUpgradeTrend(searchValue)
-      this.searchSaaSProblemByMonth(searchValue)
     },
 
     /**
@@ -444,31 +439,6 @@ export default {
         alert('失败' + error)
       }
     },
-
-    /**
-     * @param {searchValue} searchValue 搜索参数的字典
-     * @description 对省份受理数量和单位开通数量对比柱状图的后端数据请求
-     */
-    async searchSaaSProblemByMonth(searchValue) {
-      try {
-        const response = await this.$http.get(
-          '/api/CMC/workrecords/analysis_saas_problem_by_month?beginData=' +
-          searchValue['beginData'] +
-          '&endData=' +
-          searchValue['endData']
-        )
-        this.saasProblemMonthChartData = response.data.data
-        updateBarChartBasic(document, this.saasProblemMonthChartData, searchValue['beginData'].slice(0,4)+'年SaaS月份受理统计', "category", false, true, 'saasProblemMonthChart')
-        console.log('update local month bar chart data: ', this.saasProblemMonthChartData)
-
-      } catch (error) {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
-      }
-    },
-
-
 
   }
 }

@@ -27,5 +27,6 @@ urlpatterns = [
     path('analysis_saas_added_service_by_province',views.analysis_saas_added_service_by_province),
     path('analysis_saas_added_service_by_function',views.analysis_saas_added_service_by_function),
     path('analysis_saas_problem_by_country',views.analysis_saas_problem_by_country),
+    path('analysis_saas_problem_by_country_region',views.analysis_saas_problem_by_country_region),
     path('analysis_saas_privatization_license_register_province',views.analysis_saas_privatization_license_register_province),
 ]

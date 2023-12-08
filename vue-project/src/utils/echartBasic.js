@@ -93,7 +93,6 @@ export function normalBarChartAddSeries(barChartData, option, isVertical) {
                 formatter: function (params) {
                     return (params.value === 0) ? "" : params.value + "次"
                 },
-                // formatter: '{c|{c}}次',
                 rich: {
                     c: {
                         // color: '#4C5058',
