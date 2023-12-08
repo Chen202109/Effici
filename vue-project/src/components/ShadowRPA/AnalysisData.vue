@@ -159,9 +159,9 @@ export default {
      * 获取主页面宽度的一半，用于给两个在一个水平面的图设定宽度
      */
     getInlineChartsWidth: function(){
-      // windows.screen.width返回屏幕宽度，减去侧边栏240px,减去container模型左右padding各20px和margin-right的10px,
+      // windows.screen.width返回屏幕宽度，减去侧边栏220px,减去container模型左右padding各20px和margin-right的10px,
       // 减去主页面各自15px的padding, 减去不知道那里vue自己设的30px, 减去主页面内元素和滚动条保持距离的padding-right的10px,
-      return (window.screen.width-240-20*2-10-15*2-30-10)/2+'px'
+      return ((window.screen.width - 20 * 2 - 220 - 10 * 2 - 1 * 2 - 15 * 2 - 20 - 20))/2+'px'
     },
   },
   // 在初始化页面完成后,再对dom节点上图形进行相关绘制

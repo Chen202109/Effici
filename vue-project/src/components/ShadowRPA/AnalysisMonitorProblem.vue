@@ -269,7 +269,7 @@ export default {
                 searchValue['provinceSelected']
                 )
                 this.saasMonitorProblemTypeProvinceChartData = response.data.data
-                updateBarChartBasic(document, this.saasMonitorProblemTypeProvinceChartData, '省份生产监控异常分类统计', "category", false, 'saasMonitorProblemTypeProvinceChart')
+                updateBarChartBasic(document, this.saasMonitorProblemTypeProvinceChartData, '省份生产监控异常分类统计', "category", false, true, 'saasMonitorProblemTypeProvinceChart')
                 console.log('update local saasMonitorProblemTypeProvinceChart data: ', this.saasMonitorProblemTypeProvinceChartData)
 
             } catch (error) {
@@ -292,7 +292,7 @@ export default {
                 searchValue['endData']
                 )
                 this.saasMonitorProblemProvinceChartData = response.data.data
-                updateBarChartBasic(document, this.saasMonitorProblemProvinceChartData, '省份生产监控异常数量统计', "category", false, 'saasMonitorProblemProvinceChart')
+                updateBarChartBasic(document, this.saasMonitorProblemProvinceChartData, '省份生产监控异常数量统计', "category", false, true, 'saasMonitorProblemProvinceChart')
                 console.log('update local saasMonitorProblemProvinceChart data: ', this.saasMonitorProblemProvinceChartData)
 
             } catch (error) {

@@ -408,7 +408,7 @@ export default {
           searchValue['function_name']
         )
         this.saasVersionByResoucePoolBarChartData = response.data.data
-        updateBarChartBasic(document, this.saasVersionByResoucePoolBarChartData, searchValue['resourcePool']+'SaaS版本受理及升级统计', "category", false, 'saasVersionTrendByResourcePoolChart')
+        updateBarChartBasic(document, this.saasVersionByResoucePoolBarChartData, searchValue['resourcePool']+'SaaS版本受理及升级统计', "category", false, true, 'saasVersionTrendByResourcePoolChart')
         console.log('update local month bar chart data: ', this.saasVersionByResoucePoolBarChartData)
 
       } catch (error) {
@@ -435,7 +435,7 @@ export default {
           searchValue['function_name']
         )
         this.saasVersionBarChartData = response.data.data
-        updateBarChartBasic(document, this.saasVersionBarChartData, 'SaaS全版本受理趋势', "category", false, 'saasVersionTrendChart')
+        updateBarChartBasic(document, this.saasVersionBarChartData, 'SaaS全版本受理趋势', "category", false, true, 'saasVersionTrendChart')
         console.log('update local version linechart data: ', this.saasVersionBarChartData)
 
       } catch (error) {
@@ -458,7 +458,7 @@ export default {
           searchValue['endData']
         )
         this.saasProblemMonthChartData = response.data.data
-        updateBarChartBasic(document, this.saasProblemMonthChartData, searchValue['beginData'].slice(0,4)+'年SaaS月份受理统计', "category", false, 'saasProblemMonthChart')
+        updateBarChartBasic(document, this.saasProblemMonthChartData, searchValue['beginData'].slice(0,4)+'年SaaS月份受理统计', "category", false, true, 'saasProblemMonthChart')
         console.log('update local month bar chart data: ', this.saasProblemMonthChartData)
 
       } catch (error) {

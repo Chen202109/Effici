@@ -123,6 +123,9 @@ export default {
 
         /**
          * 当查询之后，数据更新，更新重大事故数量和出错功能的饼状图的数据
+         * @param {Object} pieChartData 饼状图数据
+         * @param {String} pieChartTitle 饼状图标题
+         * @param {String} pieChartElementId 饼状图元素id
          */
          updateSaaSAddedServiceTypeChart(chartData, chartTitle, chartElementId){
             let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
@@ -270,7 +273,7 @@ export default {
                 searchValue['provinceSelected']
                 )
                 this.saasAddedServiceTypeProvinceChartData = response.data.data
-                updateBarChartBasic(document, this.saasAddedServiceTypeProvinceChartData, '省份增值服务类型统计', "category", false, 'saasAddedServiceTypeProvinceChart')
+                updateBarChartBasic(document, this.saasAddedServiceTypeProvinceChartData, '省份增值服务类型统计', "category", false, true, 'saasAddedServiceTypeProvinceChart')
                 console.log('update local saasAddedServiceTypeProvinceChart data: ', this.saasAddedServiceTypeProvinceChartData)
 
             } catch (error) {
@@ -293,7 +296,7 @@ export default {
                 searchValue['endData']
                 )
                 this.saasAddedServiceProvinceChartData = response.data.data
-                updateBarChartBasic(document, this.saasAddedServiceProvinceChartData, '省份增值服务数量统计', "category", false, 'saasAddedServiceProvinceChart')
+                updateBarChartBasic(document, this.saasAddedServiceProvinceChartData, '省份增值服务数量统计', "category", false, true, 'saasAddedServiceProvinceChart')
                 console.log('update local saasAddedServiceProvinceChart data: ', this.saasAddedServiceProvinceChartData)
 
             } catch (error) {

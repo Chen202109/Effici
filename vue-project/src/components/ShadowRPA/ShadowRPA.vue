@@ -157,6 +157,6 @@ export default {
 }
 
 .main-el-tab-pane{
-    padding-right: 10px;
+    padding-right: 0px;
 }
 </style>

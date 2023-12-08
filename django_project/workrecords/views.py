@@ -805,6 +805,7 @@ def analysis_saas_problem_by_country(request):
     if request.method == 'GET':
         begin_date = request.GET.get('beginData', default='2023-01-01')
         end_date = request.GET.get('endData', default='2023-12-31')
+
         realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
         realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
 
@@ -821,10 +822,54 @@ def analysis_saas_problem_by_country(request):
             value = next((item['value'] for item in saas_province_problem_data if item['name'] == prov), 0)
             value_max = value if value > value_max else value_max
             #  数组格式为[{"name":"省份名称","value":受理问题的数量}] ， 因为echarts地图他使用的数据格式是name和value，所以得对应上不能自定义值
-            saas_country_data.append({'name':prov, 'value': value})
-        data.append({'seriesName': "全国省份受理数据", 'seriesData': saas_country_data})
-        data.append({"valueMax": value_max})
-            
+            saas_country_data.append({'name':prov, 'value': value, 'temp': 1})
+        map_graph = []
+        map_graph.append({'seriesName': "全国"+"受理数量", 'seriesData': saas_country_data})
+        map_graph.append({"valueMax": value_max})
+        data.append(map_graph)
+
+        # 对出错问题（开票，核销，数据同步等）进行统计Top5
+        sql = f' SELECT distinct errorfunction as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by errorfunction '
+        saas_function_type_data = db.select_offset(1, 2000, sql)
+        # 排序并找出前五
+        sorted_saas_function_type_data = sorted(saas_function_type_data, key=lambda x : x['y'], reverse = True)[0:5]
+        function_type_bar_gragh = []
+        function_type_bar_gragh.append({'seriesName': "全国"+"受理功能分类", 'seriesData': sorted_saas_function_type_data})
+        data.append(function_type_bar_gragh)
+
+        # 对问题分类（实施配置，异常数据处理等）进行统计排序
+        sql = f' SELECT distinct errorType as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by errorType '
+        saas_problem_type_data = db.select_offset(1, 2000, sql)
+        # 排序并找出前五
+        sorted_saas_problem_type_data = sorted(saas_problem_type_data, key=lambda x : x['y'], reverse = True)[0:5]
+        problem_type_bar_gragh = []
+        problem_type_bar_gragh.append({'seriesName': "全国"+"受理问题分类", 'seriesData': sorted_saas_problem_type_data})
+        data.append(problem_type_bar_gragh)
+
+        # 对版本号和受理进行查询
+        sql = f' SELECT distinct softversion as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by softversion order by softversion '
+        saas_soft_version_amount_data = db.select_offset(1, 2000, sql)
+        print(f"12222222222222222 {saas_soft_version_amount_data}")
+        soft_version_amount_bar_gragh = []
+        soft_version_amount_bar_gragh.append({'seriesName': "全国"+"版本受理统计", 'seriesData': saas_soft_version_amount_data})
+        data.append(soft_version_amount_bar_gragh)
+
+        # 对产品分类（医疗，通用，高校等）进行统计
+        sql = f' SELECT distinct agentype as name, count(*) as value from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" group by agentype '
+        saas_agency_type_data = db.select_offset(1, 2000, sql)
+        agency_type_pie_gragh = []
+        agency_type_pie_gragh.append({'seriesName': "全国"+"受理行业种类", 'seriesData': saas_agency_type_data})
+        data.append(agency_type_pie_gragh)
+
+        # 对重大故障的问题分类进行统计排序
+        sql = f' SELECT distinct errorType as x, count(*) as y from majorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" group by errorType '
+        saas_large_problem_type_data = db.select_offset(1, 2000, sql)
+        # 排序并找出前五, 这里reverse为false是因为前端使用的是横向的柱状图，他会把排序完的第一个的放在最底下，想要数值高的放在上方，reverse为false
+        sorted_saas_large_problem_type_data = sorted(saas_large_problem_type_data, key=lambda x : x['y'], reverse = False)[-6:-1]
+        large_problem_type_bar_gragh = []
+        large_problem_type_bar_gragh.append({'seriesName': "全国"+"私有化重大故障问题分类", 'seriesData': sorted_saas_large_problem_type_data})
+        data.append(large_problem_type_bar_gragh)
+
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 

@@ -257,7 +257,7 @@ export default {
                 searchValue['provinceSelected']
                 )
                 this.saasLargeProblemTypeProvinceChartData = response.data.data
-                updateBarChartBasic(document, this.saasLargeProblemTypeProvinceChartData, '省份私有化重大故障类型统计', "category", false, 'saasLargeProblemTypeProvinceChart')
+                updateBarChartBasic(document, this.saasLargeProblemTypeProvinceChartData, '省份私有化重大故障类型统计', "category", false, true, 'saasLargeProblemTypeProvinceChart')
                 console.log('update local saasLargeProblemTypeProvinceChart data: ', this.saasLargeProblemTypeProvinceChartData)
 
             } catch (error) {
@@ -280,7 +280,7 @@ export default {
                 searchValue['endData']
                 )
                 this.saasLargeProblemProvinceChartData = response.data.data
-                updateBarChartBasic(document, this.saasLargeProblemProvinceChartData, '省份私有化重大故障数量统计', "category", false, 'saasLargeProblemProvinceChart')
+                updateBarChartBasic(document, this.saasLargeProblemProvinceChartData, '省份私有化重大故障数量统计', "category", false, true, 'saasLargeProblemProvinceChart')
                 console.log('update local saasLargeProblemProvinceChart data: ', this.saasLargeProblemProvinceChartData)
 
             } catch (error) {

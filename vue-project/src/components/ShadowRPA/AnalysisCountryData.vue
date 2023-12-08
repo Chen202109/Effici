@@ -1,7 +1,7 @@
 <template>
     <div>
         <div style="margin: 15px 0">
-            <div>
+            <div style="margin-bottom: 10px;">
                 <span class="demonstration">时间范围： </span>
                 <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
                     end-placeholder="结束日期">
@@ -12,33 +12,62 @@
             <div>
                 <div style="margin-bottom: 10px;">
                     <span class="demonstration">业务分类： </span>
-                    <el-checkbox-group v-model="businessSelected" @change="businessCheckBoxChange" style="display: inline-block;">
-                    <el-checkbox v-for="(item, index) in businessOptions" :key="index" :label="item">{{ item }}</el-checkbox>
+                    <el-checkbox-group v-model="businessSelected" @change="businessCheckBoxChange"
+                        style="display: inline-block;">
+                        <el-checkbox v-for="(item, index) in businessOptions" :key="index" :label="item">{{ item
+                        }}</el-checkbox>
                     </el-checkbox-group>
                 </div>
 
                 <div>
                     <span class="demonstration">功能分类： </span>
                     <el-checkbox-group v-model="functionSelected" style="display: inline-block;">
-                    <el-checkbox v-for="(item, index) in functionOptions[this.businessSelected]" :key="index" :label="item">{{
-                        item }}</el-checkbox>
+                        <el-checkbox v-for="(item, index) in functionOptions[this.businessSelected]" :key="index"
+                            :label="item">{{
+                                item }}</el-checkbox>
                     </el-checkbox-group>
                 </div>
             </div>
         </div>
-        <!-- 容器 -->
-        <div id="saasProblemChinaMap" ref="saasProblemChinaMap"
-            :style="{ width: getMainPageWidth * 0.6 + 'px', height: '600px', margin: 'auto' }"></div>
-        <div class="saasProvinceAndFunctionChart" id="saasProvinceAndFunctionChart"
-            :style="{ width: getMainPageWidth + 'px', height: '400px' }"></div>
+        <div style="height: 10px;"></div>
+        <div style="height: 600px;">
+            <div class="saasChinaMapShow">
+                <div id = "saasFunctionTypeBarChart" class="saasFunctionTypeBarChart" :style="{ width: getMainPageWidth * 0.275 + 'px', height: '200px'}"></div>
+                <div id = "saasProblemTypeBarChart" class="saasProblemTypeBarChart" :style="{ width: getMainPageWidth * 0.275 + 'px', height: '200px'}"></div>
+                <div style="height: 200px;">
+                    
+                </div>
+            </div>
+            <div class="saasChinaMapShow">
+                <div id="saasProblemChinaMap" class="saasProblemChinaMap" :style="{ width: getMainPageWidth * 0.45 + 'px', height: '430px'}"></div>
+                <div id = "saasSoftVersionAmountBarChart" class="saasSoftVersionAmountBarChart" :style="{ width: getMainPageWidth * 0.45 + 'px', height: '177px'}"></div>
+            </div>
+            <div class="saasChinaMapShow" style="width: 27.2%;">
+                <!-- 因为饼图没有grid设置，然后data会顶到底部，所以需要一个padding用于和下面图形进行分开-->
+                <div id = "saasAgencyTypePieChart" class="saasAgencyTypePieChart" :style="{ width: getMainPageWidth * 0.275 + 'px', height: '200px', padding: '0 0 10px 0'}"></div>
+                <div id = "saasLargeProblemTypeBarChart" class="saasLargeProblemTypeBarChart" :style="{ width: getMainPageWidth * 0.275 + 'px', height: '200px'}"></div>
+                <div style="height: 190px;">
+                    <el-row>
+                        <el-col v-for="(row, rowIndex) in saasCountrySummaryData" :key="rowIndex" style="width: 50%; text-align: center;">
+                            <el-row class="threeDText">{{ row.label }}</el-row>
+                            <el-row class="threeDText">{{ row.value }}</el-row>
+                        </el-col>
+                    </el-row>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 因为map是通过geo控制大小的，并没有办法使用grid来控制，所以map的高度无法控制，只能在那个div下面配上一个空间进行和下面图标的分割 -->
+        <div style="height: 40px;"></div>
+
+        <div class="saasProvinceAndFunctionChart" id="saasProvinceAndFunctionChart" :style="{ width: getMainPageWidth + 'px', height: '400px' }"></div>
         <div class="saasProvinceAndFunctionChartSplit" id="saasProvinceAndFunctionChartSplit">
             <!-- 因为省份和功能会产生太多柱子，所以对省份进行一个切割，分成多张图来展现，注意，v-for这边生成的i是从1开始，所以id的末尾是1不是0 -->
             <div v-for="i in provinceSplitNum" :class="'saasProvinceAndFunctionChart' + i"
                 :id="'saasProvinceAndFunctionChart' + i" :style="{ width: getMainPageWidth + 'px', height: '400px' }">
             </div>
         </div>
-        <div class="saasProvinceAndAgencyChart" id="saasProvinceAndAgencyChart"
-            :style="{ width: getMainPageWidth + 'px', height: '400px' }"></div>
+        <div class="saasProvinceAndAgencyChart" id="saasProvinceAndAgencyChart" :style="{ width: getMainPageWidth + 'px', height: '400px' }"></div>
     </div>
 </template>
   
@@ -58,7 +87,6 @@ export default {
             chinaMap: null,
             // 日期查询范围
             dateRange: [new Date(new Date().getFullYear() + '-01-01'), new Date()],
-            chinaMapProvinceSaaSProblemData: [{ "seriesName": "全国省份受理数据", "seriesData": 1 }],
             // 业务选择
             businessOptions: ['日常业务', '其他业务'],
             businessSelected: [],
@@ -70,10 +98,24 @@ export default {
             functionSelected: '',
 
             // 将省份和出错功能对比的柱形图分割成几个子图
-            provinceSplitNum : 2,
-            
+            provinceSplitNum: 2,
+
+            chinaMapProvinceSaaSProblemData: [],
+            saasFunctionTypeBarChartData : [],
+            saasProblemTypeBarChartData : [],
+            saasSoftVersionAmountBarChartData : [],
+            saasAgencyTypePieChartData : [],
+            saasLargeProblemTypeBarChartData : [],
             saasProvinceBarChartData: [],
             saasProvinceAndAgencyChartData: [],
+            saasCountrySummaryData: [
+                { label: "单位总计", value: "333" },
+                { label: "受理问题总计", value: "333" },
+                { label: "V4 license受理总计", value: "333" },
+                { label: "私有化重大故障总计", value: "333" },
+                { label: "生产监控问题总计", value: "333" },
+                { label: "增值服务开通总计", value: "333" },
+            ],
         }
     },
     // 计算页面刚加载时候渲染的属性
@@ -81,10 +123,10 @@ export default {
         /**
          * 获取主页面宽度的60%，用于给地图的布局的设置
          */
-         getMainPageWidth: function () {
-            // windows.screen.width返回屏幕宽度，减去侧边栏240px,减去container模型左右padding各20px和margin-right的10px,
-            // 减去主页面各自15px的padding, 减去不知道那里vue自己设的30px, 减去主页面内元素和滚动条保持距离的padding-right的10px,
-            return (window.screen.width - 240 - 20 * 2 - 10 - 15 * 2 - 30 - 10)
+        getMainPageWidth: function () {
+            // windows.screen.width返回屏幕宽度，减去container模型左右padding各20px, 减去侧边栏220px, 减去主页面10px的padding
+            // 减去主页面的border的各1px， 减去主页面左右各15px的padding, 减去滚动条的20px，减去15px进行余量和留白
+            return (window.screen.width - 20 * 2 - 220 - 10 * 2 - 1 * 2 - 15 * 2 - 20 - 15)
         },
     },
     mounted() {
@@ -101,10 +143,10 @@ export default {
          * @param {*} value 
          */
         businessCheckBoxChange(value) {
-        if (this.businessSelected.length > 1) {
-            this.businessSelected.splice(0, 1)
-        }
-        this.functionSelected = this.functionOptions[this.businessSelected];
+            if (this.businessSelected.length > 1) {
+                this.businessSelected.splice(0, 1)
+            }
+            this.functionSelected = this.functionOptions[this.businessSelected];
         },
 
         drawCharts() {
@@ -114,14 +156,15 @@ export default {
             const option = {
                 tooltip: {
                     triggerOn: 'mousemove',
-                    formatter: function (e) {
-                        return e.name + '：' + e.value
+                    formatter: function (param) {
+                        // 通过param.data来获取鼠标悬浮的那个数据点的信息
+                        return `省份: ${param.data.name}<br/>单位开通: ${param.data.temp}<br/>受理数量: ${param.data.value}`
                     }
                 },
                 // geo为地理坐标系组件，用于地图的绘制，支持在地理坐标系上绘制散点图，线集。
                 geo: {
                     map: 'china', // 使用 registerMap 注册的地图名称。
-                    zoom: 1.1,
+                    zoom: 1.2,
                     label: {
                         show: true,
                     }
@@ -139,6 +182,11 @@ export default {
             this.saasProblemChinaMap.setOption(option);
 
             // 其他图表的init
+            echarts.init(document.getElementById('saasFunctionTypeBarChart'))
+            echarts.init(document.getElementById('saasProblemTypeBarChart'))
+            echarts.init(document.getElementById('saasSoftVersionAmountBarChart'))
+            echarts.init(document.getElementById('saasAgencyTypePieChart'))
+            echarts.init(document.getElementById('saasLargeProblemTypeBarChart'))
             echarts.init(document.getElementById('saasProvinceAndFunctionChart'))
             echarts.init(document.getElementById('saasProvinceAndAgencyChart'))
             // 因为是使用v-for生成的元素，所以使用this.$nextTick来进行延迟，否则可能会出现还没渲染元素就init的情况
@@ -242,6 +290,87 @@ export default {
             console.log("updated saasProvinceAndAgencyChart echart: ", chart)
         },
 
+        /**
+         * 当查询之后，数据更新，更新出错产品类型的饼状图
+         * @param {Object} pieChartData 饼状图数据
+         * @param {String} pieChartTitle 饼状图标题
+         * @param {String} pieChartElementId 饼状图元素id
+         */
+         updatePieChartBasic(chartData, chartTitle, labelFontSize, chartElementId){
+            let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
+
+            let option = {
+                title: {
+                    text: chartTitle,
+                    left: 'left'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b} : {c} ({d}%)'
+                },
+                series: [
+                {
+                    name: chartData[0].seriesName,
+                    type: 'pie',
+                    radius: '55%',
+                    data: chartData[0].seriesData,
+                    top: '7%',
+                    labelLine: {
+                        length: 15,
+                        maxSurfaceAngle: 80
+                    },
+                    label: {
+                        alignTo: 'edge',
+                        formatter: '{b|{b}：}{c}次 {per|{d}%}  ',
+                        minMargin: 5,
+                        lineHeight: 15,
+                        // 这个配置不知道为什么，给的值越大，edge distance其实越小
+                        edgeDistance: 10,
+                        rich: {
+                            b: {
+                                color: '#4C5058',
+                                fontSize: labelFontSize,
+                                fontWeight: 'bold',
+                                lineHeight: 25
+                            },
+                            per: {
+                                color: '#fff',
+                                fontSize: labelFontSize,
+                                backgroundColor: '#4C5058',
+                                padding: [3, 4],
+                                // borderRadius: 4
+                            }
+                        }
+                    },
+                    // 给标签线设置格式
+                    labelLayout: function (params) {
+                        // 通过标签魔性labelRect的x，查看是在这张图左边还是右边 （不能使用params.label.x直接看label的文字的坐标，不知道为什么直接整个回调所有设置失效）
+                        const isLeft = params.labelRect.x < chart.getWidth() / 2;
+                        const points = params.labelLinePoints;
+                        // 更新水平方向的标签线的末尾坐标，看是左边的标签还是右边的标签，如果是右边的标签的话就取到标签的x值也就是标签最靠左的点然后加上标签宽度
+                        points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
+                        // 更新竖直方向的标签线的末尾坐标，因为想要label显示在线上方，所以加上label的高度。
+                        points[1][1] = params.labelRect.y+params.labelRect.height
+                        points[2][1] = params.labelRect.y+params.labelRect.height
+                        return {
+                            labelLinePoints: points
+                        };
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+                ]
+            };
+
+            chart&&chart.setOption(option, true)
+            console.log("updated "+chartElementId+" echart: ", chart)
+        },
+
         async search() {
             var searchValue = {} // 存放筛选条件信息
             searchValue['function_name'] = this.functionSelected.toString()
@@ -260,7 +389,7 @@ export default {
                     searchValue['endData'] = endData
                 }
             }
-            
+
             this.searchSaaSCountryData(searchValue)
             this.searchSaaSFunctionByProvince(searchValue)
             this.searchSaaSProblemByProvinceAgency(searchValue)
@@ -278,7 +407,9 @@ export default {
                     '&endData=' +
                     searchValue['endData']
                 )
-                this.chinaMapProvinceSaaSProblemData = response.data.data
+                // 默认后端给的数据，第一个是map的数据，第二个是拿到saasFunctionType柱状图的数据， 第三个是saasAgencyType饼图的数据
+                // 拿到map的数据
+                this.chinaMapProvinceSaaSProblemData = response.data.data[0]
                 // 把valueMax的值取出来
                 let valueMax = this.chinaMapProvinceSaaSProblemData.pop()
                 let saasProblemChinaMap = echarts.getInstanceByDom(document.getElementById("saasProblemChinaMap"))
@@ -293,6 +424,7 @@ export default {
                         inRange: {
                             color: ['#FCF7F6', '#FD2C05 ']
                         },
+                        padding : [ 0, 0, 20, 15],
                         show: true
                     },
                     series: [
@@ -305,6 +437,87 @@ export default {
                     ]
                 })
                 console.log('update local map data: ', this.chinaMapProvinceSaaSProblemData)
+
+                // 拿到saasFunctionType柱状图的数据
+                this.saasFunctionTypeBarChartData = response.data.data[1]
+                updateBarChartBasic(document, this.saasFunctionTypeBarChartData, '出错功能Top5', "category", false, true, 'saasFunctionTypeBarChart')
+                let saasFunctionTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasFunctionTypeBarChart"))
+                saasFunctionTypeBarChart && saasFunctionTypeBarChart.setOption({
+                    legend: {data: []},
+                    grid: {
+                        left: '3%',
+                        right: '3%',
+                        top: '23%',
+                        bottom: '7%',
+                    },
+                })
+
+                // 拿到saasProblemType柱状图的数据
+                this.saasProblemTypeBarChartData = response.data.data[2]
+                updateBarChartBasic(document, this.saasProblemTypeBarChartData, '问题分类Top5', "category", false, true, 'saasProblemTypeBarChart')
+                let saasProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasProblemTypeBarChart"))
+                saasProblemTypeBarChart && saasProblemTypeBarChart.setOption({
+                    legend: {data: []},
+                    grid: {
+                        left: '3%',
+                        right: '3%',
+                        top: '23%',
+                        bottom: '7%',
+                    },
+                })
+
+                // 拿到saasSoftVersionAmount柱状图的数据
+                this.saasSoftVersionAmountBarChartData = response.data.data[3]
+                updateBarChartBasic(document, this.saasSoftVersionAmountBarChartData, '升级统计', "category", true, true, 'saasSoftVersionAmountBarChart')
+                let saasSoftVersionAmountBarChart = echarts.getInstanceByDom(document.getElementById("saasSoftVersionAmountBarChart"))
+                saasSoftVersionAmountBarChart && saasSoftVersionAmountBarChart.setOption({
+                    legend: {data: []},
+                    grid: {
+                        left: '3%',
+                        right: '3%',
+                        top: '20%',
+                        bottom: '3%',
+                    },
+                })
+
+                // 拿到saasAgencyType饼图的数据function
+                this.saasAgencyTypePieChartData = response.data.data[4]
+                this.updatePieChartBasic(this.saasAgencyTypePieChartData, this.saasAgencyTypePieChartData[0]["seriesName"], 10, 'saasAgencyTypePieChart')   
+                // 额外的饼图设置
+                let saasAgencyTypePieChart = echarts.getInstanceByDom(document.getElementById("saasAgencyTypePieChart"))
+                saasAgencyTypePieChart && saasAgencyTypePieChart.setOption({
+                    series: [{ 
+                        radius : ["20%", "37%"], 
+                        labelLine: { length: 3, maxSurfaceAngle: 80 },
+                    }]
+                })
+
+                // 拿到saasLargeProblemType柱状图的数据
+                this.saasLargeProblemTypeBarChartData = response.data.data[5]
+                updateBarChartBasic(document, this.saasLargeProblemTypeBarChartData, '私有化重大故障问题Top5', "category", false, false, 'saasLargeProblemTypeBarChart')
+                let saasLargeProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasLargeProblemTypeBarChart"))
+                saasLargeProblemTypeBarChart && saasLargeProblemTypeBarChart.setOption({
+                    legend: {data: []},
+                    grid: {
+                        left: '3%',
+                        right: '3%',
+                        top: '20%',
+                        bottom: '10%',
+                    },
+                    series: {
+                        label: {
+                            show: true,
+                            formatter: '{b|{b}: {c}}次',
+                            position: 'inside',
+                            
+                        },
+                    },
+                    yAxis: {
+                        type: 'category',
+                        // 将y轴标签去除，因为太长了，想展示在柱状内部
+                        axisLabel: { show: false },
+                    },
+                })
 
             } catch (error) {
                 console.log(error)
@@ -331,7 +544,7 @@ export default {
                 // 将yMax的值取出去除，不让他进入updateBarChartBasic()中，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
                 let yMax = this.saasProvinceBarChartData.pop().yMax
 
-                updateBarChartBasic(document, this.saasProvinceBarChartData, 'SaaS省份三线受理统计', "category", true, 'saasProvinceAndFunctionChart')
+                updateBarChartBasic(document, this.saasProvinceBarChartData, 'SaaS省份三线受理统计', "category", true, true, 'saasProvinceAndFunctionChart')
                 console.log('update local province bar chart data: ', this.saasProvinceBarChartData)
 
                 let interval = this.saasProvinceBarChartData[0]["seriesData"].length / this.provinceSplitNum
@@ -340,7 +553,7 @@ export default {
                     let splitData = []
                     this.saasProvinceBarChartData.forEach((item) => { splitData.push({ seriesName: item.seriesName, seriesData: item.seriesData.slice(i * interval, (i + 1) * interval) }) })
                     // 将数据注入柱状图内，i+1是因为元素在使用v-for生成的时候，v-for的i是从1开始，这里是0开始，所以使用i+1来获取相同的id
-                    updateBarChartBasic(document, splitData, 'SaaS省份三线受理统计(子集' + (i + 1) + ')', "category", false, 'saasProvinceAndFunctionChart' + (i + 1))
+                    updateBarChartBasic(document, splitData, 'SaaS省份三线受理统计(子集' + (i + 1) + ')', "category", false, true, 'saasProvinceAndFunctionChart' + (i + 1))
                     let chart = echarts.getInstanceByDom(document.getElementById('saasProvinceAndFunctionChart' + (i + 1)))
                     chart.setOption({
                         yAxis: {
@@ -382,3 +595,25 @@ export default {
     },
 };
 </script>
+
+<style>
+.saasChinaMapShow {
+    display: inline-block;
+}
+
+.saasChinaMapShow > div {
+    margin-top: 5px;
+    border-radius: 8px;
+    border: 1px solid skyblue;
+}
+
+.threeDText {
+  font-size: 16px;
+  color: #101AD2;
+  text-shadow:0px 1px 0px #c0c0c0,
+	 0px 2px 0px #b0b0b0,
+	 0px 3px 0px #a0a0a0,
+	 0px 4px 0px #909090,
+	 0px 5px 10px rgba(0, 0, 0, .9);
+}
+</style>
