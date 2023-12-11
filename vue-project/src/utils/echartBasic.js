@@ -63,12 +63,92 @@ export function updateBarChartBasic(currDocument, barChartData, barChartTitle, x
 }
 
 /**
+ * 当查询之后，数据更新，更新饼状图。
+ * 不知道为什么，如果添加在饼状图初始化时候就设置一些参数，然后再update时候只update数据，渲染反而会变卡，所以就把所有都放到update之中来。
+ * @param currDocument 页面的document对象
+ * @param {Object} pieChartData 饼状图数据
+ * @param {String} pieChartTitle 饼状图标题
+ * @param {String} pieChartElementId 饼状图元素id
+ */
+export function updatePieChartBasic(currDocument, chartData, chartTitle, chartElementId){
+    let chart = echarts.getInstanceByDom(currDocument.getElementById(chartElementId))
+
+    let option = {
+        title: {
+            text: chartTitle,
+            left: 'left'
+        },
+        tooltip: {
+            trigger: 'item',
+            formatter: '{a} <br/>{b} : {c} ({d}%)'
+        },
+        series: [
+        {
+            name: chartData[0].seriesName,
+            type: 'pie',
+            radius: '55%',
+            data: chartData[0].seriesData,
+            top: '7%',
+            labelLine: {
+                length: 15,
+                maxSurfaceAngle: 80
+            },
+            label: {
+                alignTo: 'edge',
+                formatter: '{b|{b}：}{c}次 {per|{d}%}  ',
+                minMargin: 5,
+                lineHeight: 15,
+                // 这个配置不知道为什么，给的值越大，edge distance其实越小
+                edgeDistance: 10,
+                rich: {
+                    b: {
+                        color: '#4C5058',
+                        fontWeight: 'bold',
+                        lineHeight: 25
+                    },
+                    per: {
+                        color: '#fff',
+                        backgroundColor: '#4C5058',
+                        padding: [3, 4],
+                    }
+                }
+            },
+            // 给标签线设置格式
+            labelLayout: function (params) {
+                // 通过标签魔性labelRect的x，查看是在这张图左边还是右边 （不能使用params.label.x直接看label的文字的坐标，不知道为什么直接整个回调所有设置失效）
+                const isLeft = params.labelRect.x < chart.getWidth() / 2;
+                const points = params.labelLinePoints;
+                // 更新水平方向的标签线的末尾坐标，看是左边的标签还是右边的标签，如果是右边的标签的话就取到标签的x值也就是标签最靠左的点然后加上标签宽度
+                points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
+                // 更新竖直方向的标签线的末尾坐标，因为想要label显示在线上方，所以加上label的高度。
+                points[1][1] = params.labelRect.y+params.labelRect.height
+                points[2][1] = params.labelRect.y+params.labelRect.height
+                return {
+                    labelLinePoints: points
+                };
+            },
+            emphasis: {
+                itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+            }
+        }
+        ]
+    };
+
+    chart&&chart.setOption(option, true)
+    console.log("updated "+chartElementId+" echart: ", chart)
+}
+
+/**
  * 将柱状图的数组信息循环添加进入柱状图的series中
  * @param {barChartData} barChartData 后端返回的包含柱状图所有信息的一个数组
  * @param {option} option 柱状图的option
  * @param {isVertical} 是否是垂直柱状图
  */
-export function normalBarChartAddSeries(barChartData, option, isVertical) {
+function normalBarChartAddSeries(barChartData, option, isVertical) {
     // 指定了柱子的15种颜色，因为不设置的话echarts默认超过9个颜色会开始循环，所以扩大一点，变成15个颜色开始循环
     let colors = ["#5470C6", "#91CC75", "#FAC858", "#EE6666", "#73C0DE", "#3BA272", "#fc8452", "#a26dba", "#ea7ccc", "#ffe630", "#00A0AF", "#DB643E", "#EA8D89", "#F4B2E5", "#F03A6A"]
     for (let i = 0; i < barChartData.length; i++) {

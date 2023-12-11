@@ -32,20 +32,18 @@
         <div style="height: 10px;"></div>
         <div style="height: 600px;">
             <div class="saasChinaMapShow">
-                <div id = "saasFunctionTypeBarChart" class="saasFunctionTypeBarChart" :style="{ width: getMainPageWidth * 0.275 + 'px', height: '200px'}"></div>
-                <div id = "saasProblemTypeBarChart" class="saasProblemTypeBarChart" :style="{ width: getMainPageWidth * 0.275 + 'px', height: '200px'}"></div>
-                <div style="height: 200px;">
-                    
-                </div>
+                <div id = "saasFunctionTypeBarChart" class="saasFunctionTypeBarChart" :style="{ width: getPageWidth * 0.275 + 'px', height: '200px'}"></div>
+                <div id = "saasProblemTypeBarChart" class="saasProblemTypeBarChart" :style="{ width: getPageWidth * 0.275 + 'px', height: '200px'}"></div>
+                <div id = "saasMonitorProblemTypeBarChart" class="saasMonitorProblemTypeBarChart" :style="{ width: getPageWidth * 0.275 + 'px', height: '200px'}"></div>
             </div>
             <div class="saasChinaMapShow">
-                <div id="saasProblemChinaMap" class="saasProblemChinaMap" :style="{ width: getMainPageWidth * 0.45 + 'px', height: '430px'}"></div>
-                <div id = "saasSoftVersionAmountBarChart" class="saasSoftVersionAmountBarChart" :style="{ width: getMainPageWidth * 0.45 + 'px', height: '177px'}"></div>
+                <div id="saasProblemChinaMap" class="saasProblemChinaMap" :style="{ width: getPageWidth * 0.45 + 'px', height: '430px'}"></div>
+                <div id = "saasSoftVersionAmountBarChart" class="saasSoftVersionAmountBarChart" :style="{ width: getPageWidth * 0.45 + 'px', height: '177px'}"></div>
             </div>
             <div class="saasChinaMapShow" style="width: 27.2%;">
                 <!-- 因为饼图没有grid设置，然后data会顶到底部，所以需要一个padding用于和下面图形进行分开-->
-                <div id = "saasAgencyTypePieChart" class="saasAgencyTypePieChart" :style="{ width: getMainPageWidth * 0.275 + 'px', height: '200px', padding: '0 0 10px 0'}"></div>
-                <div id = "saasLargeProblemTypeBarChart" class="saasLargeProblemTypeBarChart" :style="{ width: getMainPageWidth * 0.275 + 'px', height: '200px'}"></div>
+                <div id = "saasAgencyTypePieChart" class="saasAgencyTypePieChart" :style="{ width: getPageWidth * 0.275 + 'px', height: '200px', padding: '0 0 10px 0'}"></div>
+                <div id = "saasLargeProblemTypeBarChart" class="saasLargeProblemTypeBarChart" :style="{ width: getPageWidth * 0.275 + 'px', height: '200px'}"></div>
                 <div style="height: 190px;">
                     <el-row>
                         <!-- line-height 是为了让竖直居中，计算方法为外部div的height/(col的数量/2) * 2 -->
@@ -61,20 +59,21 @@
         <!-- 因为map是通过geo控制大小的，并没有办法使用grid来控制，所以map的高度无法控制，只能在那个div下面配上一个空间进行和下面图标的分割 -->
         <div style="height: 40px;"></div>
 
-        <div class="saasProvinceAndFunctionChart" id="saasProvinceAndFunctionChart" :style="{ width: getMainPageWidth + 'px', height: '400px' }"></div>
+        <div class="saasProvinceAndFunctionChart" id="saasProvinceAndFunctionChart" :style="{ width: getPageWidth + 'px', height: '400px' }"></div>
         <div class="saasProvinceAndFunctionChartSplit" id="saasProvinceAndFunctionChartSplit">
             <!-- 因为省份和功能会产生太多柱子，所以对省份进行一个切割，分成多张图来展现，注意，v-for这边生成的i是从1开始，所以id的末尾是1不是0 -->
             <div v-for="i in provinceSplitNum" :class="'saasProvinceAndFunctionChart' + i"
-                :id="'saasProvinceAndFunctionChart' + i" :style="{ width: getMainPageWidth + 'px', height: '400px' }">
+                :id="'saasProvinceAndFunctionChart' + i" :style="{ width: getPageWidth + 'px', height: '400px' }">
             </div>
         </div>
-        <div class="saasProvinceAndAgencyChart" id="saasProvinceAndAgencyChart" :style="{ width: getMainPageWidth + 'px', height: '400px' }"></div>
-        <div class="saasProblemMonthChart" id="saasProblemMonthChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }"></div>
+        <div class="saasProvinceAndAgencyChart" id="saasProvinceAndAgencyChart" :style="{ width: getPageWidth + 'px', height: '400px' }"></div>
+        <div class="saasProblemMonthChart" id="saasProblemMonthChart" :style="{ width: getPageWidth+ 'px', height: '400px' }"></div>
     </div>
 </template>
   
 <script>
-import { updateBarChartBasic } from '@/utils/echartBasic'
+import { getMainPageWidth } from '@/utils/layoutUtil'
+import { updateBarChartBasic, updatePieChartBasic} from '@/utils/echartBasic'
 
 import * as echarts from 'echarts'; // 引入 ECharts 库, 该项目安装的是5.4.3版本的echarts
 // 这个chinaMap.json是有完全版本的是从 https://datav.aliyun.com/portal/school/atlas/area_selector 进行获取的
@@ -106,6 +105,7 @@ export default {
             chinaMapProvinceSaaSProblemData: [],
             saasFunctionTypeBarChartData : [],
             saasProblemTypeBarChartData : [],
+            saasMonitorProblemTypeBarChartData : [],
             saasSoftVersionAmountBarChartData : [],
             saasAgencyTypePieChartData : [],
             saasLargeProblemTypeBarChartData : [],
@@ -118,14 +118,7 @@ export default {
     },
     // 计算页面刚加载时候渲染的属性
     computed: {
-        /**
-         * 获取主页面宽度的60%，用于给地图的布局的设置
-         */
-        getMainPageWidth: function () {
-            // windows.screen.width返回屏幕宽度，减去container模型左右padding各20px, 减去侧边栏220px, 减去主页面10px的padding
-            // 减去主页面的border的各1px， 减去主页面左右各15px的padding, 减去滚动条的20px，减去15px进行余量和留白
-            return (window.screen.width - 20 * 2 - 220 - 10 * 2 - 1 * 2 - 15 * 2 - 20 - 15)
-        },
+        getPageWidth: getMainPageWidth
     },
     mounted() {
         this.businessSelected.push(this.businessOptions[0]);
@@ -147,7 +140,29 @@ export default {
             this.functionSelected = this.functionOptions[this.businessSelected];
         },
 
+        // echarts各类图表的init
         drawCharts() {
+            this.initChinaMap()
+
+            // 其他图表的init
+            echarts.init(document.getElementById('saasFunctionTypeBarChart'))
+            echarts.init(document.getElementById('saasProblemTypeBarChart'))
+            echarts.init(document.getElementById('saasMonitorProblemTypeBarChart'))
+            echarts.init(document.getElementById('saasSoftVersionAmountBarChart'))
+            echarts.init(document.getElementById('saasAgencyTypePieChart'))
+            echarts.init(document.getElementById('saasLargeProblemTypeBarChart'))
+            echarts.init(document.getElementById('saasProvinceAndFunctionChart'))
+            echarts.init(document.getElementById('saasProvinceAndAgencyChart'))
+            echarts.init(document.getElementById('saasProblemMonthChart'))
+            // 因为是使用v-for生成的元素，所以使用this.$nextTick来进行延迟，否则可能会出现还没渲染元素就init的情况
+            this.$nextTick(() => { for (let i = 0; i < this.provinceSplitNum; i++) echarts.init(document.getElementById('saasProvinceAndFunctionChart' + (i + 1))) })
+
+        },
+
+        /**
+         * 对中国地图的echart做一个初始化
+         */
+        initChinaMap(){
             // 在 mounted 钩子中初始化 china map echarts 实例，并获取容器
             this.saasProblemChinaMap = echarts.init(document.getElementById('saasProblemChinaMap'))
             // ECharts 配置项
@@ -188,19 +203,6 @@ export default {
                 // 获取省份对应的图表统计
                 that.searchSaaSCountryRelevantData()
             });
-
-            // 其他图表的init
-            echarts.init(document.getElementById('saasFunctionTypeBarChart'))
-            echarts.init(document.getElementById('saasProblemTypeBarChart'))
-            echarts.init(document.getElementById('saasSoftVersionAmountBarChart'))
-            echarts.init(document.getElementById('saasAgencyTypePieChart'))
-            echarts.init(document.getElementById('saasLargeProblemTypeBarChart'))
-            echarts.init(document.getElementById('saasProvinceAndFunctionChart'))
-            echarts.init(document.getElementById('saasProvinceAndAgencyChart'))
-            echarts.init(document.getElementById('saasProblemMonthChart'))
-            // 因为是使用v-for生成的元素，所以使用this.$nextTick来进行延迟，否则可能会出现还没渲染元素就init的情况
-            this.$nextTick(() => { for (let i = 0; i < this.provinceSplitNum; i++) echarts.init(document.getElementById('saasProvinceAndFunctionChart' + (i + 1))) })
-
         },
 
         /**
@@ -299,87 +301,6 @@ export default {
             console.log("updated saasProvinceAndAgencyChart echart: ", chart)
         },
 
-        /**
-         * 当查询之后，数据更新，更新出错产品类型的饼状图
-         * @param {Object} pieChartData 饼状图数据
-         * @param {String} pieChartTitle 饼状图标题
-         * @param {String} pieChartElementId 饼状图元素id
-         */
-         updatePieChartBasic(chartData, chartTitle, labelFontSize, chartElementId){
-            let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
-
-            let option = {
-                title: {
-                    text: chartTitle,
-                    left: 'left'
-                },
-                tooltip: {
-                    trigger: 'item',
-                    formatter: '{a} <br/>{b} : {c} ({d}%)'
-                },
-                series: [
-                {
-                    name: chartData[0].seriesName,
-                    type: 'pie',
-                    radius: '55%',
-                    data: chartData[0].seriesData,
-                    top: '7%',
-                    labelLine: {
-                        length: 15,
-                        maxSurfaceAngle: 80
-                    },
-                    label: {
-                        alignTo: 'edge',
-                        formatter: '{b|{b}：}{c}次 {per|{d}%}  ',
-                        minMargin: 5,
-                        lineHeight: 15,
-                        // 这个配置不知道为什么，给的值越大，edge distance其实越小
-                        edgeDistance: 10,
-                        rich: {
-                            b: {
-                                color: '#4C5058',
-                                fontSize: labelFontSize,
-                                fontWeight: 'bold',
-                                lineHeight: 25
-                            },
-                            per: {
-                                color: '#fff',
-                                fontSize: labelFontSize,
-                                backgroundColor: '#4C5058',
-                                padding: [3, 4],
-                                // borderRadius: 4
-                            }
-                        }
-                    },
-                    // 给标签线设置格式
-                    labelLayout: function (params) {
-                        // 通过标签魔性labelRect的x，查看是在这张图左边还是右边 （不能使用params.label.x直接看label的文字的坐标，不知道为什么直接整个回调所有设置失效）
-                        const isLeft = params.labelRect.x < chart.getWidth() / 2;
-                        const points = params.labelLinePoints;
-                        // 更新水平方向的标签线的末尾坐标，看是左边的标签还是右边的标签，如果是右边的标签的话就取到标签的x值也就是标签最靠左的点然后加上标签宽度
-                        points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
-                        // 更新竖直方向的标签线的末尾坐标，因为想要label显示在线上方，所以加上label的高度。
-                        points[1][1] = params.labelRect.y+params.labelRect.height
-                        points[2][1] = params.labelRect.y+params.labelRect.height
-                        return {
-                            labelLinePoints: points
-                        };
-                    },
-                    emphasis: {
-                        itemStyle: {
-                            shadowBlur: 10,
-                            shadowOffsetX: 0,
-                            shadowColor: 'rgba(0, 0, 0, 0.5)'
-                        }
-                    }
-                }
-                ]
-            };
-
-            chart&&chart.setOption(option, true)
-            console.log("updated "+chartElementId+" echart: ", chart)
-        },
-
         async search() {
             var searchValue = {} // 存放筛选条件信息
             searchValue['function_name'] = this.functionSelected.toString()
@@ -474,11 +395,8 @@ export default {
                     searchValue['province']
                 )
 
-                // 拿到saasFunctionType柱状图的数据
-                this.saasFunctionTypeBarChartData = response.data.data[0]
-                updateBarChartBasic(document, this.saasFunctionTypeBarChartData, this.saasFunctionTypeBarChartData[0]["seriesName"], "category", false, true, 'saasFunctionTypeBarChart')
-                let saasFunctionTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasFunctionTypeBarChart"))
-                saasFunctionTypeBarChart && saasFunctionTypeBarChart.setOption({
+                // 这里是因为环绕在地图周围，所以size比较小，进行边距和轴标签的特殊设置
+                let smallSizeBarChartOption = {
                     legend: {data: []},
                     grid: {
                         left: '3%',
@@ -486,53 +404,24 @@ export default {
                         top: '23%',
                         bottom: '7%',
                     },
-                })
-
-                // 拿到saasProblemType柱状图的数据
-                this.saasProblemTypeBarChartData = response.data.data[1]
-                updateBarChartBasic(document, this.saasProblemTypeBarChartData, this.saasProblemTypeBarChartData[0]["seriesName"], "category", false, true, 'saasProblemTypeBarChart')
-                let saasProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasProblemTypeBarChart"))
-                saasProblemTypeBarChart && saasProblemTypeBarChart.setOption({
-                    legend: {data: []},
-                    grid: {
-                        left: '3%',
-                        right: '3%',
-                        top: '23%',
-                        bottom: '7%',
+                    xAxis : {
+                        axisLabel: {
+                            textStyle: {
+                                fontSize: "11",
+                            },
+                        },
                     },
-                })
-
-                // 拿到saasSoftVersionAmount柱状图的数据
-                this.saasSoftVersionAmountBarChartData = response.data.data[2]
-                updateBarChartBasic(document, this.saasSoftVersionAmountBarChartData, this.saasSoftVersionAmountBarChartData[0]["seriesName"], "category", true, true, 'saasSoftVersionAmountBarChart')
-                let saasSoftVersionAmountBarChart = echarts.getInstanceByDom(document.getElementById("saasSoftVersionAmountBarChart"))
-                saasSoftVersionAmountBarChart && saasSoftVersionAmountBarChart.setOption({
-                    legend: {data: []},
-                    grid: {
-                        left: '3%',
-                        right: '3%',
-                        top: '20%',
-                        bottom: '3%',
+                    yAxis : {
+                        axisLabel: {
+                            textStyle: {
+                                fontSize: "11",
+                            },
+                        },
                     },
-                })
+                }
 
-                // 拿到saasAgencyType饼图的数据function
-                this.saasAgencyTypePieChartData = response.data.data[3]
-                this.updatePieChartBasic(this.saasAgencyTypePieChartData, this.saasAgencyTypePieChartData[0]["seriesName"], 10, 'saasAgencyTypePieChart')   
-                // 额外的饼图设置
-                let saasAgencyTypePieChart = echarts.getInstanceByDom(document.getElementById("saasAgencyTypePieChart"))
-                saasAgencyTypePieChart && saasAgencyTypePieChart.setOption({
-                    series: [{ 
-                        radius : ["20%", "37%"], 
-                        labelLine: { length: 3, maxSurfaceAngle: 80 },
-                    }]
-                })
-
-                // 拿到saasLargeProblemType柱状图的数据
-                this.saasLargeProblemTypeBarChartData = response.data.data[4]
-                updateBarChartBasic(document, this.saasLargeProblemTypeBarChartData, this.saasLargeProblemTypeBarChartData[0]["seriesName"], "category", false, false, 'saasLargeProblemTypeBarChart')
-                let saasLargeProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasLargeProblemTypeBarChart"))
-                saasLargeProblemTypeBarChart && saasLargeProblemTypeBarChart.setOption({
+                // size较小的横向柱状图的设置，将标签设在内部并且靠左对齐
+                let smallSizeHorizontalBarChartOption = {
                     legend: {data: []},
                     grid: {
                         left: '3%',
@@ -544,19 +433,73 @@ export default {
                         label: {
                             show: true,
                             formatter: '{b|{b}: {c}}次',
-                            position: 'inside',
-                            
+                            // 横向柱状图，将标签设置在柱状内部，并且靠左对齐，padding是为了默认靠左对齐离y轴太近。
+                            position: 'insideLeft',
+                            align : 'left',
+                            padding : [0, -12, 0, 12],
                         },
                     },
                     yAxis: {
-                        type: 'category',
                         // 将y轴标签去除，因为太长了，想展示在柱状内部
                         axisLabel: { show: false },
                     },
+                }
+
+                // 拿到saasFunctionType柱状图的数据
+                this.saasFunctionTypeBarChartData = response.data.data[0]
+                updateBarChartBasic(document, this.saasFunctionTypeBarChartData, this.saasFunctionTypeBarChartData[0]["seriesName"], "category", false, true, 'saasFunctionTypeBarChart')
+                let saasFunctionTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasFunctionTypeBarChart"))
+                saasFunctionTypeBarChart && saasFunctionTypeBarChart.setOption(smallSizeBarChartOption)
+
+                // 拿到saasProblemType柱状图的数据
+                this.saasProblemTypeBarChartData = response.data.data[1]
+                updateBarChartBasic(document, this.saasProblemTypeBarChartData, this.saasProblemTypeBarChartData[0]["seriesName"], "category", false, true, 'saasProblemTypeBarChart')
+                let saasProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasProblemTypeBarChart"))
+                saasProblemTypeBarChart && saasProblemTypeBarChart.setOption(smallSizeBarChartOption)
+                
+                // 拿到saasMonitorProblemType柱状图的数据
+                this.saasMonitorProblemTypeBarChartData = response.data.data[2]
+                updateBarChartBasic(document, this.saasMonitorProblemTypeBarChartData, this.saasMonitorProblemTypeBarChartData[0]["seriesName"], "category", false, false, 'saasMonitorProblemTypeBarChart')
+                let saasMonitorProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasMonitorProblemTypeBarChart"))
+                saasMonitorProblemTypeBarChart && saasMonitorProblemTypeBarChart.setOption(smallSizeHorizontalBarChartOption)
+
+                // 拿到saasSoftVersionAmount柱状图的数据
+                this.saasSoftVersionAmountBarChartData = response.data.data[3]
+                updateBarChartBasic(document, this.saasSoftVersionAmountBarChartData, this.saasSoftVersionAmountBarChartData[0]["seriesName"], "category", true, true, 'saasSoftVersionAmountBarChart')
+                let saasSoftVersionAmountBarChart = echarts.getInstanceByDom(document.getElementById("saasSoftVersionAmountBarChart"))
+                saasSoftVersionAmountBarChart && saasSoftVersionAmountBarChart.setOption(smallSizeBarChartOption)
+
+                // 拿到saasAgencyType饼图的数据function
+                this.saasAgencyTypePieChartData = response.data.data[4]
+                updatePieChartBasic(document, this.saasAgencyTypePieChartData, this.saasAgencyTypePieChartData[0]["seriesName"], 'saasAgencyTypePieChart')   
+                // 额外的饼图设置
+                let saasAgencyTypePieChart = echarts.getInstanceByDom(document.getElementById("saasAgencyTypePieChart"))
+                saasAgencyTypePieChart && saasAgencyTypePieChart.setOption({
+                    series: [{ 
+                        radius : ["20%", "37%"], 
+                        labelLine: { length: 3, maxSurfaceAngle: 80 },
+                        // 给标签设置字体大小
+                        label : {
+                            rich: {
+                                b: {
+                                    fontSize: 10,
+                                },
+                                per: {
+                                    fontSize: 10,
+                                }
+                            }
+                        }
+                    }]
                 })
 
+                // 拿到saasLargeProblemType柱状图的数据
+                this.saasLargeProblemTypeBarChartData = response.data.data[5]
+                updateBarChartBasic(document, this.saasLargeProblemTypeBarChartData, this.saasLargeProblemTypeBarChartData[0]["seriesName"], "category", false, false, 'saasLargeProblemTypeBarChart')
+                let saasLargeProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasLargeProblemTypeBarChart"))
+                saasLargeProblemTypeBarChart && saasLargeProblemTypeBarChart.setOption(smallSizeHorizontalBarChartOption)
+
                 // 拿到saasCountrySummaryData表格的的数据
-                this.saasCountrySummaryData = response.data.data[5][0]["seriesData"]
+                this.saasCountrySummaryData = response.data.data[6][0]["seriesData"]
 
             } catch (error) {
                 console.log(error)

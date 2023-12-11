@@ -42,7 +42,8 @@
 </template>
   
 <script>
-import { updateBarChartBasic } from '@/utils/echartBasic'
+import { getMainPageWidth } from '@/utils/layoutUtil'
+import { updateBarChartBasic, updatePieChartBasic } from '@/utils/echartBasic'
 
 // 引入基本模板
 let echarts = require("echarts/lib/echarts");
@@ -71,14 +72,7 @@ export default {
     },
     // 计算页面刚加载时候渲染的属性
     computed: {
-        /**
-         * 获取主页面宽度
-         */
-        getPageWidth: function () {
-            // windows.screen.width返回屏幕宽度，减去侧边栏240px,减去container模型左右padding各20px和margin-right的10px,
-            // 减去主页面各自15px的padding, 减去不知道那里vue自己设的30px, 减去主页面内元素和滚动条保持距离的padding-right的10px,
-            return (window.screen.width - 240 - 20 * 2 - 10 - 15 * 2 - 30 - 10)
-        },
+        getPageWidth: getMainPageWidth
     },
     mounted() {
         this.searchLargeProblemProvinceList()
@@ -114,83 +108,6 @@ export default {
             echarts.init(document.getElementById('saasLargeProblemTypeProvinceChart'))
             echarts.init(document.getElementById('saasLargeProblemProvinceChart'))
             echarts.init(document.getElementById('saasLargeProblemTypeChart'))
-        },
-
-        /**
-         * 当查询之后，数据更新，更新重大事故数量和出错功能的饼状图的数据
-         */
-         updateSaaSLargeProblemTypeChart(chartData, chartTitle, chartElementId){
-            let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
-
-            let option = {
-                title: {
-                text: chartTitle,
-                left: 'left'
-                },
-                tooltip: {
-                trigger: 'item',
-                formatter: '{a} <br/>{b} : {c} ({d}%)'
-                },
-                series: [
-                {
-                    name: chartData[0].seriesName,
-                    type: 'pie',
-                    radius: '55%',
-                    data: chartData[0].seriesData,
-                    top: '7%',
-                    labelLine: {
-                        length: 15,
-                        maxSurfaceAngle: 80
-                    },
-                    label: {
-                    alignTo: 'edge',
-                    formatter: '{b|{b}：}{c}次 {per|{d}%}  ',
-                    minMargin: 5,
-                    lineHeight: 15,
-                    // 这个配置不知道为什么，给的值越大，edge distance其实越小
-                    edgeDistance: 10,
-                    rich: {
-                        b: {
-                        color: '#4C5058',
-                        fontSize: 12,
-                        fontWeight: 'bold',
-                        lineHeight: 25
-                        },
-                        per: {
-                        color: '#fff',
-                        backgroundColor: '#4C5058',
-                        padding: [3, 4],
-                        // borderRadius: 4
-                        }
-                    }
-                    },
-                    // 给标签线设置格式
-                    labelLayout: function (params) {
-                    // 通过标签魔性labelRect的x，查看是在这张图左边还是右边 （不能使用params.label.x直接看label的文字的坐标，不知道为什么直接整个回调所有设置失效）
-                    const isLeft = params.labelRect.x < chart.getWidth() / 2;
-                    const points = params.labelLinePoints;
-                    // 更新水平方向的标签线的末尾坐标，看是左边的标签还是右边的标签，如果是右边的标签的话就取到标签的x值也就是标签最靠左的点然后加上标签宽度
-                    points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
-                    // 更新竖直方向的标签线的末尾坐标，因为想要label显示在线上方，所以加上label的高度。
-                    points[1][1] = params.labelRect.y+params.labelRect.height
-                    points[2][1] = params.labelRect.y+params.labelRect.height
-                    return {
-                        labelLinePoints: points
-                    };
-                    },
-                    emphasis: {
-                    itemStyle: {
-                        shadowBlur: 10,
-                        shadowOffsetX: 0,
-                        shadowColor: 'rgba(0, 0, 0, 0.5)'
-                    }
-                    }
-                }
-                ]
-            };
-
-            chart&&chart.setOption(option, true)
-            console.log("updated "+chartElementId+" echart: ", chart)
         },
 
         /**
@@ -303,7 +220,7 @@ export default {
                 searchValue['endData']
                 )
                 this.saasLargeProblemTypeChartData = response.data.data
-                this.updateSaaSLargeProblemTypeChart(this.saasLargeProblemTypeChartData, "私有化重大故障问题分类", "saasLargeProblemTypeChart")
+                updatePieChartBasic(document, this.saasLargeProblemTypeChartData, "私有化重大故障问题分类", "saasLargeProblemTypeChart")
                 console.log('update local saasLargeProblemTypeChart data: ', this.saasLargeProblemTypeChartData)
 
             } catch (error) {

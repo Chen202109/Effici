@@ -867,6 +867,15 @@ def analysis_saas_problem_by_country_region(request):
         problem_type_bar_gragh.append({'seriesName': province+"问题分类Top5", 'seriesData': sorted_saas_problem_type_data})
         data.append(problem_type_bar_gragh)
 
+        # 对生产监控异常的数据进行统计排序
+        sql = f' SELECT distinct errorType as x, count(*) as y from monitorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" {province_condition_sql} group by errorType '
+        saas_monitor_problem_type_data = db.select_offset(1, 2000, sql)
+        # 排序并找出前五, 因为前端使用横向柱状图，所以排序要反着来
+        sorted_saas_monitor_problem_type_data = sorted(saas_monitor_problem_type_data, key=lambda x : x['y'], reverse = False)[-6:-1]
+        monitor_problem_type_bar_gragh = []
+        monitor_problem_type_bar_gragh.append({'seriesName': province+"生产监控问题分类Top5", 'seriesData': sorted_saas_monitor_problem_type_data})
+        data.append(monitor_problem_type_bar_gragh)
+
         # 对版本号和受理进行查询
         sql = f' SELECT distinct softversion as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} group by softversion order by softversion '
         saas_soft_version_amount_data = db.select_offset(1, 2000, sql)
@@ -887,7 +896,7 @@ def analysis_saas_problem_by_country_region(request):
         # 排序并找出前五, 这里reverse为false是因为前端使用的是横向的柱状图，他会把排序完的第一个的放在最底下，想要数值高的放在上方，reverse为false
         sorted_saas_large_problem_type_data = sorted(saas_large_problem_type_data, key=lambda x : x['y'], reverse = False)[-6:-1]
         large_problem_type_bar_gragh = []
-        large_problem_type_bar_gragh.append({'seriesName': province+"私有化重大故障问题分类", 'seriesData': sorted_saas_large_problem_type_data})
+        large_problem_type_bar_gragh.append({'seriesName': province+"私有化重大故障问题分类Top5", 'seriesData': sorted_saas_large_problem_type_data})
         data.append(large_problem_type_bar_gragh)
 
         # 对合计的数据进行统计添加

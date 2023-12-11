@@ -67,11 +67,11 @@
 
     <div style="height: 20px;"></div>
 
-    <div class="saasUpgradeTrendChart" id="saasUpgradeTrendChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
+    <div class="saasUpgradeTrendChart" id="saasUpgradeTrendChart" :style="{ width: getPageWidth+ 'px', height: '400px' }">
     </div>
-    <div class="saasVersionTrendByResourcePoolChart" id="saasVersionTrendByResourcePoolChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
+    <div class="saasVersionTrendByResourcePoolChart" id="saasVersionTrendByResourcePoolChart" :style="{ width: getPageWidth+ 'px', height: '400px' }">
     </div>
-    <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getMainPageWidth+ 'px', height: '400px' }">
+    <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getPageWidth+ 'px', height: '400px' }">
     </div>
 
   </div>
@@ -79,6 +79,7 @@
 
 
 <script>
+import { getMainPageWidth } from '@/utils/layoutUtil'
 import { updateBarChartBasic } from '@/utils/echartBasic'
 
 // 引入基本模板
@@ -119,11 +120,7 @@ export default {
   // 计算页面刚加载时候渲染的属性
   computed: {
     data() { },
-    getMainPageWidth: function () {
-      // windows.screen.width返回屏幕宽度，减去侧边栏240px,减去container模型左右padding各20px和margin-right的10px,
-      // 减去主页面各自15px的padding, 减去不知道那里vue自己设的30px, 减去主页面内元素和滚动条保持距离的padding-right的10px,
-      return (window.screen.width - 240 - 20 * 2 - 10 - 15 * 2 - 30 - 10) 
-    },
+    getPageWidth: getMainPageWidth
   },
   // 在初始化页面完成后,再对dom节点上图形进行相关绘制
   mounted() {

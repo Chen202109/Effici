@@ -27,8 +27,8 @@
 
     <div id='saasProblemCharts'>
       <!-- 放入Echarts 可视化图形 组件 -->
-      <div class="myChart" id="myChart" :style="{ width: getInlineChartsWidth, height: '420px' }"></div>
-      <div class="saasProblemPieChart" id="saasProblemPieChart" :style="{ width: getInlineChartsWidth, height: '420px' }"></div>
+      <div class="myChart" id="myChart" :style="{ width: getPageWidth * 0.5 + 'px', height: '420px' }"></div>
+      <div class="saasProblemPieChart" id="saasProblemPieChart" :style="{ width: getPageWidth * 0.5 + 'px', height: '420px' }"></div>
     </div>
 
     <div class="clearFloat"></div>
@@ -58,6 +58,7 @@
 </template>
 
 <script>
+import { getMainPageWidth } from '@/utils/layoutUtil'
 import saasProblemTable from '@/components/ShadowRPA/AnalysisData_saasProblemTable.vue'
 import html2pdf from 'html2pdf.js'
 
@@ -154,15 +155,7 @@ export default {
   },
   // 计算页面刚加载时候渲染的属性
   computed: {
-    data() { },
-    /**
-     * 获取主页面宽度的一半，用于给两个在一个水平面的图设定宽度
-     */
-    getInlineChartsWidth: function(){
-      // windows.screen.width返回屏幕宽度，减去侧边栏220px,减去container模型左右padding各20px和margin-right的10px,
-      // 减去主页面各自15px的padding, 减去不知道那里vue自己设的30px, 减去主页面内元素和滚动条保持距离的padding-right的10px,
-      return ((window.screen.width - 20 * 2 - 220 - 10 * 2 - 1 * 2 - 15 * 2 - 20 - 20))/2+'px'
-    },
+    getPageWidth: getMainPageWidth
   },
   // 在初始化页面完成后,再对dom节点上图形进行相关绘制
   mounted() {
@@ -258,11 +251,7 @@ export default {
             labelLine: {
               show: false
             },
-            data: [
-              { value: 10, name: '程序bug', },
-              { value: 19, name: '实施配置', },
-              { value: 6, name: '异常情况处理', }
-            ]
+            data: []
           },
           {
             name: 'Access From',
@@ -271,11 +260,10 @@ export default {
             radius: ['48%', '62%'],
             top: "1%",
             left: 'center',
-            // width不直接指定，因为这个图的大小是通过整个屏幕计算宽度除以2得到的，所以和这个图的宽度保持一直，具体算法见getInlineChartsWidth()方法
-            width: (window.screen.width-240-20*2-10-15*2-30-10)/2,
+            // width不直接指定，因为这个图的大小是通过整个屏幕计算宽度除以2得到的，所以和这个图的宽度保持一直，具体算法见util中的layoutUtil的getMainPageWidth()方法
+            width: (window.screen.width - 20 * 2 - 220 - 10 * 2 - 1 * 2 - 15 * 2 - 20 - 15)/2,
             labelLine: {
               length: 15,
-              length2: 0,
               maxSurfaceAngle: 80
             },
             label: {
@@ -295,7 +283,6 @@ export default {
                   color: '#fff',
                   backgroundColor: '#4C5058',
                   padding: [3, 4],
-                  // borderRadius: 4
                 },
               }
             },
@@ -313,21 +300,7 @@ export default {
                 labelLinePoints: points
               };
             },
-            data: [
-              { value: 3, name: 'report' },
-              { value: 5, name: 'openbill' },
-              { value: 6, name: 'licenseReset' },
-              { value: 2, name: 'added' },
-              { value: 3, name: 'collection' },
-              { value: 1, name: 'exchange' },
-              { value: 6, name: 'writeoff' },
-              { value: 1, name: 'billManagement' },
-              { value: 0, name: 'security' },
-              { value: 0, name: 'print' },
-              { value: 2, name: 'datasync' },
-              { value: 2, name: 'inverse' },
-              { value: 8, name: 'opening' }
-            ]
+            data: []
           }
         ]
       })
