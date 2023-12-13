@@ -63,7 +63,7 @@
         <!-- 因为map是通过geo控制大小的，并没有办法使用grid来控制，所以map的高度无法控制，只能在那个div下面配上一个空间进行和下面图标的分割 -->
         <div style="height: 40px;"></div>
 
-        <div class="saasProvinceAndFunctionChart" id="saasProvinceAndFunctionChart" :style="{ width: getPageWidth + 'px', height: '400px' }"></div>
+        <div class="saasProvinceAndFunctionChart normalChartSize" id="saasProvinceAndFunctionChart"></div>
         <div class="saasProvinceAndFunctionChartSplit" id="saasProvinceAndFunctionChartSplit">
             <!-- 因为省份和功能会产生太多柱子，所以对省份进行一个切割，分成多张图来展现，注意，v-for这边生成的i是从1开始，所以id的末尾是1不是0 -->
             <div v-for="i in provinceSplitNum" :class="'saasProvinceAndFunctionChart' + i"
@@ -612,16 +612,18 @@ export default {
             this.saasProblemMonthChartData = response.data.data
             updateBarChartBasic(document, this.saasProblemMonthChartData, searchValue['beginData'].slice(0,4)+'年SaaS月份受理统计', "category", false, true, 'saasProblemMonthChart')
             let saasProblemMonthChart = echarts.getInstanceByDom(document.getElementById("saasProblemMonthChart"))
-            let functionTypeData = this.saasProblemMonthChartDatap[0]["seriesData"].map((item) => item.functionType)
+            let functionTypeData = this.saasProblemMonthChartData[0]["seriesData"].map((item) => item.functionType)
             saasProblemMonthChart && saasProblemMonthChart.setOption({
                 tooltip: {
                     trigger: 'axis',
                     formatter: function (params) {
                         const index = params[0].dataIndex; // 获取当前数据点的索引
-                        const xValue = params[0].value[0]; // x 值
-                        const yValue = params[0].value[1]; // y 值
-                        const func = functionTypeData[params[0].seriesIndex][index]; // 获取数据点对应版本号
-                        return `月份: ${xValue}<br/>受理数量: ${yValue}<br/>出错功能: ${func}`;
+                        const xValue = params[0].name; // x 值
+                        const yValue = params[0].value; // y 值
+                        // 获取数据点对应的出错功能
+                        let func = ''
+                        functionTypeData[index].forEach((item)=> { func+= '<br/>' + item.function + ": " + item.amount })
+                        return `月份: ${xValue}<br/>受理数量: ${yValue} ${func}`;
                     }
                 }
             })
@@ -697,4 +699,10 @@ export default {
     color: #1027CA;
     font-family: seven_digit_i;   
 }
-</style>
+
+.normalChartSize {
+    width: 100% !important;
+    height: 400px !important;
+}
+
+</style>    

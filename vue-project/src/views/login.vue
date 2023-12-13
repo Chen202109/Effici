@@ -3,13 +3,13 @@
   <div v-loading="loading" element-loading-text="登录中..." element-loading-spinner="el-icon-loading" element-loading-background="rgba(0, 0, 0, 0.6)" class="login-container">
  
     <el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" auto-complete="on" label-position="left">
-      <!-- 头像区域 -->
+      <!-- 头像区域
       <div v-if="TxStatus" class="avatar-box">
         <img src="../assets/touxiang.jpg" alt="">
-      </div>
+      </div> -->
  
       <div class="title-container">
-        <h3 class="title">进入系统</h3>
+        <h3 class="title">SaaS运营分析平台</h3>
       </div>
  
       <el-form-item prop="username">

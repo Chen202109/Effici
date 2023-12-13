@@ -981,16 +981,17 @@ def analysis_version_upgrade_trend(request):
 
         province_condition_sql = "" if province=='全国' else f' AND region = "{province}" '
 
-        sql = f'SELECT DISTINCT softversion as x, 0 as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} ORDER BY softversion '
+        sql = f'SELECT DISTINCT softversion as x from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} ORDER BY softversion '
         saas_version_data = db.select_offset(1, 2000, sql)
 
         for i in range(len(function_name)):
-            sql = f' SELECT * from workrecords_2023 '\
+            sql = f' SELECT softversion as x, COUNT(*) as y from workrecords_2023 '\
                   f' WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '\
                   f' {province_condition_sql} ' \
-                  f' AND errorfunction = "{function_name[i]}" '
+                  f' AND errorfunction = "{function_name[i]}" ' \
+                  f' GROUP BY softversion'
             saas_function_data = db.select_offset(1, 2000, sql)
-            saas_version_data = [{'x': entry['x'], 'y': Counter(item['softversion'] for item in saas_function_data)[entry['x']]} for entry in saas_version_data]
+            saas_version_data = [{'x': entry['x'], 'y': next((value['y'] for value in saas_function_data if value['x'] == entry['x']), 0)} for entry in saas_version_data]
             data.append({'seriesName': function_name[i], 'seriesData': saas_version_data})
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
@@ -1007,10 +1008,31 @@ def analysis_saas_problem_by_month(request):
         saas_month_data = []
 
         db =mysql_base.Db()
-        sql = f'SELECT MONTH(createtime) AS Month,COUNT(*) AS ProblemAmount FROM workrecords_2023 WHERE MONTH(createtime) between {datetime.strptime(begin_date, "%Y-%m-%d").month} and {datetime.strptime(end_date, "%Y-%m-%d").month} GROUP BY MONTH(createtime)'
+        sql = f' SELECT MONTH(createtime) AS Month, errorfunction, COUNT(*) AS ProblemAmount '\
+              f' FROM workrecords_2023 '\
+              f' WHERE MONTH(createtime) between {datetime.strptime(begin_date, "%Y-%m-%d").month} AND {datetime.strptime(end_date, "%Y-%m-%d").month} '\
+              f' GROUP BY MONTH(createtime), errorfunction'
         saas_month_data = db.select_offset(1, 2000, sql)
-        seriesData = [{'x':str(d["Month"])+'月', 'y':d["ProblemAmount"], 'functionType' : '111'} for d in saas_month_data]
-        data.append({'seriesName': "问题受理数量", 'seriesData': seriesData})
+
+        # 因为前端想要tooltip展示每个月出错功能的前五，所以在这里进行每个月出错功能的排序
+        series_data = []
+        curr_month = 0
+        month_amount = 0
+        month_function_list = []
+        for i in range(len(saas_month_data)):
+            if (curr_month != 0 and curr_month != saas_month_data[i]['Month']) or (i== len(saas_month_data)-1):
+                # 说明要换成下个月的数据了，或者是已经到查询的月份的末尾了，所以将当前存储的当前月份的数据进行出错功能的排序取前五和添加到series_data中
+                month_function_list.sort(key=lambda x: x['amount'], reverse=True)
+                series_data.append({'x':str(curr_month)+'月', 'y':month_amount, 'functionType' : month_function_list[0:5]})
+                # 将临时数据进行清空
+                month_amount = 0
+                month_function_list = []
+            # 还在当前月份，那么就往临时数据里面添加当前月份的出错功能和累加出错的量
+            curr_month = saas_month_data[i]['Month']    
+            month_amount += saas_month_data[i]['ProblemAmount']
+            month_function_list.append({"function": saas_month_data[i]['errorfunction'], 'amount' : saas_month_data[i]['ProblemAmount']})
+
+        data.append({'seriesName': "问题受理数量", 'seriesData': series_data})
             
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
