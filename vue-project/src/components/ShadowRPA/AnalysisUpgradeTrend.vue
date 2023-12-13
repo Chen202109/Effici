@@ -71,8 +71,6 @@
     </div>
     <div class="saasVersionTrendByResourcePoolChart" id="saasVersionTrendByResourcePoolChart" :style="{ width: getPageWidth+ 'px', height: '400px' }">
     </div>
-    <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getPageWidth+ 'px', height: '400px' }">
-    </div>
 
   </div>
 </template>
@@ -112,9 +110,6 @@ export default {
       // 这个页面各类图的数据
       saasUpgradeLineChartData: [],
       saasVersionByResoucePoolBarChartData: [],
-      saasVersionBarChartData: [],
-      saasProvinceBarChartData: [],
-      saasProvinceAndAgencyChartData: [],
     }
   },
   // 计算页面刚加载时候渲染的属性
@@ -177,7 +172,6 @@ export default {
       // saas 升级，版本更新和bug的折线图的init
       echarts.init(document.getElementById('saasUpgradeTrendChart'))
       echarts.init(document.getElementById('saasVersionTrendByResourcePoolChart'))
-      echarts.init(document.getElementById('saasVersionTrendChart'))
     },
 
     /**
@@ -319,21 +313,13 @@ export default {
         var year = this.dateRange[i].getFullYear()
         var month = ('0' + (this.dateRange[i].getMonth() + 1)).slice(-2)
         var day = ('0' + this.dateRange[i].getDate()).slice(-2)
-        if (i == 0) {
-          // 构建格式化后的日期字符串
-          var beginData = year + '-' + month + '-' + day
-          searchValue['beginData'] = beginData
-        }
-        if (i == 1) {
-          var endData = year + '-' + month + '-' + day
-          searchValue['endData'] = endData
-        }
+        searchValue[(i==0)?"beginData":"endData"] = year + "-" + month + "-" + day;
       } //结束for，完成日期的拼接
       
       this.searchSaasUpgradeProblemTypeTable(searchValue)
       this.searchSaaSServiceUpgradeTrend(searchValue)
       this.searchSaaSVersionUpgradeTrendByResoucePool(searchValue)
-      this.searchSaaSVersionUpgradeTrend(searchValue)
+      
     },
 
     /**
@@ -409,34 +395,6 @@ export default {
         alert('失败' + error)
       }
     },
-
-    /**
-     * @param {searchValue} searchValue 搜索参数的字典
-     * @description 对版本趋势柱状图的后端数据请求
-     */
-    async searchSaaSVersionUpgradeTrend(searchValue) {
-      try {
-        const response = await this.$http.get(
-          '/api/CMC/workrecords/analysis_version_upgrade_trend?beginData=' +
-          searchValue['beginData'] +
-          '&endData=' +
-          searchValue['endData'] +
-          '&resourcePool=' +
-          searchValue['resourcePool'] +
-          '&function_name=' +
-          searchValue['function_name']
-        )
-        this.saasVersionBarChartData = response.data.data
-        updateBarChartBasic(document, this.saasVersionBarChartData, 'SaaS全版本受理趋势', "category", false, true, 'saasVersionTrendChart')
-        console.log('update local version linechart data: ', this.saasVersionBarChartData)
-
-      } catch (error) {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
-      }
-    },
-
   }
 }
 </script>

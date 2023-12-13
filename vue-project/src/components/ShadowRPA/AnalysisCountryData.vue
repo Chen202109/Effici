@@ -2,7 +2,11 @@
     <div>
         <div style="margin: 15px 0">
             <div style="margin-bottom: 10px;">
-                <span class="demonstration">时间范围： </span>
+                <span class="demonstration">省份： </span>
+                <el-select v-model = "provinceSelected" placeholder = "请选择省份" style="width: 120px;" :clearable="true">
+                    <el-option v-for="(item,index) in this.provinceList" :key="index" :label="item" :value="item"></el-option>
+                </el-select>
+                <span class="demonstration" style="margin-left: 15px;">时间范围： </span>
                 <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
                     end-placeholder="结束日期">
                 </el-date-picker>
@@ -68,6 +72,7 @@
         </div>
         <div class="saasProvinceAndAgencyChart" id="saasProvinceAndAgencyChart" :style="{ width: getPageWidth + 'px', height: '400px' }"></div>
         <div class="saasProblemMonthChart" id="saasProblemMonthChart" :style="{ width: getPageWidth+ 'px', height: '400px' }"></div>
+        <div class="saasVersionTrendChart" id="saasVersionTrendChart" :style="{ width: getPageWidth+ 'px', height: '400px' }"></div>
     </div>
 </template>
   
@@ -97,7 +102,8 @@ export default {
                 "其他业务": ["增值服务", "单位开通", "license重置", "安全漏洞"],
             },
             functionSelected: '',
-            provinceSelected : "全国",
+            provinceSelected : "",
+            provinceList : [],
 
             // 将省份和出错功能对比的柱形图分割成几个子图
             provinceSplitNum: 2,
@@ -113,7 +119,7 @@ export default {
             saasProvinceBarChartData: [],
             saasProvinceAndAgencyChartData: [],
             saasProblemMonthChartData: [],
-            
+            saasVersionBarChartData: [],
         }
     },
     // 计算页面刚加载时候渲染的属性
@@ -123,6 +129,11 @@ export default {
     mounted() {
         this.businessSelected.push(this.businessOptions[0]);
         this.functionSelected = this.functionOptions[this.businessSelected].slice(0, 3);
+        this.provinceList = ['北京','天津','上海','重庆','河北','山西','辽宁','吉林', '云南', '新疆', '广西', '甘肃', '内蒙古', '陕西', '西藏', 
+                       '四川', '宁夏', '黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','海南', '贵州', '青海', 
+                       '台湾', '香港', '澳门'];
+        this.provinceList.unshift("全国");
+        this.provinceSelected = this.provinceList[0];
         // 初始化中国的地图的数据，从本地配置文件中读取
         echarts.registerMap("china", { geoJSON: chinaMap });
         // 进行图的配置
@@ -154,6 +165,7 @@ export default {
             echarts.init(document.getElementById('saasProvinceAndFunctionChart'))
             echarts.init(document.getElementById('saasProvinceAndAgencyChart'))
             echarts.init(document.getElementById('saasProblemMonthChart'))
+            echarts.init(document.getElementById('saasVersionTrendChart'))
             // 因为是使用v-for生成的元素，所以使用this.$nextTick来进行延迟，否则可能会出现还没渲染元素就init的情况
             this.$nextTick(() => { for (let i = 0; i < this.provinceSplitNum; i++) echarts.init(document.getElementById('saasProvinceAndFunctionChart' + (i + 1))) })
 
@@ -167,6 +179,15 @@ export default {
             this.saasProblemChinaMap = echarts.init(document.getElementById('saasProblemChinaMap'))
             // ECharts 配置项
             const option = {
+                title : {
+                    show: true,
+                    text: '全国受理问题分布',
+                    left: '2%',
+                    top: '2%',
+                    textStyle: {
+                        fontSize: 18
+                    }
+                },
                 tooltip: {
                     triggerOn: 'mousemove',
                     formatter: function (param) {
@@ -303,7 +324,8 @@ export default {
 
         async search() {
             var searchValue = {} // 存放筛选条件信息
-            searchValue['function_name'] = this.functionSelected.toString()
+            searchValue['functionName'] = this.functionSelected.toString()
+            searchValue['provinceSelected'] = this.provinceSelected
             // 获取年、月、日，进行拼接
             for (let i = 0; i < this.dateRange.length; i++) {
                 var year = this.dateRange[i].getFullYear()
@@ -317,7 +339,7 @@ export default {
             this.searchSaaSFunctionByProvince(searchValue)
             this.searchSaaSProblemByProvinceAgency(searchValue)
             this.searchSaaSProblemByMonth(searchValue)
-
+            this.searchSaaSVersionUpgradeTrend(searchValue)
         },
 
         /**
@@ -519,8 +541,8 @@ export default {
                     searchValue['beginData'] +
                     '&endData=' +
                     searchValue['endData'] +
-                    '&function_name=' +
-                    searchValue['function_name']
+                    '&functionName=' +
+                    searchValue['functionName']
                 )
                 this.saasProvinceBarChartData = response.data.data
                 // 将yMax的值取出去除，不让他进入updateBarChartBasic()中，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
@@ -589,7 +611,49 @@ export default {
             )
             this.saasProblemMonthChartData = response.data.data
             updateBarChartBasic(document, this.saasProblemMonthChartData, searchValue['beginData'].slice(0,4)+'年SaaS月份受理统计', "category", false, true, 'saasProblemMonthChart')
+            let saasProblemMonthChart = echarts.getInstanceByDom(document.getElementById("saasProblemMonthChart"))
+            let functionTypeData = this.saasProblemMonthChartDatap[0]["seriesData"].map((item) => item.functionType)
+            saasProblemMonthChart && saasProblemMonthChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function (params) {
+                        const index = params[0].dataIndex; // 获取当前数据点的索引
+                        const xValue = params[0].value[0]; // x 值
+                        const yValue = params[0].value[1]; // y 值
+                        const func = functionTypeData[params[0].seriesIndex][index]; // 获取数据点对应版本号
+                        return `月份: ${xValue}<br/>受理数量: ${yValue}<br/>出错功能: ${func}`;
+                    }
+                }
+            })
+            
             console.log('update local month bar chart data: ', this.saasProblemMonthChartData)
+
+        } catch (error) {
+            console.log(error)
+            this.$message.error('错了哦，仔细看错误信息弹窗')
+            alert('失败' + error)
+        }
+        },
+
+        /**
+         * @param {searchValue} searchValue 搜索参数的字典
+         * @description 对版本趋势柱状图的后端数据请求
+         */
+        async searchSaaSVersionUpgradeTrend(searchValue) {
+        try {
+            const response = await this.$http.get(
+            '/api/CMC/workrecords/analysis_version_upgrade_trend?beginData=' +
+            searchValue['beginData'] +
+            '&endData=' +
+            searchValue['endData'] +
+            '&functionName=' +
+            searchValue['functionName'] +
+            '&provinceSelected=' +
+            searchValue['provinceSelected']
+            )
+            this.saasVersionBarChartData = response.data.data
+            updateBarChartBasic(document, this.saasVersionBarChartData, this.provinceSelected+'SaaS全版本受理趋势', "category", false, true, 'saasVersionTrendChart')
+            console.log('update local version linechart data: ', this.saasVersionBarChartData)
 
         } catch (error) {
             console.log(error)

@@ -175,6 +175,29 @@ export default {
                 )
                 this.saasLargeProblemTypeProvinceChartData = response.data.data
                 updateBarChartBasic(document, this.saasLargeProblemTypeProvinceChartData, '省份私有化重大故障类型统计', "category", false, true, 'saasLargeProblemTypeProvinceChart')
+                
+                // 因为重大故障这个x轴的标签有的过于长，就算换行显示也还是会乱在一起。
+                // 所以进行判断，x轴的多于10个标签的正常来说换行也不能解决问题，所以进行斜着显示，并且将换行清除和grid进行调整（否则末尾的标签斜着会溢出图表所在区域）。
+                // 如果小于10个标签，那么原来update函数中就会自己判断是否正常显示或者换行显示。
+                let saasLargeProblemTypeProvinceChart = echarts.getInstanceByDom(document.getElementById("saasLargeProblemTypeProvinceChart"))
+                let xAxisData = this.saasLargeProblemTypeProvinceChartData[0].seriesData.map(item => item.x)
+                xAxisData.length > 10 && saasLargeProblemTypeProvinceChart && saasLargeProblemTypeProvinceChart.setOption({
+                    grid: {
+                        left: '3%',
+                        right: '5%',
+                        top: '20%',
+                        bottom: '10%',
+                        containLabel: true
+                    },
+                    xAxis : {
+                        data: xAxisData,
+                        axisLabel: {  
+                            interval:0,      //坐标轴刻度标签的显示间隔(在类目轴中有效) 0:显示所有  1：隔一个显示一个 :3：隔三个显示一个...
+                            rotate:-20    //标签倾斜的角度，显示不全时可以通过旋转防止标签重叠（-90到90）
+                        }
+                    }
+                })
+
                 console.log('update local saasLargeProblemTypeProvinceChart data: ', this.saasLargeProblemTypeProvinceChartData)
 
             } catch (error) {
