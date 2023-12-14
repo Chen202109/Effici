@@ -66,9 +66,7 @@
         <div class="saasProvinceAndFunctionChart normalChartSize" id="saasProvinceAndFunctionChart"></div>
         <div class="saasProvinceAndFunctionChartSplit" id="saasProvinceAndFunctionChartSplit">
             <!-- 因为省份和功能会产生太多柱子，所以对省份进行一个切割，分成多张图来展现，注意，v-for这边生成的i是从1开始，所以id的末尾是1不是0 -->
-            <div v-for="i in provinceSplitNum" :class="'saasProvinceAndFunctionChart' + i"
-                :id="'saasProvinceAndFunctionChart' + i" :style="{ width: getPageWidth + 'px', height: '400px' }">
-            </div>
+            <div v-for="i in provinceSplitNum" :class="'saasProvinceAndFunctionChart' + i" :id="'saasProvinceAndFunctionChart' + i"></div>
         </div>
         <div class="saasProvinceAndAgencyChart" id="saasProvinceAndAgencyChart" :style="{ width: getPageWidth + 'px', height: '400px' }"></div>
         <div class="saasProblemMonthChart" id="saasProblemMonthChart" :style="{ width: getPageWidth+ 'px', height: '400px' }"></div>
@@ -107,6 +105,8 @@ export default {
 
             // 将省份和出错功能对比的柱形图分割成几个子图
             provinceSplitNum: 2,
+            // 省份与出错功能柱状图的子集的图的收缩state
+            provinceSplitState : false,
 
             chinaMapProvinceSaaSProblemData: [],
             saasFunctionTypeBarChartData : [],
@@ -117,6 +117,7 @@ export default {
             saasLargeProblemTypeBarChartData : [],
             saasCountrySummaryData: [],
             saasProvinceBarChartData: [],
+            saasProvinceProblemAmountMax: 0, //该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
             saasProvinceAndAgencyChartData: [],
             saasProblemMonthChartData: [],
             saasVersionBarChartData: [],
@@ -166,9 +167,6 @@ export default {
             echarts.init(document.getElementById('saasProvinceAndAgencyChart'))
             echarts.init(document.getElementById('saasProblemMonthChart'))
             echarts.init(document.getElementById('saasVersionTrendChart'))
-            // 因为是使用v-for生成的元素，所以使用this.$nextTick来进行延迟，否则可能会出现还没渲染元素就init的情况
-            this.$nextTick(() => { for (let i = 0; i < this.provinceSplitNum; i++) echarts.init(document.getElementById('saasProvinceAndFunctionChart' + (i + 1))) })
-
         },
 
         /**
@@ -320,6 +318,33 @@ export default {
             chart && chart.setOption(option, true)
 
             console.log("updated saasProvinceAndAgencyChart echart: ", chart)
+        },
+
+        /**
+         * 对省份子集的图进行update数据
+         */
+        updateSaasProvinceAndFunctionSplitChart(){
+            let interval = this.saasProvinceBarChartData[0]["seriesData"].length / this.provinceSplitNum
+            // 要分成几张图的数据，进行遍历循环，给柱状图添加数据。
+            for (let i = 0; i < this.provinceSplitNum; i++) {
+                const ele = document.getElementById('saasProvinceAndFunctionChart' + (i + 1))
+                ele.classList.add('normalChartSize')
+                echarts.init(ele)
+                let splitData = []
+                this.saasProvinceBarChartData.forEach((item) => { splitData.push({ seriesName: item.seriesName, seriesData: item.seriesData.slice(i * interval, (i + 1) * interval) }) })
+                // 将数据注入柱状图内，i+1是因为元素在使用v-for生成的时候，v-for的i是从1开始，这里是0开始，所以使用i+1来获取相同的id
+                updateBarChartBasic(document, splitData, 'SaaS省份三线受理统计(子集' + (i + 1) + ')', "category", false, true, 'saasProvinceAndFunctionChart' + (i + 1))
+                let chart = echarts.getInstanceByDom(document.getElementById('saasProvinceAndFunctionChart' + (i + 1)))
+                chart && chart.setOption({
+                    yAxis: {
+                        type: "value",
+                        max: Math.ceil(this.saasProvinceProblemAmountMax / 10) * 10
+                    }
+                })
+
+                // 判断是否要隐藏子集
+                if (!this.provinceSplitState && !ele.classList.contains('hidden')) ele.classList.add('hidden')
+            }
         },
 
         async search() {
@@ -546,27 +571,40 @@ export default {
                 )
                 this.saasProvinceBarChartData = response.data.data
                 // 将yMax的值取出去除，不让他进入updateBarChartBasic()中，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
-                let yMax = this.saasProvinceBarChartData.pop().yMax
+                this.saasProvinceProblemAmountMax = this.saasProvinceBarChartData.pop().yMax
 
                 updateBarChartBasic(document, this.saasProvinceBarChartData, 'SaaS省份三线受理统计', "category", true, true, 'saasProvinceAndFunctionChart')
                 console.log('update local province bar chart data: ', this.saasProvinceBarChartData)
+                this.updateSaasProvinceAndFunctionSplitChart()
 
-                let interval = this.saasProvinceBarChartData[0]["seriesData"].length / this.provinceSplitNum
-                // 要分成几张图的数据，进行遍历循环，给柱状图添加数据。
-                for (let i = 0; i < this.provinceSplitNum; i++) {
-                    let splitData = []
-                    this.saasProvinceBarChartData.forEach((item) => { splitData.push({ seriesName: item.seriesName, seriesData: item.seriesData.slice(i * interval, (i + 1) * interval) }) })
-                    // 将数据注入柱状图内，i+1是因为元素在使用v-for生成的时候，v-for的i是从1开始，这里是0开始，所以使用i+1来获取相同的id
-                    updateBarChartBasic(document, splitData, 'SaaS省份三线受理统计(子集' + (i + 1) + ')', "category", false, true, 'saasProvinceAndFunctionChart' + (i + 1))
-                    let chart = echarts.getInstanceByDom(document.getElementById('saasProvinceAndFunctionChart' + (i + 1)))
-                    chart.setOption({
-                        yAxis: {
-                            type: "value",
-                            max: Math.ceil(yMax / 10) * 10
+                // 给图添加一个graphic用于点击使用，进行子集的图的收缩和展开。
+                // 在回调函数中this指向的是echart对象，而不是这个document
+                var that = this
+                let saasProvinceAndFunctionChart = echarts.getInstanceByDom(document.getElementById("saasProvinceAndFunctionChart"))
+                saasProvinceAndFunctionChart && saasProvinceAndFunctionChart.setOption({
+                    graphic : {
+                        type : 'text',
+                        left: 'right',
+                        top: 'top',
+                        z: 100,
+                        style : {
+                            fill : '#409eff',
+                            text : "收缩/展开子集",
+                            fontSize: 16,
+                            lineHeight: 30,
+                            textAlign: 'center',
+                            padding : [10, 25, 0, 0],
+                        },
+                        onclick: function(){
+                            for (let i = 0; i < that.provinceSplitNum; i++) {
+                                const ele = document.getElementById('saasProvinceAndFunctionChart' + (i + 1));
+                                // 根据子集的state进行是否要添加hidden class设置display none
+                                (that.provinceSplitState) ? ele.classList.add("hidden") : ele.classList.remove("hidden");
+                            }
+                            that.provinceSplitState = !that.provinceSplitState                 
                         }
-                    })
-                }
-
+                    }
+                })
             } catch (error) {
                 console.log(error)
                 this.$message.error('错了哦，仔细看错误信息弹窗')
@@ -703,6 +741,10 @@ export default {
 .normalChartSize {
     width: 100% !important;
     height: 400px !important;
+}
+
+.hidden {
+    display: none !important;
 }
 
 </style>    
