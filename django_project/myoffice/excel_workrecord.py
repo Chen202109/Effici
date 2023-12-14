@@ -11,7 +11,7 @@ def workrecord_inster_sql(filePath):
         '编码':'recordcode','标题':'recordtitle','创建人':'creater','接入人姓名':'creater','创建时间':'createtime','登记日期':'createtime',
         '接入方':'createdirectional','解决日期': 'endtime','问题描述':'problem','解决':'issolve','处理人':'solver','解决方案':'solveway',
         '原因分析':'reason','事件':'eventtype','省份':'region','单位名称':'agenname','产品类型':'agentype','环境属性':'environment',
-        '出错功能':'errorfunction','问题分类':'errortype','数据库类型':'databasetype','程序版本号':'softversion','JIRA编号':'jiracode'
+        '出错功能':'errorfunction','问题分类':'errortype','数据库类型':'databasetype','程序版本号':'softversion','JIAR编号':'jiracode'
     }
 
     book = xlrd.open_workbook(filePath)  # 加载excel
@@ -31,12 +31,12 @@ def workrecord_inster_sql(filePath):
                 if sheet.cell_value(i,j) in name_field.keys(): # 当单元格的数据在字典中，说明是字段行（即第0行），通过字段顺序获得字典里面字段名，拼接成sql
                     sql_key_col.append(j) #记录j的数值，即记住是取了那些列的数据
                     sql_key_str = sql_key_str + str(name_field[f'{str(sheet.cell_value(i,j))}'])+',' # 拼接列上名字对应的字段, 最后用时要[:-1]，把最后的逗号去掉
-                    print(f"{type(sheet.cell_value(i,j))},{sheet.cell_value(i,j)} 字段 {name_field[f'{str(sheet.cell_value(i,j))}']}")
+                    #print(f"{type(sheet.cell_value(i,j))},{sheet.cell_value(i,j)} 字段 {name_field[f'{str(sheet.cell_value(i,j))}']}")
 
         if i>0: #vlaue数据从第二行开始，# 2. 获取inster into 的字段名
             for n in range(len(sql_key_col)):
                 # 也可以通过判断单元格类型是否为日期时间类型   # if worksheet.cell_type(rowx=0, colx=0) == xlrd.XL_CELL_DATE:
-                print(f'日期在 第{i + 1}行，第{sql_key_col[n] + 1}列{sheet.cell_value(0, sql_key_col[n])}')
+                # print(f'日期在 第{i + 1}行，第{sql_key_col[n] + 1}列{sheet.cell_value(0, sql_key_col[n])}')
                 if '日期' in sheet.cell_value(0,sql_key_col[n]): # 如果是 某某日期，那么需要用xldate_as_datetime将float转成日期
                     xldate_str = xlrd.xldate.xldate_as_datetime(sheet.cell_value(i, sql_key_col[n]), 0).strftime("%Y-%m-%d")
                     sql_value_str = sql_value_str + "'" + xldate_str + "'" + ","

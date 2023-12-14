@@ -64,12 +64,12 @@ if __name__ == '__main__':
     #     print(f'插入第{i}次数据，返回 {result}')
 
     # # 导入升级计划 数据的 excel
-    # file_path = f'C:\\Users\\Administrator\\Downloads\\升级计划导入文件.xlsx'
-    # sql_key_str,sql_value_list = upgrade_import(file_path)
-    # db = mysql_base.Db()
-    # for i in range(len(sql_value_list)):
-    #     result = db.insert('upgradeplan_2023',sql_key_str,sql_value_list[i])
-    #     print(f'插入第{i}次数据，返回 {result}')
+    file_path = f'C:\\Users\\Administrator\\Downloads\\升级计划导入文件.xlsx'
+    sql_key_str,sql_value_list = upgrade_import(file_path)
+    db = mysql_base.Db()
+    for i in range(len(sql_value_list)):
+        result = db.insert('upgradeplan_2023',sql_key_str,sql_value_list[i])
+        print(f'插入第{i}次数据，返回 {result}')
 
     # # 导入重大故障 数据的 excel
     # file_path = f'C:\\Users\\Administrator\\Downloads\\重大故障导入文件.xlsx'
@@ -94,16 +94,16 @@ if __name__ == '__main__':
     #     print(f'插入第{i}次数据，返回 {result}')
 
     # 导入 增值服务开通结果 excel
-    file_path = f'C:\\Users\\Administrator\\Downloads\\增值服务导入文件.xlsx'
-    name_field = {
-        '省份':'region','产品名称':'ordername','财政编码':'regioncode','区划编码':'areacode','单位名称':'agenname','开通日期':'createtime'
-    }
-    data_title = '日期'
-    sql_key_str,sql_value_list = any_import(file_path,name_field,data_title)
-    db = mysql_base.Db()
-    for i in range(len(sql_value_list)):
-        result = db.insert('orderprodct_2023',sql_key_str,sql_value_list[i])
-        print(f'插入第{i}次数据，返回 {result}')
+    # file_path = f'C:\\Users\\Administrator\\Downloads\\增值服务导入文件.xlsx'
+    # name_field = {
+    #     '省份':'region','产品名称':'ordername','财政编码':'regioncode','区划编码':'areacode','单位名称':'agenname','开通日期':'createtime'
+    # }
+    # data_title = '日期'
+    # sql_key_str,sql_value_list = any_import(file_path,name_field,data_title)
+    # db = mysql_base.Db()
+    # for i in range(len(sql_value_list)):
+    #     result = db.insert('orderprodct_2023',sql_key_str,sql_value_list[i])
+    #     print(f'插入第{i}次数据，返回 {result}')
 
 
     # 查询受理数据的部分
