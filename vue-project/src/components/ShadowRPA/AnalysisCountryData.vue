@@ -219,8 +219,12 @@ export default {
                 console.log(params.name, ' 我被点击了 ',params)
                 // 判断是否toggle省份，因为echart的map自带的点击一个省份会亮起，再点击一次会取消亮起，那么也就模仿为点击一次search该省份，再点击一次返回search全国
                 that.provinceSelected = (that.provinceSelected === params.name) ? "全国" : params.name
+
+                var searchValue = that.getSearchValue()
                 // 获取省份对应的图表统计
-                that.searchSaaSCountryRelevantData()
+                that.searchSaaSCountryRelevantData(searchValue)
+                // 获取指定省份的版本和功能对应的图表
+                that.searchSaaSVersionUpgradeTrend(searchValue)
             });
         },
 
@@ -347,10 +351,13 @@ export default {
             }
         },
 
-        async search() {
-            var searchValue = {} // 存放筛选条件信息
+        /**
+         * 获取搜索时候的searchValue
+         */
+        getSearchValue(){
+            var searchValue = {}
             searchValue['functionName'] = this.functionSelected.toString()
-            searchValue['provinceSelected'] = this.provinceSelected
+            searchValue["provinceSelected"] = this.provinceSelected
             // 获取年、月、日，进行拼接
             for (let i = 0; i < this.dateRange.length; i++) {
                 var year = this.dateRange[i].getFullYear()
@@ -358,9 +365,16 @@ export default {
                 var day = ('0' + this.dateRange[i].getDate()).slice(-2)
                 searchValue[(i==0)?"beginData":"endData"] = year + "-" + month + "-" + day;
             }
+            return searchValue
+        },
 
+        /**
+         * 点击查询按钮之后搜索各个图的后端数据
+         */
+        async search() {
+            var searchValue = this.getSearchValue()
             this.searchSaaSCountryData(searchValue)
-            this.searchSaaSCountryRelevantData()
+            this.searchSaaSCountryRelevantData(searchValue)
             this.searchSaaSFunctionByProvince(searchValue)
             this.searchSaaSProblemByProvinceAgency(searchValue)
             this.searchSaaSProblemByMonth(searchValue)
@@ -408,6 +422,30 @@ export default {
                         }
                     ]
                 })
+
+                
+                /* 进行map选中的取消或者替换，如果搜索时候选中区域是全国，那么就应该取消选中区域，如果不是全国，那么需要进行选中区域的替换，替换成现在选中的这个区域
+                 * 有几种情况：{旧的全国，新的全国}， {旧的全国，新的省份},  {旧的省份，新的全国},  {旧的省份，新的省份}
+                 * 如果是 {旧的全国，新的全国}， 不能执行mapSelect或者mapUnSelect，跳过
+                 * 如果是 {旧的全国，新的省份}， 那么执行mapSelect，进行选中区域替换
+                 * 其中如果是 {旧的省份，新的全国},  {旧的省份，新的省份}，那么可以获取到oldProvinceSelected，然后根据新的是否是全国进行取消选中或者替换选中区域。
+                 */
+                // 尝试获取旧的地图上被选中的区域，如果发现获取不到，那么旧的选中区域就是全国
+                var oldProvinceSelected = "全国";
+                try{
+                    var oldProvinceSelected = Object.keys(saasProblemChinaMap.getOption().series[0].selectedMap)[0];
+                }catch(TypeError){
+                    
+                }
+                console.log("aaaaaaaa", oldProvinceSelected, this.provinceSelected);
+
+                (oldProvinceSelected!= "全国" || this.provinceSelected!="全国") && saasProblemChinaMap && saasProblemChinaMap.dispatchAction({
+                    type: (this.provinceSelected === "全国")? 'mapUnSelect':'mapSelect', //根据看区域是不是全国来看是否是取消选中还是进行替换选中
+                    seriesIndex: 0, //指定地图的索引
+                    name: (this.provinceSelected === "全国") ? oldProvinceSelected: this.provinceSelected //需要取消选中的或者需要替换选中的区域名称
+                })
+
+                console.log('update local map: ', this.saasProblemChinaMap)
                 console.log('update local map data: ', this.chinaMapProvinceSaaSProblemData)
 
             } catch (error) {
@@ -420,26 +458,15 @@ export default {
         /**
          * 对地图周围的展示的map进行搜索，展现出省份里面的具体受理的统计图表情况。
          */
-        async searchSaaSCountryRelevantData(){
+        async searchSaaSCountryRelevantData(searchValue){
             try{
-
-                let searchValue = {}
-                searchValue["province"] = this.provinceSelected
-                // 获取年、月、日，进行拼接
-                for (let i = 0; i < this.dateRange.length; i++) {
-                    var year = this.dateRange[i].getFullYear()
-                    var month = ('0' + (this.dateRange[i].getMonth() + 1)).slice(-2)
-                    var day = ('0' + this.dateRange[i].getDate()).slice(-2)
-                    searchValue[(i==0)?"beginData":"endData"] = year + "-" + month + "-" + day;
-                }
-
                 const response = await this.$http.get(
                     '/api/CMC/workrecords/analysis_saas_problem_by_country_region?beginData=' +
                     searchValue['beginData'] +
                     '&endData=' +
                     searchValue['endData'] +
                     '&province=' +
-                    searchValue['province']
+                    searchValue['provinceSelected']
                 )
 
                 // 这里是因为环绕在地图周围，所以size比较小，进行边距和轴标签的特殊设置
@@ -515,6 +542,22 @@ export default {
                 updateBarChartBasic(document, this.saasSoftVersionAmountBarChartData, this.saasSoftVersionAmountBarChartData[0]["seriesName"], "category", true, true, 'saasSoftVersionAmountBarChart')
                 let saasSoftVersionAmountBarChart = echarts.getInstanceByDom(document.getElementById("saasSoftVersionAmountBarChart"))
                 saasSoftVersionAmountBarChart && saasSoftVersionAmountBarChart.setOption(smallSizeBarChartOption)
+                // 给tooltip设置出错功能top3的信息
+                let functionTypeData = this.saasSoftVersionAmountBarChartData[0]["seriesData"].map((item) => item.functionType)
+                saasSoftVersionAmountBarChart && saasSoftVersionAmountBarChart.setOption({
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: function (params) {
+                            const index = params[0].dataIndex; // 获取当前数据点的索引
+                            const xValue = params[0].name; // x 值
+                            const yValue = params[0].value; // y 值
+                            // 获取数据点对应的出错功能
+                            let func = ''
+                            functionTypeData[index].forEach((item)=> { func+= '<br/>' + item.function + ": " + item.amount })
+                            return `版本号: ${xValue}<br/>受理数量: ${yValue} ${func}`;
+                        }
+                    }
+                })
 
                 // 拿到saasAgencyType饼图的数据function
                 this.saasAgencyTypePieChartData = response.data.data[4]

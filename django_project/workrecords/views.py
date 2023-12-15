@@ -28,8 +28,6 @@ def work_record_detail_search(request):
         # 获得GET请求后面的参数信息
         search_filter = request.GET.get('searchFilter')
         search_filter = json.loads(search_filter)
-        print(f'收到的参数为{search_filter}')
-        print(f'收到的起始：{search_filter["beginData"]} 和结尾 {search_filter["endData"]}')
 
         realdate_begin = datetime.strptime(search_filter["beginData"], '%Y-%m-%d')
         realdate_end = datetime.strptime(search_filter["endData"], '%Y-%m-%d') + timedelta(days=1)
@@ -64,7 +62,7 @@ def analysisselect(request):
 
         # ■■■ 开始分页查询，获得对应时间范围内，【数据汇报】--->受理问题的表格数据
         # total是每个版本的受理数量合计，其他用了 列传行 的办法
-        sql = f'SELECT softversion as softversion,' \
+        sql = f'SELECT COALESCE(softversion,0) as softversion,' \
               f'SUM(IF(`errorfunction`="报表功能",数量,0))+SUM(IF(`errorfunction`="开票功能",数量,0))' \
               f'+SUM(IF(`errorfunction`="license重置",数量,0))+SUM(IF(`errorfunction`="增值服务",数量,0))' \
               f'+SUM(IF(`errorfunction`="收缴业务",数量,0))+SUM(IF(`errorfunction`="通知交互",数量,0))' \
@@ -95,6 +93,12 @@ def analysisselect(request):
               f'GROUP BY softversion'
         tableData = db.select_offset(1, 1000, sql)
 
+        func_list = ["softversion", "total", "report", "openbill", "licenseReset", "added", "collection", "exchange", "writeoff", 
+                            "billManagement", "security", "print", "datasync", "inverse", "opening", "softbug", "sspz", "ycsjcl"]
+        
+        # 当查询时间不对，数据库内没有那段时间的数据的时候，他会返回一个tuple而不是一个list，所以将他初始化成一个list        
+        tableData = [] if tableData == () else tableData
+            
         # 【数据汇报】--->受理问题的柱形图
         # 将 tableData 查询的数据中，softversion的内容组装到一个数组中给前端myChart柱形图setOption传参
         # myChart_xAxis表示softversion版本号 和 myChart_series表示total合计数量
@@ -105,16 +109,11 @@ def analysisselect(request):
             myChart_series.append(tableData[i]['total']) #数组，前端myChart 组件的series 中data数据
 
         # 给tableData最后一行加上合计
-        func_list = ["softversion", "total", "report", "openbill", "licenseReset", "added", "collection", "exchange", "writeoff", 
-                     "billManagement", "security", "print", "datasync", "inverse", "opening", "softbug", "sspz", "ycsjcl"]
-        summary = {}
+        summary = {key: 0 for key in func_list}
         summary["softversion"] = "合计"
         for i in range(1,len(func_list)):
-            val = 0
-            for item in tableData:
-                val += item[func_list[i]]
-            summary[func_list[i]] = val        
-        tableData.append(summary)
+            summary[func_list[i]] = sum([item[func_list[i]] for item in tableData])  
+        tableData.append(summary) 
 
         analysisData['tableData'] = tableData  # 添加数组元素 【数据汇报】--->受理问题的内容
         analysisData['myChart_xAxis'] = myChart_xAxis  # 添加数组元素 【数据汇报】--->受理问题的柱形图x轴数据
@@ -827,11 +826,32 @@ def analysis_saas_problem_by_country_region(request):
         data.append(monitor_problem_type_bar_gragh)
 
         # 对版本号和受理进行查询
-        sql = f' SELECT distinct softversion as x, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} group by softversion order by softversion '
-        saas_soft_version_amount_data = db.select_offset(1, 2000, sql)
+        sql = f' SELECT distinct softversion as x, errorfunction, count(*) as y from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} group by softversion, errorfunction '
+        saas_soft_version_data = db.select_offset(1, 2000, sql)
+
+        # 因为前端想要tooltip展示每个版本号出错功能的前三，所以在这里进行每个版本出错功能的排序
+        series_data = []
+        curr_version = 0
+        version_amount = 0
+        version_function_list = []
+        for i in range(len(saas_soft_version_data)):
+            if (curr_version != 0 and curr_version != saas_soft_version_data[i]['x']) or (i== len(saas_soft_version_data)-1):
+                # 说明要换成下个月的数据了，或者是已经到查询的月份的末尾了，所以将当前存储的当前月份的数据进行出错功能的排序取前五和添加到series_data中
+                version_function_list.sort(key=lambda x: x['amount'], reverse=True)
+
+                series_data.append({'x': curr_version, 'y':version_amount, 'functionType' : version_function_list[0:3]})
+                # 将临时数据进行清空
+                version_amount = 0
+                version_function_list = []
+            # 还在当前月份，那么就往临时数据里面添加当前月份的出错功能和累加出错的量
+            curr_version = saas_soft_version_data[i]['x']    
+            version_amount += saas_soft_version_data[i]['y']
+            version_function_list.append({"function": saas_soft_version_data[i]['errorfunction'], 'amount' : saas_soft_version_data[i]['y']})
+
         soft_version_amount_bar_gragh = []
-        soft_version_amount_bar_gragh.append({'seriesName': province+"版本受理统计", 'seriesData': saas_soft_version_amount_data})
+        soft_version_amount_bar_gragh.append({'seriesName': province+"版本受理统计", 'seriesData': series_data})
         data.append(soft_version_amount_bar_gragh)
+
 
         # 对产品分类（医疗，通用，高校等）进行统计
         sql = f' SELECT distinct agentype as name, count(*) as value from workrecords_2023 WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} group by agentype '
