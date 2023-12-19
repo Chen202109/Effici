@@ -683,39 +683,39 @@ export default {
          * @description 对省份受理数量和单位开通数量对比柱状图的后端数据请求
          */
         async searchSaaSProblemByMonth(searchValue) {
-        try {
-            const response = await this.$http.get(
-            '/api/CMC/workrecords/analysis_saas_problem_by_month?beginData=' +
-            searchValue['beginData'] +
-            '&endData=' +
-            searchValue['endData']
-            )
-            this.saasProblemMonthChartData = response.data.data
-            updateBarChartBasic(document, this.saasProblemMonthChartData, searchValue['beginData'].slice(0,4)+'年SaaS月份受理统计', "category", false, true, 'saasProblemMonthChart')
-            let saasProblemMonthChart = echarts.getInstanceByDom(document.getElementById("saasProblemMonthChart"))
-            let functionTypeData = this.saasProblemMonthChartData[0]["seriesData"].map((item) => item.functionType)
-            saasProblemMonthChart && saasProblemMonthChart.setOption({
-                tooltip: {
-                    trigger: 'axis',
-                    formatter: function (params) {
-                        const index = params[0].dataIndex; // 获取当前数据点的索引
-                        const xValue = params[0].name; // x 值
-                        const yValue = params[0].value; // y 值
-                        // 获取数据点对应的出错功能
-                        let func = ''
-                        functionTypeData[index].forEach((item)=> { func+= '<br/>' + item.function + ": " + item.amount })
-                        return `月份: ${xValue}<br/>受理数量: ${yValue} ${func}`;
+            try {
+                const response = await this.$http.get(
+                '/api/CMC/workrecords/analysis_saas_problem_by_month?beginData=' +
+                searchValue['beginData'] +
+                '&endData=' +
+                searchValue['endData']
+                )
+                this.saasProblemMonthChartData = response.data.data
+                updateBarChartBasic(document, this.saasProblemMonthChartData, searchValue['beginData'].slice(0,4)+'年SaaS月份受理统计', "category", false, true, 'saasProblemMonthChart')
+                let saasProblemMonthChart = echarts.getInstanceByDom(document.getElementById("saasProblemMonthChart"))
+                let functionTypeData = this.saasProblemMonthChartData[0]["seriesData"].map((item) => item.functionType)
+                saasProblemMonthChart && saasProblemMonthChart.setOption({
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: function (params) {
+                            const index = params[0].dataIndex; // 获取当前数据点的索引
+                            const xValue = params[0].name; // x 值
+                            const yValue = params[0].value; // y 值
+                            // 获取数据点对应的出错功能
+                            let func = ''
+                            functionTypeData[index].forEach((item)=> { func+= '<br/>' + item.function + ": " + item.amount })
+                            return `月份: ${xValue}<br/>受理数量: ${yValue} ${func}`;
+                        }
                     }
-                }
-            })
-            
-            console.log('update local month bar chart data: ', this.saasProblemMonthChartData)
+                })
+                
+                console.log('update local month bar chart data: ', this.saasProblemMonthChartData)
 
-        } catch (error) {
-            console.log(error)
-            this.$message.error('错了哦，仔细看错误信息弹窗')
-            alert('失败' + error)
-        }
+            } catch (error) {
+                console.log(error)
+                this.$message.error('错了哦，仔细看错误信息弹窗')
+                alert('失败' + error)
+            }
         },
 
         /**

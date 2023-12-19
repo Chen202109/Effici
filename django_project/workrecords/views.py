@@ -11,9 +11,9 @@ import json
 from mydata import mysql_base
 import pandas as pd
 
-# ----------------------------------------------------------- AnalysisData.vue 的请求 ----------------------------------------------------
+# ----------------------------------------------------------- AssistSubmit.vue 的请求 ----------------------------------------------------
 
-def work_record_detail_search(request):
+def work_record(request):
     # 如果请求为get 则进行查询
     # 将接受到的数据放入selet_parme
     # select_prame = {
@@ -45,7 +45,20 @@ def work_record_detail_search(request):
               f' ORDER BY createtime'
         results = db.select_offset(1, 1000, sql)
 
+    elif request.method == 'POST':
+        work_record_detail_form = json.loads(request.body)
+        print(f"sadddddddddddd{work_record_detail_form}")
+
+        db = mysql_base.Db()
+        sql = ""
+        results = []
+
+
     return JsonResponse({'data': results}, json_dumps_params={'ensure_ascii': False})
+
+# ----------------------------------------------------------- AssistSubmit.vue 的请求 ----------------------------------------------------
+
+# ----------------------------------------------------------- AnalysisData.vue 的请求 ----------------------------------------------------
 
 def analysisselect(request):
     analysisData={
