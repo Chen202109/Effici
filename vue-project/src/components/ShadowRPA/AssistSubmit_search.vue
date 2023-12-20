@@ -37,7 +37,7 @@
         </el-date-picker>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="search">查询</el-button>
+        <el-button type="primary" @click="search(true)">查询</el-button>
       </el-form-item>
 
     </el-form>
@@ -57,17 +57,20 @@ export default {
         isSolved: '', // 是否解决初始值
         problemDescription:"", // 问题描述初始值
       },
-      dateRange: [new Date((new Date().getFullYear())+'-'+(new Date().getMonth()+1)+'-01'), new Date()],
+      // 默认为最近一周的
+      dateRange: [new Date(new Date().setDate(new Date().getDate() - 7)), new Date()],
       errorTypeList: ["产品BUG","实施配置","异常数据处理"],
       errorFunctionList: ["开票功能","核销功能","收缴业务","通知交互","报表功能","数据同步","票据管理","license重置","单位开通","增值服务","打印功能","安全漏洞","反算功能"],
       isSolvedList: ["是","否"],
     };
   },
   methods: {
+    
     /**
      * 触发查询事件，将筛选条件传给父组件
+     * @param {boolean} requestTotal 看是否需要请求总条目值，如果是正常点search按钮需要，如果是翻页跳转不需要 
      */
-    search() {
+    search(requestTotal) {
       var searchValue = this.searchForm;
       // 获取年、月、日 ,并赋值到 searchValue 传递给父组件
       for (let i = 0; i < this.dateRange.length; i++) {
@@ -76,10 +79,10 @@ export default {
         var day = ("0" + this.dateRange[i].getDate()).slice(-2);
         searchValue[(i==0)?"beginData":"endData"] = year + "-" + month + "-" + day;
       }
+      searchValue["requestTotal"] = requestTotal;
       console.log('子组件向父组件传递信息为',searchValue);
       // $emit 可以传递参数给父组件
       this.$emit("search", searchValue);
-      
     },
   },
 };

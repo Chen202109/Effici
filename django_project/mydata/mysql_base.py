@@ -29,7 +29,6 @@ class Db(object):
         :return: ({"key": "value", ...} ...)
         """
         _field = ",".join(field)
-
         if where:
             where_str = ""
             for key, value in where.items():
@@ -37,20 +36,22 @@ class Db(object):
                     continue
                 elif type(value) == int:
                     value = value
-                    where_str += " " + "%s" % key + " " + "%d" % value
+                    where_str += " AND " + "%s" % key + " " + "%d" % value
                 elif type(value) == float:
                     value = value
-                    where_str += " " + "%s" % key + " " + "%f" % value
+                    where_str += " AND " + "%s" % key + " " + "%f" % value
                 else:
                     value = value.replace("'", '"')
-                    where_str += " " + "%s" % key + " " + "'%s'" % value
+                    where_str += " AND " + "%s" % key + " " + "'%s'" % value
             if where_str == "":
                 sql = "SELECT " + _field + " FROM " + table + " %s " % other
             else:
-                sql = "SELECT " + _field + " FROM " + table + " WHERE" + " 1 = 1 AND" + where_str + " %s " % other
+                sql = "SELECT " + _field + " FROM " + table + " WHERE" + " 1 = 1 " + where_str + " %s " % other
         else:
             sql = "SELECT " + _field + " FROM " + table + " %s " % other
         try:
+            print("-------------------------==================")
+            print("sql:" + sql)
             self.configure.ping(reconnect=True)
             self.begin.execute(sql)
             self.configure.commit()

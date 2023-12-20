@@ -14,36 +14,23 @@ import pandas as pd
 # ----------------------------------------------------------- AssistSubmit.vue 的请求 ----------------------------------------------------
 
 def work_record(request):
-    # 如果请求为get 则进行查询
-    # 将接受到的数据放入selet_parme
-    # select_prame = {
-    #     'page': 1,  # 第几页
-    #     'page_size': 10,  # 每页多少条
-    #     'begintime': '2023-07-10',  # 查询起始日期
-    #     'endtime': '2023-07-20',  # 查询终止日期
-    #     'version': 'V4.0.4.0'  # 版本号
-    # }
+    """
+    如果请求为get 则进行查询工单详细内容
+    如果为post, 就进行添加工单
+    """
     # 判断请求类型
     if request.method == 'GET':
         # 获得GET请求后面的参数信息
         search_filter = request.GET.get('searchFilter')
         search_filter = json.loads(search_filter)
-
-        realdate_begin = datetime.strptime(search_filter["beginData"], '%Y-%m-%d')
-        realdate_end = datetime.strptime(search_filter["endData"], '%Y-%m-%d') + timedelta(days=1)
         
-        isSolvedSql = "" if search_filter["isSolved"] == "" else f'AND issolve = "{search_filter["isSolved"]}"'
-        errorFunctionSql = "" if search_filter["errorFunction"] == "" else f'AND errorfunction = "{search_filter["errorFunction"]}"'
-        errorTypeSql = "" if search_filter["errorType"] == "" else f'AND errortype = "{search_filter["errorType"]}"'
-        softVersionSql = "" if search_filter["softVersion"] == "" else f'AND softversion = "{search_filter["softVersion"]}"'
-        problemDescriptionSql = "" if search_filter["problemDescription"] == "" else f'AND problem LIKE "%{search_filter["problemDescription"]}%"'
+        curr_page = int(request.GET.get('page', default='1'))
+        curr_page_size = int(request.GET.get('pageSize', default='10'))
 
-        db =mysql_base.Db()
-        sql = f' SELECT * from workrecords_2023 ' \
-              f' WHERE createtime>="{realdate_begin}" and createtime<="{realdate_end}" '\
-              f' {isSolvedSql} {errorFunctionSql} {errorTypeSql} {softVersionSql} {problemDescriptionSql} '\
-              f' ORDER BY createtime'
-        results = db.select_offset(1, 1000, sql)
+        detail = get_work_record_detail(search_filter, curr_page, curr_page_size)
+        amount = get_work_record_count(search_filter)
+
+        return JsonResponse({'data': detail, 'amount': amount}, json_dumps_params={'ensure_ascii': False})
 
     elif request.method == 'POST':
         work_record_detail_form = json.loads(request.body)
@@ -53,8 +40,58 @@ def work_record(request):
         sql = ""
         results = []
 
+        return JsonResponse({'data': "Adding successfully!"}, json_dumps_params={'ensure_ascii': False})
 
-    return JsonResponse({'data': results}, json_dumps_params={'ensure_ascii': False})
+
+def work_record_init(request):
+    """
+    获取工单详细界面查询的初始配置，如一些问题分类的种类，出错功能有哪些功能等
+    """
+    if request.method == 'GET':
+        data = []
+    return JsonResponse({'data': []}, json_dumps_params={'ensure_ascii': False})
+
+
+
+def get_work_record_detail(search_filter, curr_page, curr_page_size):
+    """
+    获取搜索条件下的工单的详细信息，分页搜索
+    """
+    # 工单搜索条件
+    isSolvedSql = "" if search_filter["isSolved"] == "" else f'AND issolve = "{search_filter["isSolved"]}"'
+    errorFunctionSql = "" if search_filter["errorFunction"] == "" else f'AND errorfunction = "{search_filter["errorFunction"]}"'
+    errorTypeSql = "" if search_filter["errorType"] == "" else f'AND errortype = "{search_filter["errorType"]}"'
+    softVersionSql = "" if search_filter["softVersion"] == "" else f'AND softversion = "{search_filter["softVersion"]}"'
+    problemDescriptionSql = "" if search_filter["problemDescription"] == "" else f'AND problem LIKE "%{search_filter["problemDescription"]}%"'
+
+    db =mysql_base.Db()
+    sql = f' SELECT * from workrecords_2023 ' \
+            f' WHERE createtime>="{search_filter["beginData"]}" and createtime<="{search_filter["endData"]}" '\
+            f' {isSolvedSql} {errorFunctionSql} {errorTypeSql} {softVersionSql} {problemDescriptionSql} '\
+            f' ORDER BY createtime'
+    results = db.select_offset(curr_page, curr_page_size, sql)
+    return results
+
+
+def get_work_record_count(search_filter):
+    # 获取符合搜索的工单的总数
+    if not search_filter['requestTotal']:
+        return -1
+    else:
+        # 工单搜索条件
+        condition_dict = {}
+        condition_dict["createtime>="] = search_filter["beginData"]
+        condition_dict["createtime<="] = search_filter["endData"]
+        if search_filter["isSolved"] != "": condition_dict["issolve="] = search_filter["isSolved"]
+        if search_filter["errorFunction"] != "": condition_dict["errorfunction="] = search_filter["errorFunction"]
+        if search_filter["errorType"] != "": condition_dict["errortype="] = search_filter["errorType"]
+        if search_filter["softVersion"] != "": condition_dict["softversion="] = search_filter["softVersion"]
+        if search_filter["problemDescription"] != "": condition_dict["problem LIKE"] = "%"+search_filter["problemDescription"]+"%"
+
+        db =mysql_base.Db()
+        total_work_record_amount = db.select(["count(fid)"], "workrecords_2023", condition_dict, "")
+        return total_work_record_amount
+
 
 # ----------------------------------------------------------- AssistSubmit.vue 的请求 ----------------------------------------------------
 
