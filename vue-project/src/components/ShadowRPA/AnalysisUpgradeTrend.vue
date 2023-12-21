@@ -128,7 +128,10 @@ export default {
   },
 
   methods: {
-    //业务类型的checkbox单选功能
+    /**
+     * 业务类型的checkbox单选功能
+     * @param {*} value 
+     */
     businessCheckBoxChange(value) {
       if (this.businessSelected.length > 1) {
         this.businessSelected.splice(0, 1)

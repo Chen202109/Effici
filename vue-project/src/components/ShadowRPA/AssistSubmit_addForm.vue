@@ -45,8 +45,18 @@
       <el-row>
         <el-col :span = 23>
           <el-form-item label="单位名称" prop="agencyName">
-          <el-input v-model="form.agencyName" placeholder="请输入单位名称"></el-input>
-        </el-form-item>
+            <el-input v-model="form.agencyName" placeholder="请输入单位名称"></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      
+      <el-row>
+        <el-col :span = 7>
+          <el-form-item label="出错功能" prop="errorFunction">
+            <el-select v-model="form.errorFunction" clearable placeholder="请选择">
+              <el-option v-for="(item, index) in errorFunctionOptions" :key="index" :label="item" :value="item"></el-option>
+            </el-select>
+          </el-form-item>
         </el-col>
       </el-row>
 
@@ -58,18 +68,27 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span = 8>
-          <el-form-item label="出错功能" prop="errorFunction">
-            <el-select v-model="form.errorFunction" clearable placeholder="请选择">
-              <el-option v-for="(item, index) in errorFunctionOptions" :key="index" :label="item" :value="item"></el-option>
-            </el-select>
+        <el-col :span = 16>
+          <el-form-item label="问题分类" prop="problemType">
+            <el-col :span="9">
+              <el-select v-model="form.problemTypeParty" clearable placeholder="请选择" @change="problemTypePartyChange">
+                <el-option v-for="(item, index) in problemTypePartyOptions" :key="index" :label="item" :value="item"></el-option>
+              </el-select>
+            </el-col>
+            <el-col :span = 2 style="border: 1px solid transparent;"></el-col>
+            <el-col :span="13">
+              <el-select v-model="form.problemType" clearable placeholder="请选择">
+                <el-option v-for="(item, index) in problemTypeOptions" :key="index" :label="item" :value="item"></el-option>
+              </el-select>
+            </el-col>
           </el-form-item>
         </el-col>
-        <el-col :span = 8>
-          <el-form-item label="问题分类" prop="problemType">
-            <el-select v-model="form.problemType" clearable placeholder="请选择">
-              <el-option v-for="(item, index) in problemTypeOptions" :key="index" :label="item" :value="item"></el-option>
-            </el-select>
+      </el-row>
+
+      <el-row>
+        <el-col :span = 23>
+          <el-form-item label="问题归属" prop="problemAttribution">
+            <el-input v-model="form.problemAttribution" placeholder="请输入问题归属, 格式如: 开票管理-批量开票-程序bug"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
@@ -169,6 +188,8 @@ export default {
         productType: '',
         environment: '',
         errorFunction: '',
+        problemAttribution: '',
+        problemTypeParty: '',
         problemType : '',
         informer : '',
         databaseType: '',
@@ -200,12 +221,14 @@ export default {
         productType: [
           { required: true, message: '请选择产品类型', trigger: 'blur' }
         ],
-        environment: [
-          { required: true, message: '请选择公/私有化', trigger: 'blur' }
-        ],
         errorFunction: [
           { required: true, message: '请选择出错功能', trigger: 'blur' }
         ],
+        problemAttribution: [],
+        environment: [
+          { required: true, message: '请选择公/私有化', trigger: 'blur' }
+        ],
+        problemTypeParty: [],
         problemType : [],
         informer : [],
         databaseType: [
@@ -227,16 +250,32 @@ export default {
       isSolvedOptions: ["是","否"],
       productTypeOptions: ['医疗', '高校', '通用', '捐赠', '增值', '工会'],
       environmentOptions : ["公有云", "私有化"], 
-      errorFunctionOptions: ["开票功能","核销功能","收缴业务","通知交互","报表功能","数据同步","票据管理","license重置","单位开通","增值服务","打印功能","安全漏洞","反算功能"],
-      problemTypeOptions: ["产品BUG","实施配置","异常数据处理", "需求", "需求未覆盖", "重大生产事故", "安全漏洞", "his传参错误"],
+      errorFunctionOptions: ["开票功能","核销功能","收缴业务","通知交互","报表功能","数据同步","票据管理","license重置","单位开通","增值服务","打印功能","安全漏洞","反算功能", "基础功能"],
+      problemTypePartyOptions : ["财政", "行业"],
+      problemTypeOptionsDict : {
+        "" : [],
+        "财政" : ["交互服务", "基础信息","制票中心", "数据同步", "票据审验状态异常", "缴款确认状态异常", "出库状态异常", "库存重复", "收入退付状态异常", "需求变更", "第三方入参异常"],
+        "行业" : ["程序BUG", "数据问题-日结", "数据问题-V3迁移V4", "数据问题-数据反算", "数据问题-BUG导致异常数据", "业务-沟通", "业务-需求不满足", "业务-V3需求未覆盖", "业务-用户操作不当", "实施运维-操作失误", "实施运维-常规配置调整", "实施运维-环境部署", "实施运维-增值开通", "实施运维-协助数据处理", "实施运维-license状态重置", "第三方入参异常"], 
+      },
+      // problemTypeOptions: ["产品BUG","实施配置","异常数据处理", "需求", "需求未覆盖", "重大生产事故", "安全漏洞", "his传参错误"],
+      problemTypeOptions: "",
       databaseTypeOptions: ["TDSQL", "MYSQL", "ORACLE", "达梦", "人大金仓"],
     }
   },
 
   mounted() {
-    
+    this.problemTypeOptions = this.problemTypeOptionsDict[this.form.problemTypeParty]
   },
   methods: {
+
+    /**
+     * 选择问题分类的出错方，同步出错方对应的问题分类的具体属性
+     * @param {*} value 
+     */
+    problemTypePartyChange(value) {
+      this.form.problemType = ''
+      this.problemTypeOptions = this.problemTypeOptionsDict[this.form.problemTypeParty]
+    },
 
     /**
      * 提交表单数据

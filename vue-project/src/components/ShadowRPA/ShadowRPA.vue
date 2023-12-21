@@ -12,7 +12,7 @@
       <el-main style="padding: 0 10px">
         <!-- 放入动态选项卡tagsView -->
         <el-tabs type="border-card" v-model="activeTab" @tab-remove="removeTab" @tab-click="tabClick" class="main-el-tab-pane">
-          <el-tab-pane v-for="item in tabsItem" :key="item.name" :label="item.title" :name="item.name" :closable="item.closable" :ref="item.ref">
+          <el-tab-pane v-for="item in tabsItem" :key="item.name" :label="item.title" :name="item.name" :closable="item.closable" :ref="item.ref" :id="item.id">
             <component :is="item.content"></component>
           </el-tab-pane>
         </el-tabs>
@@ -47,7 +47,8 @@ export default {
           name: '1',
           closable: false,
           ref: 'tabs',
-          content: AssistSubmit
+          content: AssistSubmit,
+          id: 'AssistSubmit'
         }
       ],
       tabsPath: [
@@ -120,6 +121,7 @@ export default {
           //获得路由元数据的name和组件名
           const thisName = to.meta.title
           const thisComp = to.meta.comp
+          const thisId = to.meta.name
           //对tabs的当前激活下标和tabs数量进行自加
           let newActiveIndex = ++this.tabIndex + ''
           //动态双向追加tabs
@@ -128,7 +130,8 @@ export default {
             name: String(newActiveIndex),
             closable: true,
             ref: 'tabs',
-            content: thisComp
+            content: thisComp,
+            id : thisId
           })
           this.activeTab = newActiveIndex
           if (this.tabsPath.indexOf(path) == -1) {

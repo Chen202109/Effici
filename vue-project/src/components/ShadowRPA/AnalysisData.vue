@@ -81,24 +81,6 @@ export default {
   },
   data() {
     return {
-      // saasProblemTableData这个总表格的表头
-      tableTitle: [
-        { prop: 'total', label: '受理合计' },
-        { prop: 'report', label: '报表功能' },
-        { prop: 'openbill', label: '开票功能' },
-        { prop: 'licenseReset', label: 'license重置' },
-        { prop: 'added', label: '增值服务' },
-        { prop: 'collection', label: '收缴业务' },
-        { prop: 'exchange', label: '通知交互' },
-        { prop: 'writeoff', label: '核销功能' },
-        { prop: 'billManagement', label: '票据管理' },
-        { prop: 'security', label: '安全漏洞' },
-        { prop: 'print', label: '打印功能' },
-        { prop: 'datasync', label: '数据同步' },
-        { prop: 'inverse', label: '反算功能' },
-        { prop: 'opening', label: '单位开通' },
-        { prop: 'softbug', label: '缺陷合计' },
-      ],
       //查询日期
       dateRange: [new Date(new Date().getFullYear() + '-' + (new Date().getMonth() + 1) + '-01'),new Date()],
       // 出错功能的key的对照，因为后台返回的数据的key是缩写，所以需要一个对照
@@ -384,10 +366,7 @@ export default {
       //受理情况的柱形图 复制修改它的 xAxis 和 series
       let myChart = echarts.getInstanceByDom(document.getElementById('myChart')) // 获取到当前的myChart实例
       // 计算柱形图的数据总和
-      let total = 0
-      for (var i = 0; i < this.analysisData['myChart_series'].length; i++) {
-        total += parseInt(this.analysisData['myChart_series'][i])
-      }
+      let total = this.analysisData['myChart_series'].reduce((accumulator, currentValue) => accumulator + parseInt(currentValue), 0);
 
       // 构造柱形图的 series 数据
       let seriesData = this.analysisData['myChart_series'].map(function (value) {
@@ -399,7 +378,6 @@ export default {
             show: true,
             position: 'top',
             align: 'center',
-            // formatter: '{b|{b}}\n{c}次\n({d}%)'.replace('{d}', percentage),
             formatter: '{c|{c}}次\n({d|{d}%})'.replace('{d}', percentage),
             rich: {
               c: {
@@ -409,7 +387,6 @@ export default {
               d: {
                 color: 'red',
                 fontSize: 14,
-                // fontWeight: 'bold',
               }
             }
           },
@@ -422,7 +399,7 @@ export default {
       // 修改xAxis的data参数
       myChart && myChart.setOption({
           xAxis: { data: xAxisData},
-          series: { data: seriesData },
+          series: { barMaxWidth: 40, data: seriesData },
       })
 
     },
