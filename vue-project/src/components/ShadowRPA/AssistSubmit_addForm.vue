@@ -198,11 +198,17 @@ export default {
         informer : '',
         DBType: '',
         version: '',
-        deploJIRACode: '',
+        JIRACode: '',
         problemDescription: '',
         solution: '',
         reasonAnalysis:'',
         timeSpent :'',
+
+        workRecordCode : '',
+        workRecordTitle: '',
+        eventType: '',
+        JIRACode: '',
+        sourcePool: ''
       },
 
       rules: {
@@ -272,6 +278,7 @@ export default {
   methods: {
 
     initForm(operation, recordInfoData){
+      console.log("abcd: ",recordInfoData)
       this.operation = operation
       if (operation === 'add') {
         // 是新增工单状态

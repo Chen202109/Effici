@@ -37,6 +37,9 @@ export default {
       recordDetailInfoFormTitleOptions : {"add":"新增记录", "view":"查看详情", "edit":"编辑记录", "":""},
       workRecordTableData: [],
 
+      // 当前正在操作的行
+      currentRow : -1,
+
       // 分页组件的数据
       pageSizes: [10, 20, 30, 50],
       currentPageSize: 10,
@@ -96,7 +99,7 @@ export default {
      * @param {*} form 
      */
     onSubmit(operation, form) {
-      console.log("tthhis form : ", form)
+      console.log("tthhis form : ", operation, form)
 
       // 如果是查看详情
       if (operation === "view") {
@@ -107,12 +110,12 @@ export default {
           '/api/CMC/workrecords/work_record',
           form
         ).then(response => {
-          console.log("dddd, this response: ", response)
           this.showForm = false
           this.$message({
             message: '添加成功',
             type: 'success'
           })
+          // 将total数量加一，并且进行一次查询更新展示的数据
           this.workRecordTotalAmount += 1;
           this.$refs.searchFilter.search(false);
         }).catch((error) => {
@@ -126,12 +129,15 @@ export default {
           '/api/CMC/workrecords/work_record_update',
           form
         ).then(response => {
-          console.log("dddd, this response: ", response)
           this.showForm = false
           this.$message({
             message: '修改成功',
             type: 'success'
           })
+          console.log("old row: ", this.workRecordTableData[this.currentRow])
+          console.log("new row: ", form)
+          this.workRecordTableData[this.currentRow] = form
+          this.currentRow = -1
         }).catch((error) => {
           console.log(error)
           this.$message.error('错了哦，仔细看错误信息弹窗')
@@ -145,11 +151,12 @@ export default {
      * @param {*} operation view, edit, delete
      * @param {*} recordInfoData 
      */
-    onHandleSingleRecordOperation(operation, recordInfoData){
+    onHandleSingleRecordOperation(operation, recordInfoData, rowIndex){
       console.log("父组件: ",operation, recordInfoData);
       if (operation === "delete"){
 
       }else {
+        if (operation === "edit") this.currentRow = rowIndex;
         this.showRecordDetailForm(operation, recordInfoData)
       }
     },

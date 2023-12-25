@@ -170,8 +170,6 @@ class Db(object):
 
         sql = "INSERT INTO " + table + " (" + final_key + ")" + " VALUES (" + final_value + ")"
         try:
-            print("-=====================================")
-            print("print sql: "+sql)
             self.configure.ping(reconnect=True)
             self.begin.execute(sql)
             self.configure.commit()
@@ -234,16 +232,18 @@ class Db(object):
                 continue
             elif type(where_value) == int:
                 where_value = where_value
-                where_str += " " + "%s" % where_key + " " + "%d" % where_value
+                where_str += " AND " + "%s" % where_key + " " + "%d" % where_value
             elif type(where_value) == float:
                 where_value = where_value
-                where_str += " " + "%s" % where_key + " " + "%f" % where_value
+                where_str += " AND " + "%s" % where_key + " " + "%f" % where_value
             else:
                 where_value = where_value.replace("'", '"')
-                where_str += " " + "%s" % where_key + " " + "'%s'" % where_value
+                where_str += " AND " + "%s" % where_key + " " + "'%s'" % where_value
 
-        sql = 'UPDATE ' + table + ' SET ' + final_field + ' WHERE ' + ' 1 = 1 AND' + where_str
+        sql = 'UPDATE ' + table + ' SET ' + final_field + ' WHERE ' + ' 1 = 1 ' + where_str
         try:
+            print("-=====================================")
+            print("print sql: "+sql)
             self.configure.ping(reconnect=True)
             self.begin.execute(sql)
             self.configure.commit()

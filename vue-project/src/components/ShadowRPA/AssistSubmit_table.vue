@@ -26,10 +26,10 @@
               <el-button size="mini" @click="handleSingleRecordOperation('view', scope.row)">详情</el-button>
             </el-col>
             <el-col :span="8">
-              <el-button size="mini" @click="handleSingleRecordOperation('edit', scope.row)">编辑</el-button>
+              <el-button size="mini" @click="handleSingleRecordOperation('edit', scope.row, scope.$index)">编辑</el-button>
             </el-col>
             <el-col :span="8">
-              <el-button size="mini" @click="handleSingleRecordOperation('delete', scope.row.fid)" type="danger">删除</el-button>
+              <el-button size="mini" @click="handleSingleRecordOperation('delete', scope.row)" type="danger">删除</el-button>
             </el-col>
           </el-row>
         </template>
@@ -117,9 +117,9 @@ export default {
       return width
     },
 
-    handleSingleRecordOperation(operation, recordInfoData) {
-      console.log("子组件", operation, recordInfoData);
-      this.$emit("handleSingleRecordOperation", operation, recordInfoData);
+    handleSingleRecordOperation(operation, recordInfoData, rowIndex) {
+      console.log("子组件", operation, recordInfoData, rowIndex);
+      this.$emit("handleSingleRecordOperation", operation, recordInfoData, rowIndex);
     },
     
   },
