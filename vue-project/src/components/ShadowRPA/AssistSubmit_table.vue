@@ -20,17 +20,19 @@
           </el-row>
         </el-col> -->
 
-        <el-row>
-          <el-col :span="8">
-            <el-button size="mini" @click="handleDetail(scope.$index, scope.row)">详情</el-button>
-          </el-col>
-          <el-col :span="8">
-            <el-button size="mini" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
-          </el-col>
-          <el-col :span="8">
-            <el-button size="mini" @click="handleDelete(scope.$index, scope.row)" type="danger">删除</el-button>
-          </el-col>
-        </el-row>
+        <template slot-scope="scope">
+          <el-row>
+            <el-col :span="8">
+              <el-button size="mini" @click="handleSingleRecordOperation('view', scope.row)">详情</el-button>
+            </el-col>
+            <el-col :span="8">
+              <el-button size="mini" @click="handleSingleRecordOperation('edit', scope.row)">编辑</el-button>
+            </el-col>
+            <el-col :span="8">
+              <el-button size="mini" @click="handleSingleRecordOperation('delete', scope.row.fid)" type="danger">删除</el-button>
+            </el-col>
+          </el-row>
+        </template>
       </el-table-column>
 
       <el-table-column type="index" label="序号" width="50px" align="center"></el-table-column>
@@ -57,16 +59,16 @@ export default {
     return {
       showForm: false,
       tableTitle: [
-        { prop: 'issolve', label: '解决' },
-        { prop: 'createtime', label: '登记日期' },
-        { prop: 'agenname', label: '单位名称' },
-        { prop: 'region', label: '省份地区' },
-        { prop: 'agentype', label: '产品类型' },
-        { prop: 'environment', label: '环境属性' },
-        { prop: 'errorfunction', label: '出错功能' },
-        { prop: 'errortype', label: '问题分类' },
-        { prop: 'softversion', label: '程序版本' },
-        { prop: 'databasetype', label: '数据库类型' },
+        { prop: 'isSolved', label: '解决' },
+        { prop: 'registerDate', label: '登记日期' },
+        { prop: 'agencyName', label: '单位名称' },
+        { prop: 'province', label: '省份地区' },
+        { prop: 'productType', label: '产品类型' },
+        { prop: 'deployment', label: '环境属性' },
+        { prop: 'errorFunction', label: '出错功能' },
+        { prop: 'problemType', label: '问题分类' },
+        { prop: 'version', label: '程序版本' },
+        { prop: 'DBType', label: '数据库类型' },
       ],
     };
   },
@@ -115,13 +117,11 @@ export default {
       return width
     },
 
-
-    handleEdit(index, row) {
-      console.log("编辑", index, row.createtime);
+    handleSingleRecordOperation(operation, recordInfoData) {
+      console.log("子组件", operation, recordInfoData);
+      this.$emit("handleSingleRecordOperation", operation, recordInfoData);
     },
-    handleDelete(index, row) {
-      console.log("删除", index, row);
-    },
+    
   },
 };
 </script>

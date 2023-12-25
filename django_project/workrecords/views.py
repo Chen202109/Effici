@@ -10,6 +10,7 @@ from datetime import datetime,timedelta # 用于传入的字符串转换成日�
 import json
 from mydata import mysql_base
 import pandas as pd
+import hashlib
 
 # ----------------------------------------------------------- AssistSubmit.vue 的请求 ----------------------------------------------------
 
@@ -36,12 +37,33 @@ def work_record(request):
         work_record_detail_form = json.loads(request.body)
         print(f"sadddddddddddd{work_record_detail_form}")
 
+        hash_original = str(work_record_detail_form.get("registerDate"))+"-"+str(work_record_detail_form.get("agencyName"))
+        md5 = hashlib.md5()
+        md5.update(hash_original.encode("utf-8"))
+        encrypted_data = md5.hexdigest()
+
+        fieldDict = {}
+        fieldDict["fid"] = encrypted_data
+
+        # 进行别名的转换，转换成数据库里字段名
+        for key, value in constant.work_record_col_alias_map.items():
+            fieldDict[key] = work_record_detail_form.get(value)
+
+        print(f"sadddddddddddd{fieldDict}")
+        
         db = mysql_base.Db()
-        sql = ""
+        db.insert_copy("workrecords_2023", fieldDict)
         results = []
 
         return JsonResponse({'data': "Adding successfully!"}, json_dumps_params={'ensure_ascii': False})
 
+
+def work_record_update(request):
+    if request.method == 'POST':
+        work_record_detail_form = json.loads(request.body)
+        print(f"sadddddddddddd{work_record_detail_form}")
+
+    return 
 
 def work_record_init(request):
     """
@@ -65,7 +87,7 @@ def get_work_record_detail(search_filter, curr_page, curr_page_size):
     problemDescriptionSql = "" if search_filter["problemDescription"] == "" else f'AND problem LIKE "%{search_filter["problemDescription"]}%"'
 
     db =mysql_base.Db()
-    sql = f' SELECT * from workrecords_2023 ' \
+    sql = f' SELECT {cat_all_work_record_table_cols_alias()} from workrecords_2023 ' \
             f' WHERE createtime>="{search_filter["beginData"]}" and createtime<="{search_filter["endData"]}" '\
             f' {isSolvedSql} {errorFunctionSql} {errorTypeSql} {softVersionSql} {problemDescriptionSql} '\
             f' ORDER BY createtime'
@@ -1142,6 +1164,21 @@ def analysis_saas_privatization_license_register_province(request):
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
 # ----------------------------------------------------------- AnalysisPrivatizationLicense.vue 的请求 --------------------------------------------
+
+
+# --------------------------------------------------------------------- help functions ------------------------------------------------------
+
+def cat_all_work_record_table_cols_alias():
+    """
+    select * from table 的情况下， 因为不想直接查询出现列名， 给所有列名起个别名
+    """
+    cat_alias_str = ''
+    for key, value in constant.work_record_col_alias_map.items():
+        cat_alias_str += f'{key} as {value}, '
+    return cat_alias_str[:-2]
+
+# --------------------------------------------------------------------- help functions ------------------------------------------------------
+
 
 if __name__ == '__main__':
     pass

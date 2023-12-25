@@ -1,7 +1,32 @@
-china_province_list = ['北京','天津','上海','重庆','河北','山西','辽宁','吉林', '云南', '新疆', '广西', '甘肃', '内蒙古', '陕西', '西藏', 
-                       '四川', '宁夏', '黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','海南', '贵州', '青海', 
-                       '台湾', '香港', '澳门']
+# sql
+work_record_col_alias_map = {
+    # "fid":"code",
+    "belong" : "problemParty",
+    "recordcode" : "workRecordCode",
+    "recordtitle" : "workRecordTitle",
+    "creater" : "informer",
+    "createtime" : "registerDate",
+    "createdirectional" : "informParty",
+    "endtime" : "solveDate",
+    "problem" : "problemDescription",
+    "issolve" : "isSolved",
+    "solver" : "solver",
+    "solveway" : "solution",
+    "reason" : "reasonAnalysis",
+    "eventtype" : "eventType",
+    "region" : "province",
+    "agenname" : "agencyName",
+    "agentype" : "productType",
+    "environment" : "deployment",
+    "errorfunction" : "errorFunction",
+    "errortype" : "problemType",
+    "databasetype" : "DBType",
+    "softversion" : "version",
+    "jiracode" : "JIRACode",
+    "resourcepool" : "sourcePool",
+}
 
+# error function
 work_record_error_function_list = ["开票功能","核销功能","收缴业务","通知交互","报表功能","数据同步","票据管理","license重置","单位开通","增值服务","打印功能","安全漏洞","反算功能"]
 
 
@@ -27,6 +52,12 @@ saas_function_service_map = {
     "反算功能" : [],
     "license重置" : [],
 }
+
+
+# map
+china_province_list = ['北京','天津','上海','重庆','河北','山西','辽宁','吉林', '云南', '新疆', '广西', '甘肃', '内蒙古', '陕西', '西藏', 
+                       '四川', '宁夏', '黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','海南', '贵州', '青海', 
+                       '台湾', '香港', '澳门']
 
 source_pool_province_map = {
     '01资源池' : ["中央", "宁夏", "贵州", "四川", "山西", "新疆", "福建", "北京"],

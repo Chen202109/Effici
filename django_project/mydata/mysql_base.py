@@ -50,8 +50,6 @@ class Db(object):
         else:
             sql = "SELECT " + _field + " FROM " + table + " %s " % other
         try:
-            print("-------------------------==================")
-            print("sql:" + sql)
             self.configure.ping(reconnect=True)
             self.begin.execute(sql)
             self.configure.commit()
@@ -172,6 +170,8 @@ class Db(object):
 
         sql = "INSERT INTO " + table + " (" + final_key + ")" + " VALUES (" + final_value + ")"
         try:
+            print("-=====================================")
+            print("print sql: "+sql)
             self.configure.ping(reconnect=True)
             self.begin.execute(sql)
             self.configure.commit()

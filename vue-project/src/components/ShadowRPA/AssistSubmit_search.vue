@@ -43,7 +43,7 @@
     </el-form>
   </div>
 </template>
-errorType
+
 <script>
 export default {
   data() {
@@ -59,7 +59,7 @@ export default {
       },
       // 默认为最近一周的
       dateRange: [new Date(new Date().setDate(new Date().getDate() - 7)), new Date()],
-      errorTypeList: ["产品BUG","实施配置","异常数据处理"],
+      errorTypeList: ["产品BUG","实施配置","异常数据处理", "需求", "需求未覆盖", "重大生产事故", "安全漏洞", "his传参错误"],
       errorFunctionList: ["开票功能","核销功能","收缴业务","通知交互","报表功能","数据同步","票据管理","license重置","单位开通","增值服务","打印功能","安全漏洞","反算功能", "基础功能"],
       isSolvedList: ["是","否"],
     };

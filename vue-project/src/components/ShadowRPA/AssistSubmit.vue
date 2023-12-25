@@ -3,12 +3,13 @@
     <search v-on:search="onSearch" ref="searchFilter"></search>
     
     <!-- 让新增记录的页面进行弹窗式的页面 :visible.sync是来控制dialog显示的属性，v-if是因为打开dialog之后会有上次的数据的缓存，使用v-if可以清空内存来清除之前的数据 -->
-    <el-dialog title="新增记录" :visible.sync="showForm" v-if="showForm" :close-on-click-modal="false">
-      <add-form v-on:submit="onSubmit"></add-form>
+    <el-dialog :title=this.recordDetailInfoFormTitle :visible.sync="showForm" v-if="showForm" :close-on-click-modal="false">
+      <add-form v-on:submit="onSubmit" ref="recordDetailInfoForm"></add-form>
     </el-dialog>
-    <el-button v-if="!showForm" type="primary" class="add-button" icon="el-icon-plus" @click="showForm = true">新增受理信息</el-button>
 
-    <ReportTable :table-data="workRecordTableData"></ReportTable>
+    <el-button v-if="!showForm" type="primary" class="add-button" icon="el-icon-plus" @click="showRecordDetailForm('add', -1)">新增受理信息</el-button>
+
+    <ReportTable :table-data="workRecordTableData" v-on:handleSingleRecordOperation="onHandleSingleRecordOperation"></ReportTable>
 
     <!-- element-ui的分页组件 -->
     <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page.sync="currentPage"
@@ -32,13 +33,15 @@ export default {
   data() {
     return {
       showForm: false,
+      recordDetailInfoFormTitle : "",
+      recordDetailInfoFormTitleOptions : {"add":"新增记录", "view":"查看详情", "edit":"编辑记录", "":""},
       workRecordTableData: [],
 
       // 分页组件的数据
       pageSizes: [10, 20, 30, 50],
       currentPageSize: 10,
       currentPage: 1,
-      workRecordTotalAmount: 500,
+      workRecordTotalAmount: 0,
 
     }
   },
@@ -47,7 +50,9 @@ export default {
   },
 
   methods: {
-
+    /**
+     * 最开始页面加载的时候，默认查询前10条数据显示在表格上
+     */
     searchBasicInfo() {
       // 触发子组件的search函数，那样就等于点击了一遍搜索那边的查询按钮进行请求
       this.$refs.searchFilter.search(true);
@@ -90,22 +95,75 @@ export default {
      * 提交新增/修改工单数据的表单给后端，将更改的内容存储到数据库
      * @param {*} form 
      */
-    onSubmit(form) {
+    onSubmit(operation, form) {
       console.log("tthhis form : ", form)
-      this.$http.post(
-        '/api/CMC/workrecords/work_record',
-        form
-      ).then(response => {
-        console.log("dddd, this response: ", response)
-        this.showForm = false
-        this.$message({
-          message: '添加成功',
-          type: 'success'
+
+      // 如果是查看详情
+      if (operation === "view") {
+        this.showForm = false;
+      } else if (operation === "add") {
+        // 新增工单记录
+        this.$http.post(
+          '/api/CMC/workrecords/work_record',
+          form
+        ).then(response => {
+          console.log("dddd, this response: ", response)
+          this.showForm = false
+          this.$message({
+            message: '添加成功',
+            type: 'success'
+          })
+          this.workRecordTotalAmount += 1;
+          this.$refs.searchFilter.search(false);
+        }).catch((error) => {
+          console.log(error)
+          this.$message.error('错了哦，仔细看错误信息弹窗')
+          alert('失败' + error)
         })
-      }).catch((error) => {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
+      } else {
+        // 修改工单记录
+        this.$http.post(
+          '/api/CMC/workrecords/work_record_update',
+          form
+        ).then(response => {
+          console.log("dddd, this response: ", response)
+          this.showForm = false
+          this.$message({
+            message: '修改成功',
+            type: 'success'
+          })
+        }).catch((error) => {
+          console.log(error)
+          this.$message.error('错了哦，仔细看错误信息弹窗')
+          alert('失败' + error)
+        })
+      }
+    },
+
+    /**
+     * 子组件的table里面的每行的查看修改删除操作的触发
+     * @param {*} operation view, edit, delete
+     * @param {*} recordInfoData 
+     */
+    onHandleSingleRecordOperation(operation, recordInfoData){
+      console.log("父组件: ",operation, recordInfoData);
+      if (operation === "delete"){
+
+      }else {
+        this.showRecordDetailForm(operation, recordInfoData)
+      }
+    },
+
+    /**
+     * 当进行新增，或者查看，或者编辑的时候，弹出具体信息的form框
+     * @param {*} operation 有三种，新增 add，查看 view，编辑 edit
+     * @param {*} id 如果是查看或者编辑的是有具体的编号，那么对应的id
+     */
+    showRecordDetailForm(operation, recordInfoData){
+      this.showForm = true
+      this.recordDetailInfoFormTitle = this.recordDetailInfoFormTitleOptions[operation]
+      this.$nextTick(() => {
+        this.$refs.recordDetailInfoForm.initForm(operation, recordInfoData)  // init（）是子组件函数
       })
     },
 
@@ -114,7 +172,6 @@ export default {
      * @param {*} val 
      */
     handleSizeChange(val) {
-      console.log(`每页 ${val} 条`);
       this.currentPage = 1
       // 触发子组件的search函数，那样就等于点击了一遍搜索那边的查询按钮进行请求
       this.$refs.searchFilter.search(false);
@@ -129,7 +186,6 @@ export default {
      * @param {*} val 
      */
     handleCurrentChange(val) {
-      console.log(`当前页: ${val}`);
       // 触发子组件的search函数，那样就等于点击了一遍搜索那边的查询按钮进行请求
       this.$refs.searchFilter.search(false);
 
@@ -137,7 +193,6 @@ export default {
       var that = this
       this.$nextTick(()=>{that.scrollToTop(); })
     },
-
 
     // 滚动到容器顶部
     scrollToTop() {
