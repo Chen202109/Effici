@@ -1,15 +1,18 @@
 <template>
   <div class="component-wrapper">
     <search v-on:search="onSearch" ref="searchFilter"></search>
-    
+
     <!-- 让新增记录的页面进行弹窗式的页面 :visible.sync是来控制dialog显示的属性，v-if是因为打开dialog之后会有上次的数据的缓存，使用v-if可以清空内存来清除之前的数据 -->
-    <el-dialog :title=this.recordDetailInfoFormTitle :visible.sync="showForm" v-if="showForm" :close-on-click-modal="false">
+    <el-dialog :title=this.recordDetailInfoFormTitle :visible.sync="showForm" v-if="showForm"
+      :close-on-click-modal="false">
       <add-form v-on:submit="onSubmit" ref="recordDetailInfoForm"></add-form>
     </el-dialog>
 
-    <el-button v-if="!showForm" type="primary" class="add-button" icon="el-icon-plus" @click="showRecordDetailForm('add', -1)">新增受理信息</el-button>
+    <el-button v-if="!showForm" type="primary" class="add-button" icon="el-icon-plus"
+      @click="showRecordDetailForm('add', -1)">新增受理信息</el-button>
 
-    <ReportTable :table-data="workRecordTableData" v-on:handleSingleRecordOperation="onHandleSingleRecordOperation"></ReportTable>
+    <ReportTable :table-data="workRecordTableData" v-on:handleSingleRecordOperation="onHandleSingleRecordOperation">
+    </ReportTable>
 
     <!-- element-ui的分页组件 -->
     <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page.sync="currentPage"
@@ -33,12 +36,12 @@ export default {
   data() {
     return {
       showForm: false,
-      recordDetailInfoFormTitle : "",
-      recordDetailInfoFormTitleOptions : {"add":"新增记录", "view":"查看详情", "edit":"编辑记录", "":""},
+      recordDetailInfoFormTitle: "",
+      recordDetailInfoFormTitleOptions: { "add": "新增记录", "view": "查看详情", "edit": "编辑记录", "": "" },
       workRecordTableData: [],
 
       // 当前正在操作的行
-      currentRow : -1,
+      currentRow: -1,
 
       // 分页组件的数据
       pageSizes: [10, 20, 30, 50],
@@ -130,12 +133,7 @@ export default {
           form
         ).then(response => {
           this.showForm = false
-          this.$message({
-            message: '修改成功',
-            type: 'success'
-          })
-          console.log("old row: ", this.workRecordTableData[this.currentRow])
-          console.log("new row: ", form)
+          this.$message.success('修改成功')
           this.workRecordTableData[this.currentRow] = form
           this.currentRow = -1
         }).catch((error) => {
@@ -151,11 +149,24 @@ export default {
      * @param {*} operation view, edit, delete
      * @param {*} recordInfoData 
      */
-    onHandleSingleRecordOperation(operation, recordInfoData, rowIndex){
-      console.log("父组件: ",operation, recordInfoData);
-      if (operation === "delete"){
-
-      }else {
+    onHandleSingleRecordOperation(operation, recordInfoData, rowIndex) {
+      console.log("父组件: ", operation, recordInfoData);
+      if (operation === "delete") {
+        // 删除工单记录
+        this.$http.post(
+          '/api/CMC/workrecords/work_record_delete',
+          recordInfoData
+        ).then(response => {
+          this.$message.success('删除成功')
+          // 将total数量减一，并且进行一次查询更新展示的数据
+          this.workRecordTotalAmount -= 1;
+          this.$refs.searchFilter.search(false);
+        }).catch((error) => {
+          console.log(error)
+          this.$message.error('错了哦，仔细看错误信息弹窗')
+          alert('失败' + error)
+        })
+      } else {
         if (operation === "edit") this.currentRow = rowIndex;
         this.showRecordDetailForm(operation, recordInfoData)
       }
@@ -166,7 +177,7 @@ export default {
      * @param {*} operation 有三种，新增 add，查看 view，编辑 edit
      * @param {*} id 如果是查看或者编辑的是有具体的编号，那么对应的id
      */
-    showRecordDetailForm(operation, recordInfoData){
+    showRecordDetailForm(operation, recordInfoData) {
       this.showForm = true
       this.recordDetailInfoFormTitle = this.recordDetailInfoFormTitleOptions[operation]
       this.$nextTick(() => {
@@ -185,7 +196,7 @@ export default {
 
       // 切换展示条目数时滚动到容器顶部
       var that = this
-      this.$nextTick(()=>{that.scrollToTop(); })
+      this.$nextTick(() => { that.scrollToTop(); })
     },
 
     /**
@@ -198,7 +209,7 @@ export default {
 
       // 切换展示条目数时滚动到容器顶部
       var that = this
-      this.$nextTick(()=>{that.scrollToTop(); })
+      this.$nextTick(() => { that.scrollToTop(); })
     },
 
     // 滚动到容器顶部
@@ -220,5 +231,9 @@ export default {
 
 .add-button {
   margin-bottom: 20px;
+}
+
+.el-pagination {
+  margin-top: 20px;
 }
 </style>

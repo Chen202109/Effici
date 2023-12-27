@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-form ref="workRecordEditForm" :rules="rules" :model="form" label-width="100px" size="small" >
+    <el-form ref="workRecordEditForm" :rules="rules" :model="form" label-width="100px" size="small" style="margin: 10px">
       <!-- 所有el-row最后里面的col总和为span 23,因为如果设置成24的话，左右边会不对称，因为左边有留给el-form-item的label的空间，但是右边没有，
         会直接元素和关闭的叉叉靠的太近 -->
       <el-row>
@@ -137,7 +137,7 @@
         <el-col :span = 23>
           <el-form-item label="问题描述" prop="problemDescription">
             <!-- :4代表这个textarea可以展示四行的内容 -->
-            <el-input type="textarea" :rows="6" v-model="form.problemDescription" :disabled="this.operation==='view'"></el-input>
+            <el-input type="textarea" :rows="6" v-model="form.problemDescription" maxlength="650" show-word-limit :disabled="this.operation==='view'"></el-input>
           </el-form-item>
         </el-col>
       </el-row>

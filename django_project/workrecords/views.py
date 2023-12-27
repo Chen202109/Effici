@@ -47,7 +47,7 @@ def work_record(request):
         # 进行别名的转换，转换成数据库里字段名
         for key, value in constant.work_record_col_alias_map.items():
             temp_value = work_record_detail_form.get(value)
-            fieldDict[key] = work_record_detail_form.get(value)
+            fieldDict[key] = "" if temp_value is None else temp_value
         
         db = mysql_base.Db()
         db.insert_copy("workrecords_2023", fieldDict)
@@ -58,7 +58,6 @@ def work_record(request):
 def work_record_update(request):
     if request.method == 'POST':
         work_record_detail_form = json.loads(request.body)
-        print(f"sadddddddddddd{work_record_detail_form}")
 
         hash_original = str(work_record_detail_form.get("registerDate"))+"-"+str(work_record_detail_form.get("agencyName"))
         md5 = hashlib.md5()
@@ -75,11 +74,24 @@ def work_record_update(request):
         print(f"wwwwwwww{fieldDict}")
         
         db = mysql_base.Db()
-        db.update("workrecords_2023", fieldDict, {"fid=":encrypted_data})
-        results = []
+        db.update("workrecords_2023", fieldDict, {"fid=" : encrypted_data})
 
-        return JsonResponse({'data': "Adding successfully!"}, json_dumps_params={'ensure_ascii': False})
+        return JsonResponse({'data': "Update successfully!"}, json_dumps_params={'ensure_ascii': False})
     
+def work_record_delete(request):
+    if request.method == 'POST':
+        work_record_detail_form = json.loads(request.body)
+
+        hash_original = str(work_record_detail_form.get("registerDate"))+"-"+str(work_record_detail_form.get("agencyName"))
+        md5 = hashlib.md5()
+        md5.update(hash_original.encode("utf-8"))
+        encrypted_data = md5.hexdigest()
+
+        db = mysql_base.Db()
+        db.delete("workrecords_2023", {"fid=" : encrypted_data})
+
+        return JsonResponse({'data': "Delete successfully!"}, json_dumps_params={'ensure_ascii': False})
+
 
 def work_record_init(request):
     """

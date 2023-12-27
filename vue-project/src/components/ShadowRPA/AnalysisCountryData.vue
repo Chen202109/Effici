@@ -8,7 +8,7 @@
                 </el-select>
                 <span class="demonstration" style="margin-left: 15px;">时间范围： </span>
                 <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
-                    end-placeholder="结束日期">
+                    end-placeholder="结束日期" value-format="yyyy-MM-dd">
                 </el-date-picker>
                 <el-button type="primary" @click="search">查询</el-button>
             </div>
@@ -355,6 +355,7 @@ export default {
          * 获取搜索时候的searchValue
          */
         getSearchValue(){
+            console.log("date range: ", this.dateRange)
             var searchValue = {}
             searchValue['functionName'] = this.functionSelected.toString()
             searchValue["provinceSelected"] = this.provinceSelected
