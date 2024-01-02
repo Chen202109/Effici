@@ -1,6 +1,7 @@
 import json
 import sys
 import pymysql
+import pandas as pd
 
 class Db(object):
     def __init__(self):
@@ -194,6 +195,57 @@ class Db(object):
             self.configure.close()
             return error
 
+
+    # insert 语句
+    # 批量插入
+    def group_insert_dataframe(self, table_name, df_data:pd.DataFrame, columns=None):
+        df_data = df_data.where(df_data.notnull(), None)
+        if columns is None:
+            columns = df_data.columns.values.tolist()
+        sql_insert = """ INSERT INTO {table_name} ({col_list}) VALUES({data_holder}) """.format(
+            table_name=table_name,
+            col_list=",".join(columns),
+            data_holder=",".join(["%s" for _ in columns])
+        )
+
+        # 去除转义字符
+        data = [[pymysql.escape_string(str(ele)) for ele in innerlist] for innerlist in df_data.values.tolist()]
+
+        start = 0
+        chunk_size = 5
+
+        try:
+            self.configure.ping(reconnect=True)
+            # 分批次插入
+            while start < len(data):
+                print(f"sql is {sql_insert}")
+                print(f"data is {data[start:start + chunk_size]}")
+                print("====================================")
+                self.begin.executemany(sql_insert, data[start:start + chunk_size])
+                start += chunk_size
+            self.configure.commit()
+            return "success"
+        except pymysql.err.ProgrammingError as error:
+            self.configure.rollback()
+            self.configure.close()
+            return error
+        except pymysql.err.InternalError as error:
+            self.configure.rollback()
+            self.configure.close()
+            return error
+        except pymysql.err.OperationalError as error:
+            self.configure.rollback()
+            self.configure.close()
+            return error
+        except pymysql.err.InterfaceError as error:
+            self.configure.rollback()
+            self.configure.close()
+            return error
+        except pymysql.err.DataError as error:
+            self.configure.rollback()
+            self.configure.close()
+            return error
+
     # update语句
     # UPDATE 表名称 SET 列名称 = 新值 WHERE 列名称 = 某值
     def update(self, table, field: dict, where: dict):
@@ -242,8 +294,6 @@ class Db(object):
 
         sql = 'UPDATE ' + table + ' SET ' + final_field + ' WHERE ' + ' 1 = 1 ' + where_str
         try:
-            print("-=====================================")
-            print("print sql: "+sql)
             self.configure.ping(reconnect=True)
             self.begin.execute(sql)
             self.configure.commit()

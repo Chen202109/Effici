@@ -3,13 +3,25 @@
     <search v-on:search="onSearch" ref="searchFilter"></search>
 
     <!-- 让新增记录的页面进行弹窗式的页面 :visible.sync是来控制dialog显示的属性，v-if是因为打开dialog之后会有上次的数据的缓存，使用v-if可以清空内存来清除之前的数据 -->
-    <el-dialog :title=this.recordDetailInfoFormTitle :visible.sync="showForm" v-if="showForm"
-      :close-on-click-modal="false">
+    <el-dialog :title=this.recordDetailInfoFormTitle :visible.sync="showRecordDetail" v-if="showRecordDetail" :close-on-click-modal="false">
       <add-form v-on:submit="onSubmit" ref="recordDetailInfoForm"></add-form>
     </el-dialog>
 
-    <el-button v-if="!showForm" type="primary" class="add-button" icon="el-icon-plus"
-      @click="showRecordDetailForm('add', -1)">新增受理信息</el-button>
+    <el-dialog title="批量新增" :visible.sync="showGroupAdd" v-if="showGroupAdd" :close-on-click-modal="false">
+      <el-form style="text-align: center;">
+        <el-form-item>
+          <Upload ref="groupAddWorkRecord" :fileType="fileType" :fileLimitSize="fileLimitSize" :url="uploadUri" :fileLimit="fileLimitAmount" @closeUploadDialog="closeUploadDialog"></Upload>
+        </el-form-item>
+        <el-form-item>
+          <el-button size=“medium” type="primary" @click="submitGroupAddWorkRecord">确认</el-button>
+          <el-button size=“medium” @click="cancelGroupAddWorkRecord">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+
+    <el-button v-if="!showRecordDetail" type="primary" class="add-button" icon="el-icon-plus" @click="showRecordDetailForm('add', -1)">新增受理信息</el-button>
+    <el-button v-if="!showGroupAdd" type="primary" class="add-button" icon="el-icon-plus" @click="showGroupAddDialog">批量新增</el-button>
+
 
     <ReportTable :table-data="workRecordTableData" v-on:handleSingleRecordOperation="onHandleSingleRecordOperation">
     </ReportTable>
@@ -26,16 +38,29 @@
 import search from '@/components/ShadowRPA/AssistSubmit_search.vue'
 import addForm from '@/components/ShadowRPA/AssistSubmit_addForm.vue'
 import ReportTable from '@/components/ShadowRPA/AssistSubmit_table.vue'
+import Upload from '@/components/Form/upload.vue'
+
 
 export default {
   components: {
     search,
     addForm,
-    ReportTable
+    ReportTable,
+    Upload
   },
   data() {
     return {
-      showForm: false,
+      // 控制新增记录对话框的显示与隐藏
+      showRecordDetail: false,
+      showGroupAdd : false,
+
+      // 上传文件的控制
+      fileType  : ["xlsx", "csv", "xls", "xml"],
+      fileLimitSize: 3,
+      fileLimitAmount : 2,
+      uploadUri : '/api/CMC/workrecords/work_record_group_add',
+
+      // 记录详情表单的数据
       recordDetailInfoFormTitle: "",
       recordDetailInfoFormTitleOptions: { "add": "新增记录", "view": "查看详情", "edit": "编辑记录", "": "" },
       workRecordTableData: [],
@@ -47,7 +72,7 @@ export default {
       pageSizes: [10, 20, 30, 50],
       currentPageSize: 10,
       currentPage: 1,
-      workRecordTotalAmount: 0,
+      workRecordTotalAmount: 1,
 
     }
   },
@@ -106,14 +131,14 @@ export default {
 
       // 如果是查看详情
       if (operation === "view") {
-        this.showForm = false;
+        this.showRecordDetail = false;
       } else if (operation === "add") {
         // 新增工单记录
         this.$http.post(
           '/api/CMC/workrecords/work_record',
           form
         ).then(response => {
-          this.showForm = false
+          this.showRecordDetail = false
           this.$message({
             message: '添加成功',
             type: 'success'
@@ -132,7 +157,7 @@ export default {
           '/api/CMC/workrecords/work_record_update',
           form
         ).then(response => {
-          this.showForm = false
+          this.showRecordDetail = false
           this.$message.success('修改成功')
           this.workRecordTableData[this.currentRow] = form
           this.currentRow = -1
@@ -178,11 +203,30 @@ export default {
      * @param {*} id 如果是查看或者编辑的是有具体的编号，那么对应的id
      */
     showRecordDetailForm(operation, recordInfoData) {
-      this.showForm = true
+      this.showRecordDetail = true
       this.recordDetailInfoFormTitle = this.recordDetailInfoFormTitleOptions[operation]
       this.$nextTick(() => {
         this.$refs.recordDetailInfoForm.initForm(operation, recordInfoData)  // init（）是子组件函数
       })
+    },
+
+    showGroupAddDialog(){
+      this.showGroupAdd = true;
+    },
+
+    closeUploadDialog(){
+      this.showGroupAdd = false;
+    },
+
+    /**
+     * 进行批量新增操作，调用子组件的方法将文件进行上传检验，如果成功则关闭这个弹窗
+     */
+    submitGroupAddWorkRecord(){
+      this.$refs.groupAddWorkRecord.submitFiles();
+    },
+
+    cancelGroupAddWorkRecord(){
+      this.closeUploadDialog()
     },
 
     /**

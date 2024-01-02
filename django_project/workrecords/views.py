@@ -11,6 +11,9 @@ import json
 from mydata import mysql_base
 import pandas as pd
 import hashlib
+import os
+import shutil 
+
 
 # ----------------------------------------------------------- AssistSubmit.vue 的请求 ----------------------------------------------------
 
@@ -55,6 +58,72 @@ def work_record(request):
         return JsonResponse({'data': "Adding successfully!"}, json_dumps_params={'ensure_ascii': False})
 
 
+def work_record_group_add(request):
+    if request.method == 'POST':
+        error_msg=''
+
+        # 进行暂存上传文件的目录的创建
+        dir_path = os.path.join(constant.MEDIA_ROOT, "111")
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
+        files = request.FILES.values()
+        for file in files:
+            print(f"receive file {file}")
+
+            try:
+                filename = os.path.join(dir_path, file.name)
+                # 将文件存入服务器
+                with open(filename, 'wb+') as f:
+                    for chunk in file.chunks():
+                        f.write(chunk)
+                    f.close()
+            except: 
+                print("文件存储路径不对")
+                continue
+
+            try:
+                # 根据文件类型进行读取
+                file_extension = filename.split('.')[-1]
+                print(f"filename, {filename}, file extension: {file_extension}")
+                if file_extension == 'xlsx' or file_extension == 'xls': 
+                    dataframe = pd.read_excel(io=filename)
+                elif file_extension == 'csv':
+                    dataframe = pd.read_csv(io=filename)
+                else:
+                    print("不是可接受的文件类型")
+                    continue
+            except:
+                print("读取文件出错")
+                continue       
+            
+            # 对批量新增工单的文件的数据的头部进行格式检查，看是否有所有需要的项
+            for item in constant.work_record_col_chinese_alias_map.keys():
+                if item not in dataframe.columns:
+                    print("文件中缺少必要的列："+item)
+                    break
+            # 说明在检测数据头部的时候格式不对
+            if error_msg != "": continue
+            # 将不在work_record_col_chinese_alias_map中的列进行去除, 然后将中文的列名给弄成表的列名
+            cols_to_keep = [col for col in dataframe.columns if col in constant.work_record_col_chinese_alias_map.keys()]
+            dataframe = dataframe[cols_to_keep]
+            dataframe.rename(columns=constant.work_record_col_chinese_alias_map, inplace=True)
+            print(f"dataframe cols : "+ dataframe.columns)
+
+            # 计算并生成fid列
+            dataframe['fid'] = dataframe.apply(lambda row: hashlib.md5((str(row['createtime'])+"-"+str(row['agenname'])).encode("utf-8")).hexdigest(), axis=1)
+
+            # 批量将数据进行插入到数据库            
+            db = mysql_base.Db()
+            content = db.group_insert_dataframe("workrecords_2023", dataframe)
+            print(content)
+
+        # 将暂存的文件进行删除，连带这个目录进行删除
+        shutil.rmtree(dir_path)    
+
+        return JsonResponse({'result': 'OK', 'status': 200, 'data': ""}, json_dumps_params={'ensure_ascii': False})
+    
+
 def work_record_update(request):
     if request.method == 'POST':
         work_record_detail_form = json.loads(request.body)
@@ -78,6 +147,7 @@ def work_record_update(request):
 
         return JsonResponse({'data': "Update successfully!"}, json_dumps_params={'ensure_ascii': False})
     
+
 def work_record_delete(request):
     if request.method == 'POST':
         work_record_detail_form = json.loads(request.body)
@@ -100,7 +170,6 @@ def work_record_init(request):
     if request.method == 'GET':
         data = []
     return JsonResponse({'data': []}, json_dumps_params={'ensure_ascii': False})
-
 
 
 def get_work_record_detail(search_filter, curr_page, curr_page_size):
@@ -141,7 +210,7 @@ def get_work_record_count(search_filter):
         db =mysql_base.Db()
         total_work_record_amount = db.select(["count(fid)"], "workrecords_2023", condition_dict, "")
         return total_work_record_amount
-
+    
 
 # ----------------------------------------------------------- AssistSubmit.vue 的请求 ----------------------------------------------------
 
@@ -533,16 +602,11 @@ def analysis_saas_large_problem_province_list(request):
     data = []
 
     if request.method == 'GET':
-        begin_date = request.GET.get('beginData', default='2023-01-01')
-        end_date = request.GET.get('endData', default='2023-12-31')
-
-        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
-        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
 
         db =mysql_base.Db()
 
         # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
-        sql = f' SELECT distinct region from majorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
+        sql = f' SELECT distinct region from majorrecords'
         saas_large_problem_province_list = db.select_offset(1, 2000, sql)
         data.append({'seriesName': "监控出错省份", 'seriesData': saas_large_problem_province_list})
  
@@ -638,16 +702,11 @@ def analysis_saas_monitor_province_list(request):
     data = []
 
     if request.method == 'GET':
-        begin_date = request.GET.get('beginData', default='2023-01-01')
-        end_date = request.GET.get('endData', default='2023-12-31')
-
-        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
-        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
 
         db =mysql_base.Db()
 
         # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
-        sql = f' SELECT distinct region from monitorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
+        sql = f' SELECT distinct region from monitorrecords'
         saas_minitor_province_list = db.select_offset(1, 2000, sql)
         data.append({'seriesName': "监控出错省份", 'seriesData': saas_minitor_province_list})
  
@@ -745,16 +804,10 @@ def analysis_saas_added_service_province_list(request):
     data = []
 
     if request.method == 'GET':
-        begin_date = request.GET.get('beginData', default='2023-01-01')
-        end_date = request.GET.get('endData', default='2023-12-31')
-
-        realdate_begin = datetime.strptime(begin_date, '%Y-%m-%d')
-        realdate_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
-
         db =mysql_base.Db()
 
         # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
-        sql = f' SELECT distinct region from orderprodct_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" '
+        sql = f' SELECT distinct region from orderprodct_2023'
         saas_added_service_province_list = db.select_offset(1, 2000, sql)
         data.append({'seriesName': "增值服务订购省份", 'seriesData': saas_added_service_province_list})
  
@@ -920,7 +973,7 @@ def analysis_saas_problem_by_country_region(request):
         sql = f' SELECT distinct errorType as x, count(*) as y from monitorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" {province_condition_sql} group by errorType '
         saas_monitor_problem_type_data = db.select_offset(1, 2000, sql)
         # 排序并找出前五, 因为前端使用横向柱状图，所以排序要反着来
-        sorted_saas_monitor_problem_type_data = sorted(saas_monitor_problem_type_data, key=lambda x : x['y'], reverse = False)[-6:-1]
+        sorted_saas_monitor_problem_type_data = sorted(saas_monitor_problem_type_data, key=lambda x : x['y'], reverse = False)[-5:]
         monitor_problem_type_bar_gragh = []
         monitor_problem_type_bar_gragh.append({'seriesName': province+"生产监控问题分类Top5", 'seriesData': sorted_saas_monitor_problem_type_data})
         data.append(monitor_problem_type_bar_gragh)
@@ -935,18 +988,24 @@ def analysis_saas_problem_by_country_region(request):
         version_amount = 0
         version_function_list = []
         for i in range(len(saas_soft_version_data)):
-            if (curr_version != 0 and curr_version != saas_soft_version_data[i]['x']) or (i== len(saas_soft_version_data)-1):
-                # 说明要换成下个月的数据了，或者是已经到查询的月份的末尾了，所以将当前存储的当前月份的数据进行出错功能的排序取前五和添加到series_data中
-                version_function_list.sort(key=lambda x: x['amount'], reverse=True)
 
+            if (curr_version != 0 and curr_version != saas_soft_version_data[i]['x']):
+                # 说明要换成下个月的数据了，所以将当前存储的当前月份的数据进行出错功能的排序取前五和添加到series_data中
+                version_function_list.sort(key=lambda x: x['amount'], reverse=True)
                 series_data.append({'x': curr_version, 'y':version_amount, 'functionType' : version_function_list[0:3]})
                 # 将临时数据进行清空
                 version_amount = 0
                 version_function_list = []
+
             # 还在当前月份，那么就往临时数据里面添加当前月份的出错功能和累加出错的量
             curr_version = saas_soft_version_data[i]['x']    
             version_amount += saas_soft_version_data[i]['y']
             version_function_list.append({"function": saas_soft_version_data[i]['errorfunction'], 'amount' : saas_soft_version_data[i]['y']})
+            
+            if (i== len(saas_soft_version_data)-1):
+                # 说明所有数据查到最后一项了，该要退出循环了，将这个月份的数据加入series_data中
+                version_function_list.sort(key=lambda x: x['amount'], reverse=True)
+                series_data.append({'x': curr_version, 'y':version_amount, 'functionType' : version_function_list[0:3]})
 
         soft_version_amount_bar_gragh = []
         soft_version_amount_bar_gragh.append({'seriesName': province+"版本受理统计", 'seriesData': series_data})
@@ -964,7 +1023,7 @@ def analysis_saas_problem_by_country_region(request):
         sql = f' SELECT distinct errorType as x, count(*) as y from majorrecords WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" {province_condition_sql} group by errorType '
         saas_large_problem_type_data = db.select_offset(1, 2000, sql)
         # 排序并找出前五, 这里reverse为false是因为前端使用的是横向的柱状图，他会把排序完的第一个的放在最底下，想要数值高的放在上方，reverse为false
-        sorted_saas_large_problem_type_data = sorted(saas_large_problem_type_data, key=lambda x : x['y'], reverse = False)[-6:-1]
+        sorted_saas_large_problem_type_data = sorted(saas_large_problem_type_data, key=lambda x : x['y'], reverse = False)[-5:]
         large_problem_type_bar_gragh = []
         large_problem_type_bar_gragh.append({'seriesName': province+"私有化重大故障问题分类Top5", 'seriesData': sorted_saas_large_problem_type_data})
         data.append(large_problem_type_bar_gragh)

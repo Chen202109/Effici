@@ -26,6 +26,31 @@ work_record_col_alias_map = {
     "resourcepool" : "sourcePool",
 }
 
+work_record_col_chinese_alias_map = {
+    "问题归属" : "belong",
+    "接入人姓名" : "creater",
+    "登记日期" : "createtime",
+    "接入方" : "createdirectional",
+    "解决日期" : "endtime",
+    "问题描述" : "problem",
+    "解决" : "issolve",
+    "处理人" : "solver",
+    "解决方案" : "solveway",
+    "原因分析" : "reason",
+    "事件" : "eventtype",
+    "省份" : "region",
+    "单位名称" : "agenname",
+    "产品类型" : "agentype",
+    "环境属性" : "environment",
+    "出错功能" : "errorfunction",
+    "问题分类" : "errortype",
+    "数据库类型" : "databasetype",
+    "程序版本" : "softversion",
+    "JIAR编号" : "jiracode",
+    "资源池" : "resourcepool",
+}
+
+
 # error function
 work_record_error_function_list = ["开票功能","核销功能","收缴业务","通知交互","报表功能","数据同步","票据管理","license重置","单位开通","增值服务","打印功能","安全漏洞","反算功能"]
 
@@ -94,3 +119,6 @@ province_source_pool_map = {
     "吉林": "04资源池",
     "山东": "04资源池",
 }
+
+#path
+MEDIA_ROOT = r"E:\myWork\Effici\django_project\media_files\workrecords"

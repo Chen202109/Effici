@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path('work_record', views.work_record),
+    path('work_record_group_add', views.work_record_group_add),
     path('work_record_update', views.work_record_update),
     path('work_record_delete', views.work_record_delete),
     path('work_record_init', views.work_record_init),

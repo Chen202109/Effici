@@ -157,13 +157,12 @@ export default {
                 }
             } 
             this.$http.get(
-                '/api/CMC/workrecords/analysis_saas_monitor_province_list?beginData=' +
-                searchValue['beginData'] +
-                '&endData=' +
-                searchValue['endData']
+                '/api/CMC/workrecords/analysis_saas_monitor_province_list'
             ).then(response =>{
                 this.provinceList = response.data.data[0]["seriesData"]
-                this.provinceSelected = this.provinceList[0].region 
+                if (this.provinceList.length !== 0){
+                    this.provinceSelected = this.provinceList[0].region
+                }
             }).catch(error =>{
                 console.log(error)
                 this.$message.error('错了哦，仔细看错误信息弹窗')

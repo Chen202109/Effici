@@ -90,7 +90,7 @@ export default {
         return {
             chinaMap: null,
             // 日期查询范围
-            dateRange: [new Date(new Date().getFullYear() + '-01-01'), new Date()],
+            dateRange: [],
             // 业务选择
             businessOptions: ['日常业务', '其他业务'],
             businessSelected: [],
@@ -135,12 +135,25 @@ export default {
                        '台湾', '香港', '澳门'];
         this.provinceList.unshift("全国");
         this.provinceSelected = this.provinceList[0];
+        this.defaultDatePickerValue()
         // 初始化中国的地图的数据，从本地配置文件中读取
         echarts.registerMap("china", { geoJSON: chinaMap });
         // 进行图的配置
         this.drawCharts()
     },
     methods: {
+        
+        /**
+         * 因为使用value-format设置传给后端的格式为yyyy-MM-dd, 但是datepicker他这格式化对默认值不生效，所以要将默认值也弄成yyyy-MM-dd
+         */
+        defaultDatePickerValue(){
+            var begin = new Date().getFullYear() + '-01-01'
+            // var end = new Date().getFullYear() + '-12-31'
+            var end = new Date().getFullYear() + "-" + new Date().getMonth()+1 + "-" + new Date().getDate()
+            console.log("begin and end picker", begin, end)
+            this.dateRange = [begin, end]
+        },
+
         /**
          * 业务类型的checkbox单选功能
          * @param {*} value 
@@ -361,10 +374,7 @@ export default {
             searchValue["provinceSelected"] = this.provinceSelected
             // 获取年、月、日，进行拼接
             for (let i = 0; i < this.dateRange.length; i++) {
-                var year = this.dateRange[i].getFullYear()
-                var month = ('0' + (this.dateRange[i].getMonth() + 1)).slice(-2)
-                var day = ('0' + this.dateRange[i].getDate()).slice(-2)
-                searchValue[(i==0)?"beginData":"endData"] = year + "-" + month + "-" + day;
+                searchValue[(i==0)?"beginData":"endData"] = this.dateRange[i];
             }
             return searchValue
         },
