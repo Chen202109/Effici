@@ -224,7 +224,7 @@ class Db(object):
                 self.begin.executemany(sql_insert, data[start:start + chunk_size])
                 start += chunk_size
             self.configure.commit()
-            return "success"
+            return ""
         except pymysql.err.ProgrammingError as error:
             self.configure.rollback()
             self.configure.close()

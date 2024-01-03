@@ -60,15 +60,19 @@ def work_record(request):
 
 def work_record_group_add(request):
     if request.method == 'POST':
-        error_msg=''
+        error_msg=[]
 
         # 进行暂存上传文件的目录的创建
-        dir_path = os.path.join(constant.MEDIA_ROOT, "111")
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
+        try:
+            dir_path = os.path.join(constant.MEDIA_ROOT, "111")
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+        except:
+            return JsonResponse({'status': 500, 'message': "服务端创建缓存文件夹失败。"}, json_dumps_params={'ensure_ascii': False})
 
         files = request.FILES.values()
-        for file in files:
+        for i in range(len(files)):
+            file = files[i]
             print(f"receive file {file}")
 
             try:
@@ -78,51 +82,67 @@ def work_record_group_add(request):
                     for chunk in file.chunks():
                         f.write(chunk)
                     f.close()
-            except: 
-                print("文件存储路径不对")
+            except Exception as e: 
+                print(e)
+                print(f"服务端缓存文件{file.name}失败。")
+                error_msg.append(f"服务端缓存文件{file.name}失败， 请重新尝试。")
                 continue
 
             try:
                 # 根据文件类型进行读取
                 file_extension = filename.split('.')[-1]
-                print(f"filename, {filename}, file extension: {file_extension}")
                 if file_extension == 'xlsx' or file_extension == 'xls': 
-                    dataframe = pd.read_excel(io=filename)
+                    dataframe = pd.read_excel(io=filename, parse_dates=["登记日期"])
+                    dataframe['登记日期'] = dataframe['登记日期'].apply(lambda x: str(pd.to_datetime(x).date()))
+                    dataframe['解决日期'] = dataframe['解决日期'].apply(lambda x: str(pd.to_datetime(x).date()))
                 elif file_extension == 'csv':
                     dataframe = pd.read_csv(io=filename)
                 else:
-                    print("不是可接受的文件类型")
+                    print(f"文件{file.name}不是可接受的文件类型, 需要为 xlsx, xls 或 csv。")
+                    error_msg.append(f"文件{file.name}不是可接受的文件类型, 需要为 xlsx, xls 或 csv。")
                     continue
-            except:
-                print("读取文件出错")
+            except Exception as e:
+                print(e)
+                print(f"读取文件出错，原因为{e.message}")
+                error_msg.append(f"读取文件{file.name}失败。")
                 continue       
             
             # 对批量新增工单的文件的数据的头部进行格式检查，看是否有所有需要的项
             for item in constant.work_record_col_chinese_alias_map.keys():
                 if item not in dataframe.columns:
-                    print("文件中缺少必要的列："+item)
+                    print(f"{file.name}文件中缺少必要的列：{item}")
+                    error_msg.append(f"{file.name}文件中缺少必要的列：{item}")
                     break
             # 说明在检测数据头部的时候格式不对
-            if error_msg != "": continue
+            if error_msg[i] != "": continue
             # 将不在work_record_col_chinese_alias_map中的列进行去除, 然后将中文的列名给弄成表的列名
             cols_to_keep = [col for col in dataframe.columns if col in constant.work_record_col_chinese_alias_map.keys()]
             dataframe = dataframe[cols_to_keep]
             dataframe.rename(columns=constant.work_record_col_chinese_alias_map, inplace=True)
-            print(f"dataframe cols : "+ dataframe.columns)
 
             # 计算并生成fid列
             dataframe['fid'] = dataframe.apply(lambda row: hashlib.md5((str(row['createtime'])+"-"+str(row['agenname'])).encode("utf-8")).hexdigest(), axis=1)
 
             # 批量将数据进行插入到数据库            
             db = mysql_base.Db()
-            content = db.group_insert_dataframe("workrecords_2023", dataframe)
-            print(content)
+            db_result = db.group_insert_dataframe("workrecords_2023", dataframe)
+            # 如果是成功插入，返回""， 进行list的第i个的占位，如果是失败插入，返回error，那么放进这个第i个的errorlist里面
+            error_msg.append(db_result)
 
         # 将暂存的文件进行删除，连带这个目录进行删除
-        shutil.rmtree(dir_path)    
+        try:
+            shutil.rmtree(dir_path)
+        except Exception as e:
+            print(e.message)
 
-        return JsonResponse({'result': 'OK', 'status': 200, 'data': ""}, json_dumps_params={'ensure_ascii': False})
-    
+        # 看是否有error
+        has_error = has_error = any(item != "" for item in error_msg)
+        if has_error:
+            return JsonResponse({'status': 406, 'message': "批量导入失败。", 'data': error_msg}, json_dumps_params={'ensure_ascii': False}) 
+        else:
+            return JsonResponse({'status': 200, 'message': "批量导入成功。"}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse({'status': 405, 'message': "请求方法错误, 需要POST请求。"})
 
 def work_record_update(request):
     if request.method == 'POST':

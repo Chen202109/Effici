@@ -136,6 +136,10 @@ export default {
                     this.$message.success("添加成功")   
                     // 将父组件的dialog给关闭, 这个需要父组件绑定这个事件
                     that.$emit("closeUploadDialog");
+                }else if (response.status === 406){
+                    error_msg_list = response.data
+                    error_msg = error_msg_list.join("\n")
+                    this.$message.error(error_msg);
                 }else {
                     this.$message.error(response.message);
                 }       
@@ -162,7 +166,7 @@ export default {
          */
         handleRemove(file, fileList) {
             this.fileList = this.fileList.filter((item) => {return item !== file});
-            
+
         },
 
         /**
