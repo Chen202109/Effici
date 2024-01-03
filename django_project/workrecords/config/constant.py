@@ -122,3 +122,5 @@ province_source_pool_map = {
 
 #path
 MEDIA_ROOT = r"E:\myWork\Effici\django_project\media_files\workrecords"
+AGENCY_ACCOUNT_FILE_ROOT = './workrecords/config/agency_account/'
+
