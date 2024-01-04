@@ -3,7 +3,7 @@
         <div style="margin: 15px 0">
             <div style="margin-bottom: 10px;">
                 <span class="demonstration">省份： </span>
-                <el-select v-model = "provinceSelected" placeholder = "请选择省份" style="width: 120px;" :clearable="true">
+                <el-select v-model = "provinceSelected" placeholder = "请选择省份" style="width: 120px;">
                     <el-option v-for="(item,index) in this.provinceList" :key="index" :label="item" :value="item"></el-option>
                 </el-select>
                 <span class="demonstration" style="margin-left: 15px;">时间范围： </span>

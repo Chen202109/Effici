@@ -151,10 +151,36 @@ def analysis_saas_problem_by_country_region(request):
               f'UNION ALL '\
               f'select "增值服务开通合计" as name, count(*) from orderprodct_2023 WHERE createtime >= "{realdate_begin}" AND createtime <= "{realdate_end}" {province_condition_sql} '
         saas_country_summary_table_data = db.select_offset(1, 2000, sql)
+
+        # 上线单位数量统计, 因为是跨越时间的查询，查询这段时间内的单位新增
+        begin_time_year = int(begin_date.split("-")[0])
+        begin_time_month = int(begin_date.split("-")[1])
+        end_time_year = int(end_date.split("-")[0])
+        end_time_month = int(end_date.split("-")[1])
+        agency_amount = 0
+        while (begin_time_year <= end_time_year):
+            # 打开该年的csv, 因为现在只有2020-2023,其他年份的会找不到报错
+            try:
+                dataframe = pd.read_csv(f"{constant.AGENCY_ACCOUNT_FILE_ROOT}agency_account_increment_{begin_time_year}.csv",sep=',', index_col = 0)
+            except FileNotFoundError:
+                begin_time_year += 1
+                continue
+            if (begin_time_year == end_time_year):
+                while (True):
+                    agency_amount += int(dataframe.loc[province,str(begin_time_month)+'月'])
+                    if begin_time_month == end_time_month:
+                        break
+                    begin_time_month += 1
+                break
+            else:
+                while (begin_time_month <= 12):
+                    agency_amount += int(dataframe.loc[province,str(begin_time_month)+'月'])
+                    begin_time_month += 1
+                begin_time_month = 1
+                begin_time_year += 1
         # 对上线单位数量统计进行读取和插入到summary table中
-        saas_province_agency_account_data = pd.read_csv(constant.AGENCY_ACCOUNT_FILE_ROOT+"agency_account_by_year_2023.csv",sep=',').rename(columns={'省份':'name','数量':'value'}).to_dict(orient="records")
-        agency_amount = sum(item["value"] for item in saas_province_agency_account_data) if province=="全国" else next((item['value'] for item in saas_province_agency_account_data if item['name'] == province), 0)
         saas_country_summary_table_data.insert(0, { "name":'上线单位合计', "value" : agency_amount })
+
         saas_country_summary_table = []
         saas_country_summary_table.append({'seriesName': province+"合计数据", 'seriesData': saas_country_summary_table_data})
         data.append(saas_country_summary_table)
