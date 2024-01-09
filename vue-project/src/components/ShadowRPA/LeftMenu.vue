@@ -14,6 +14,7 @@
               <el-menu-item index="/AnalysisCountryData">全国数据统计</el-menu-item>
               <el-menu-item index="/AssistSubmit">受理明细</el-menu-item>
               <el-menu-item index="/AnalysisData">工单受理数据分析</el-menu-item>
+              <el-menu-item index="/AnalysisDataNew">工单受理数据分析（新）</el-menu-item>
               <el-menu-item index="/AnalysisUpgradeTrend">公有云升级汇报</el-menu-item>
               <el-menu-item index="/AnalysisLargeProblemData">私有化重大故障统计</el-menu-item>
               <el-menu-item index="/AnalysisMonitorProblem">生产监控异常统计</el-menu-item>

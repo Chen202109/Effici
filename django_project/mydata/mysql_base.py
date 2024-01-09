@@ -51,6 +51,7 @@ class Db(object):
         else:
             sql = "SELECT " + _field + " FROM " + table + " %s " % other
         try:
+            print(f"select sql is : {sql}")
             self.configure.ping(reconnect=True)
             self.begin.execute(sql)
             self.configure.commit()
@@ -212,7 +213,66 @@ class Db(object):
         data = [[pymysql.escape_string(str(ele)) for ele in innerlist] for innerlist in df_data.values.tolist()]
 
         start = 0
-        chunk_size = 5
+        chunk_size = 100
+
+        try:
+            self.configure.ping(reconnect=True)
+            # 分批次插入
+            while start < len(data):
+                print(f"sql is {sql_insert}")
+                print(f"data is {data[start:start + chunk_size]}")
+                print("====================================")
+                self.begin.executemany(sql_insert, data[start:start + chunk_size])
+                start += chunk_size
+            self.configure.commit()
+            return ""
+        except pymysql.err.ProgrammingError as error:
+            self.configure.rollback()
+            self.configure.close()
+            return error
+        except pymysql.err.InternalError as error:
+            self.configure.rollback()
+            self.configure.close()
+            return error
+        except pymysql.err.OperationalError as error:
+            self.configure.rollback()
+            self.configure.close()
+            return error
+        except pymysql.err.InterfaceError as error:
+            self.configure.rollback()
+            self.configure.close()
+            return error
+        except pymysql.err.DataError as error:
+            self.configure.rollback()
+            self.configure.close()
+            return error
+
+
+    # 批量存入数据，有的更新，不存在的插入
+    def bench_save(self, table_name, df_data:pd.DataFrame):
+        """
+        批量存入数据，如果是数据库已有的数据就进行更新，如果是数据库没有的数据就进行插入
+        """
+        df_data = df_data.where(df_data.notnull(), None)
+        # 去除转义字符
+        data = [[pymysql.escape_string(str(ele)) for ele in innerlist] for innerlist in df_data.values.tolist()]
+        columns = df_data.columns.tolist()
+
+        col_list = ",".join(columns)
+        data_holder = ",".join(["%s" for _ in columns])
+        update_fields = ",".join([f"{col} = VALUES({col}) " for col in columns])
+    
+        print(f"aaaaaa, : {update_fields}")
+
+        sql_insert = """ INSERT INTO {table_name} ({col_list}) VALUES({data_holder}) ON DUPLICATE KEY UPDATE {update_fields} """.format(
+            table_name = table_name,
+            col_list = col_list,
+            data_holder = data_holder,
+            update_fields = update_fields
+        )
+
+        start = 0
+        chunk_size = 1000
 
         try:
             self.configure.ping(reconnect=True)
@@ -361,6 +421,9 @@ class Db(object):
 
     def rollBack(self):
         self.configure.rollback()
+
+    def commit(self):
+        self.configure.commit()
 
 if __name__ == '__main__':
     pass

@@ -11,6 +11,7 @@ import Jira from '@/views/jira'
 import ShadowRPA from '@/components/ShadowRPA/ShadowRPA.vue'
 import AssistSubmit from "@/components/ShadowRPA/AssistSubmit.vue"
 import AnalysisData from "@/components/ShadowRPA/AnalysisData.vue"
+import AnalysisDataNew from "@/components/ShadowRPA/AnalysisDataNew.vue"
 import AnalysisUpgradeTrend from "@/components/ShadowRPA/AnalysisUpgradeTrend.vue"
 import AnalysisCountryData from "@/components/ShadowRPA/AnalysisCountryData.vue"
 import AnalysisMonitorProblem from "@/components/ShadowRPA/AnalysisMonitorProblem.vue"
@@ -42,6 +43,7 @@ export default new Router({
           children: [
             { path: '/AssistSubmit', component: AssistSubmit, meta: {keepAlive: true, comp: AssistSubmit, name: 'AssistSubmit', title:"受理明细"}},
             { path: '/AnalysisData', component: AnalysisData, meta: {keepAlive: true, comp: AnalysisData, name: 'AnalysisData', title:"工单受理数据分析"}},
+            { path: '/AnalysisDataNew', component: AnalysisDataNew, meta: {keepAlive: true, comp: AnalysisDataNew, name: 'AnalysisDataNew', title:"工单受理数据分析（新）"}},
             { path: '/AnalysisUpgradeTrend', component: AnalysisUpgradeTrend, meta: {keepAlive: true, comp: AnalysisUpgradeTrend, name: 'AnalysisUpgrade', title:"公有云升级汇报"}},
             { path: '/AnalysisCountryData', component: AnalysisCountryData, meta: {keepAlive: true, comp: AnalysisCountryData, name: 'AnalysisCountryData', title:"全国数据统计"}},
             { path: '/AnalysisLargeProblemData', component: AnalysisLargeProblemData, meta: {keepAlive: true, comp: AnalysisLargeProblemData, name: 'AnalysisLargeProblemData', title:"私有化重大故障统计"}},
