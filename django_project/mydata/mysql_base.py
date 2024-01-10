@@ -288,23 +288,23 @@ class Db(object):
         except pymysql.err.ProgrammingError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise Exception(error)
         except pymysql.err.InternalError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise Exception(error)
         except pymysql.err.OperationalError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise Exception(error)
         except pymysql.err.InterfaceError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise Exception(error)
         except pymysql.err.DataError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise Exception(error)
 
     # update语句
     # UPDATE 表名称 SET 列名称 = 新值 WHERE 列名称 = 某值

@@ -34,10 +34,8 @@ def group_add_data_dict(file_path, filename):
     result = db.bench_save(table_name, insert_dataframe)
 
 
-
 def delete_data_dict(dict):
     return
-
 
 
 def update_error_attribution_data_dict(error_attribution_new):
@@ -112,10 +110,6 @@ def update_product_type_data_dict(product_type_new):
         is_insert = True       
 
     return insert_data
-
-
-def encode_error_attribution():
-    return 
 
 
 def encode_data_item(item, dict_code):
