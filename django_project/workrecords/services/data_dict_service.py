@@ -146,10 +146,11 @@ def decode_data_item(item_code, dict_code):
         condition_dict["code="] = parent_code
         node = db.select(["name", "parentCode"], table_name, condition_dict, "")
         print(f"node is {node}")
-        item = node[0]['name'] +"-" + item
-        parent_code = node[0]["parentCode"]
         if isinstance(parent_code, tuple):
             parent_code = None
+            continue
+        item = node[0]['name'] +"-" + item
+        parent_code = node[0]["parentCode"]
     return item[:-1]
 
 
@@ -158,5 +159,5 @@ def get_data_dict(dict_code):
     db =mysql_base.Db()
     condition_dict = {}
     condition_dict["dictCode="] = dict_code
-    data_dict_old = db.select("*", table_name, condition_dict, "")
+    data_dict_old = db.select(["*"], table_name, condition_dict, "")
     return data_dict_old

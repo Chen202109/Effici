@@ -29,14 +29,21 @@
       </el-select>
     </div>
     <div style="margin: 15px 20px 15px 0;">
-      <el-table :data="saasProblemTypeInVersions"
+      <!-- <el-table :data="saasProblemTypeInVersions"
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
         :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%">
         <el-table-column v-for="(value, key) in saasProblemTypeInVersions[0]" :key="key" :prop="key"
           :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
         </el-table-column>
-      </el-table>
+      </el-table> -->
 
+      <el-table v-for="(item, index) in saasProblemTypeInVersionsDetail" :key="index" :data="item"
+        :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
+        :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
+        <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
+          :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
+        </el-table-column>
+      </el-table>
     </div>
 
   </div>
@@ -61,6 +68,7 @@ export default {
 
       // SaaS各版本处理汇总的表格数据
       saasProblemTypeInVersions: [],
+      saasProblemTypeInVersionsDetail : [],
 
       tableData: [{
         "程序版本": "合计",
@@ -100,6 +108,29 @@ export default {
     },
 
     /**
+     * 计算el-table列的宽度
+     */
+     columnWidth(key, tableName) {
+      // 因为当标题是版本号比如V4.3.2.0的时候，表头会显示不完全，所以在生成表格column的时候将版本之中的.给给成了_,如果这时候要计算想要的宽度，就把它给改回来
+      key= key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
+      let widthDict = {
+        2: 57,
+        3: 70,
+        4: 75,
+        5: 85,
+        6: 110,
+        10: 130,
+      }
+      let width
+      if (tableName === 'saasProblemTypeInVersions' && (["问题分类" , "产品bug" , "实施配置" , "异常数据处理", "需求", "其他"].includes(key))) {
+        width = 200 
+      } else if (key.length in widthDict){
+        width = widthDict[key.length]
+      }
+      return width
+    },
+
+    /**
     * 进行 查询 事件,因为axios是异步的请求，所以会先处理数据，空闲了才处理异步数据
     */
     async search() {
@@ -115,7 +146,7 @@ export default {
       }
 
       this.searchProblemTableData(searchValue)
-      // this.searchSaasProblemTypeInVersions(searchValue)
+      this.searchSaasProblemTypeInVersions(searchValue)
 
     },
 
@@ -151,8 +182,14 @@ export default {
         searchValue['partySelected']
       ).then(response => {
         if (response.data.status == 200) {
-          // this.saasProblemTypeInVersions = response.data.data
-          console.log('update local saasProblemTypeInVersions data: ', response.data.data)
+          length = response.data.data.length
+          // 清空原来的数据
+          this.saasProblemTypeInVersionsDetail = []
+          for ( let i = 0; i < length; i++) {
+            this.saasProblemTypeInVersionsDetail.push(response.data.data[i]['problemData'])
+          }
+          console.log('response data: ', response.data.data)
+          console.log('update local saasProblemTypeInVersionsDetail data: ', this.saasProblemTypeInVersionsDetail)
         }else{
           console.log(response.message)
           this.$message.error(response.message)

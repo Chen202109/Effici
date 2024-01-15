@@ -50,6 +50,13 @@ work_record_col_chinese_alias_map = {
     "资源池" : "resourcepool",
 }
 
+data_dict_code_map = {
+    "error_attribution": "001",
+    "error_type" : "002",
+    "product_type" : "003",
+    "error_function" : "004",
+    "error_type_factor" : "005",
+}
 
 # error function
 work_record_error_function_list = ["开票功能","核销功能","收缴业务","通知交互","报表功能","数据同步","票据管理","license重置","单位开通","增值服务","打印功能","安全漏洞","反算功能"]
