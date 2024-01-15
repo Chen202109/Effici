@@ -68,6 +68,7 @@ class Db(object):
                             return results
                     # 查询数据为空时
                     except IndexError:
+                        print("询数据为空 SQL statement: ", sql)  # 打印SQL语句
                         return results
             else:
                 return results

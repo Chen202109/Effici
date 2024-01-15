@@ -1,3 +1,5 @@
+import copy
+
 from django.shortcuts import render
 from django.http import JsonResponse
 from mydata import mysql_base
@@ -5,6 +7,7 @@ from workrecords.config import constant
 
 from datetime import datetime,timedelta # 用于传入的字符串转换成日期 datetime.strptime
 from mydata import mysql_base
+from workrecords.services.data_dict_service import encode_data_item, decode_data_item
 
 
 
@@ -175,8 +178,137 @@ def analysis_saas_problem_type_in_versions(request):
                     total += int(item[function_type])
                 new_item["合计"] = total
                 saas_problem_type_and_function_data_in_version.append(new_item)
-                
-                
+
             data.append({'problemType': problem_type, 'problemTypeData': saas_problem_type_and_function_data_in_version})
             
     return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+
+
+def analysis_select_new(request):
+    """
+    数据汇报界面的， 新版本的，所选时间段内的出错功能与版本的对比总结表格
+    """
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData')
+        end_date = request.GET.get('endData')
+
+        db = mysql_base.Db()
+
+        condition_dict = {
+            # 004代表的是问题功能的那个数据字典
+            "dictCode=": "004",
+            "level=": 1
+        }
+        function_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
+
+        condition_dict = {
+            # 004代表的是问题功能的那个数据字典
+            "dictCode=": "005",
+            "level=": 1
+        }
+        error_factor_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
+
+        # 开始查询生成出错功能和版本对比的表格数据
+        sql = f'select softversion, errorfunction, count(*) as amount ' \
+              f'from workrecords_2024 where createtime>="{begin_date}" and createtime<="{end_date}" ' \
+              f'GROUP BY softversion, errorfunction'
+        result = db.select_offset(1, 1000, sql)
+
+        sql = f'select softversion, ' \
+              f'count(case when errortypefactor between 10100 and 10200 then 1 else NULL end ) as 产品bug, ' \
+              f'count(case when errortypefactor between 10200 and 10300 then 1 else NULL end ) as 异常数据处理, ' \
+              f'count(case when errortypefactor between 10300 and 10400 then 1 else NULL end ) as 实施配置, ' \
+              f'count(case when errortypefactor between 10400 and 10500 then 1 else NULL end ) as 需求, '\
+              f'count(case when errortypefactor between 10500 and 10600 then 1 else NULL end ) as 其他 ' \
+              f'from workrecords_2024 where createtime>="{begin_date}" and createtime<="{end_date}" ' \
+              f'GROUP BY softversion'
+        error_factor_result = db.select_offset(1, 1000, sql)
+
+        data = []
+        row_template = {"程序版本": "合计", "受理合计": 0}
+        row_template.update({key["name"]:0 for key in function_list})
+        row_template.update({key["name"]: 0 for key in error_factor_list})
+
+        if len(result) == 0:
+            data.append(row_template)
+        else:
+            row = copy.deepcopy(row_template)
+            sum_row = copy.deepcopy(row_template)
+            for i in range(len(result)):
+                if row["程序版本"] != result[i]["softversion"]:
+                    if i != 0:
+                        # 到了不同版本了,添加产品bug等错误因素信息添加，存入数据data，新开一行
+                        error_factor_row = next(item for item in error_factor_result if item.get("softversion") == row["程序版本"])
+                        # row.update({key["name"]: error_factor_row[key["name"]] for key in error_factor_list})
+                        for key in error_factor_list:
+                            row.update({key["name"]: error_factor_row[key["name"]]})
+                            sum_row.update({key["name"]: sum_row[key["name"]]+error_factor_row[key["name"]]})
+                        data.append(row)
+                        row = copy.deepcopy(row_template)
+                    row["程序版本"] = result[i]["softversion"]
+                # 进行对应的版本errorfunction数量添加和合计累计
+                row[result[i]["errorfunction"]] += result[i]["amount"]
+                row["受理合计"] += result[i]["amount"]
+                sum_row[result[i]["errorfunction"]] += result[i]["amount"]
+                sum_row["受理合计"] += result[i]["amount"]
+            # 最后一行，因为循环到结尾，没有添加，这里添加最后一行version, 然后添加上合计栏
+            data.append(row)
+            data.append(sum_row)
+
+        return JsonResponse({'status': 200, 'data': data}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse({'status': 405, 'message': "请求方法错误, 需要GET请求。"})
+
+
+def analysis_saas_problem_type_in_versions_new(request):
+    """
+    数据汇报界面的， 新版本的，问题分类和各版本和功能的详细对比
+    """
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData')
+        end_date = request.GET.get('endData')
+        party_selected = request.GET.get('partySelected')
+
+        if party_selected =="全部":
+            parties = ["财政","行业","第三方"]
+        else:
+            parties = [party_selected]
+
+        db = mysql_base.Db()
+        # 去找到所有的问题分类里的因素，存在dict 005中, 第一层是问题分类的大类想实施配置等，第二层是问题分类的小类别，也就是因素像用户操作不当等
+        condition_dict = {}
+        condition_dict["dictCode="] = "005"
+        factors = db.select(["code", "name"], "work_record_data_dict", condition_dict,"")
+        # level 1 的是大类的factor，是实施配置等，他是三位，第一位固定是1，所以小于200的都是大类的factor
+        factor_types = [ {item["code"]: item["name"]} for item in factors if item["code"]<200]
+        # level 2 的是小类的factor， 是用户操作不当等，他是5位，第一位固定是1，所以在200和20000之间
+        factor_details = [ {item["code"]: item["name"]} for item in factors if 20000>item["code"]>200]
+
+        data = []
+        for party in parties:
+            party_encoded = encode_data_item(party, "001")
+
+            condition_dict = {}
+            condition_dict["createtime>="] = begin_date
+            condition_dict["createtime<="] = end_date
+            # 10^3 是因为party的二级现在是3位数，所以是10^3
+            condition_dict["belong>=  "] = party_encoded * 1000
+            condition_dict["belong<  "] = (party_encoded+1) * 1000
+            result = db.select(["errortypefactor", "softversion", "errortype", "count(*) as amount"], "workrecords_2024", condition_dict, "GROUP BY errortypefactor, softversion, errortype")
+            print(f"workrecord 2024 table result : {result}")
+
+            # 将数据进行转码
+
+
+            # 转化成前端可以直接渲染上el-table的形式,格式像这样
+            # [{'异常数据处理': '报表功能', 'V3': 1, 'V4_3_1_2': 0, 'V4_3_1_3': 0, 'V4_3_2_0': 2, 'V4_3_2_1': 0}, {...}]
+            saas_errortype_detail_in_version = []
+
+
+            
+
+
+        return JsonResponse({'status': 200, 'data': data}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse({'status': 405, 'message': "请求方法错误, 需要GET请求。"})
+

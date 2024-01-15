@@ -127,7 +127,8 @@ def encode_data_item(item, dict_code):
         condition_dict["name="] = item_cols[i]
         condition_dict["parentCode="] = parent_code
         parent_code = db.select(["code"], table_name, condition_dict, "")
-        print(f"parent code is : {parent_code}")
+        if isinstance(parent_code, tuple):
+            return None
     return parent_code
 
     
@@ -145,8 +146,10 @@ def decode_data_item(item_code, dict_code):
         condition_dict["code="] = parent_code
         node = db.select(["name", "parentCode"], table_name, condition_dict, "")
         print(f"node is {node}")
-        parent_code = node[0]["parentCode"]
         item = node[0]['name'] +"-" + item
+        parent_code = node[0]["parentCode"]
+        if isinstance(parent_code, tuple):
+            parent_code = None
     return item[:-1]
 
 
