@@ -17,6 +17,7 @@ urlpatterns = [
     path('analysis_saas_problem_type_in_versions',workrecords_report.analysis_saas_problem_type_in_versions),
     path('analysis_select_new',workrecords_report.analysis_select_new),
     path('analysis_saas_problem_type_in_versions_new',workrecords_report.analysis_saas_problem_type_in_versions_new),
+    path('analysis_saas_problem_type_detail_in_versions_new',workrecords_report.analysis_saas_problem_type_detail_in_versions_new),
 
     path('analysis_saas_upgrade_problem_type',views.analysis_saas_upgrade_problem_type),
     path('analysis_service_upgrade_trend',views.analysis_service_upgrade_trend),

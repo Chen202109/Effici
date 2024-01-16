@@ -8,7 +8,7 @@
           <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
             end-placeholder="结束日期">
           </el-date-picker>
-          <el-button type="primary" @click="search">查询</el-button>
+          <el-button type="primary" @click="search(1)">查询</el-button>
         </div>
       </template>
     </div>
@@ -27,15 +27,16 @@
       <el-select v-model="partySelected" placeholder="请选择" style="width: 110px;">
         <el-option v-for="(item, index) in this.partyList" :key="index" :label="item" :value="item"></el-option>
       </el-select>
+      <el-button type="primary" @click="search()">查询</el-button>
     </div>
     <div style="margin: 15px 20px 15px 0;">
-      <!-- <el-table :data="saasProblemTypeInVersions"
+      <el-table v-for="(item, index) in saasProblemTypeInVersions" :key="index" :data="item"
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
-        :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%">
-        <el-table-column v-for="(value, key) in saasProblemTypeInVersions[0]" :key="key" :prop="key"
+        :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
+        <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
           :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
         </el-table-column>
-      </el-table> -->
+      </el-table>
 
       <el-table v-for="(item, index) in saasProblemTypeInVersionsDetail" :key="index" :data="item"
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
@@ -122,18 +123,26 @@ export default {
         10: 130,
       }
       let width
-      if (tableName === 'saasProblemTypeInVersions' && (["问题分类" , "产品bug" , "实施配置" , "异常数据处理", "需求", "其他"].includes(key))) {
-        width = 200 
-      } else if (key.length in widthDict){
+      if (tableName === 'saasProblemTypeInVersions') {
+        if (["产品bug" , "实施配置" , "异常数据处理", "需求", "其他"].some(str => key.includes(str))){
+          width = 200
+        } else if (key.search("问题因素") !== -1){
+          width = 150
+        } else {
+          width = widthDict[key.length]
+        }
+      } else {
         width = widthDict[key.length]
       }
-      return width
+      return width === undefined ? 100 : width
     },
 
-    /**
+
+   /**
     * 进行 查询 事件,因为axios是异步的请求，所以会先处理数据，空闲了才处理异步数据
+    * @param {*} searchFlag 如果为1，则代表全局搜索，会将这个页面所有需要搜索的东西都搜索了。
     */
-    async search() {
+    async search(searchFlag) {
       // 触发查询事件，根据日期条件进行查询
       var searchValue = {} // 存放筛选条件信息
       searchValue["partySelected"] = this.partySelected
@@ -145,11 +154,11 @@ export default {
         searchValue[i == 0 ? 'beginData' : 'endData'] = year + '-' + month + '-' + day;
       }
 
-      this.searchProblemTableData(searchValue)
+      if (searchFlag === 1) this.searchProblemTableData(searchValue)
       this.searchSaasProblemTypeInVersions(searchValue)
+      this.searchSaasProblemTypeDetailInVersions(searchValue)
 
     },
-
 
     async searchProblemTableData(searchValue) {
       this.$http.get(
@@ -181,15 +190,40 @@ export default {
         '&partySelected=' +
         searchValue['partySelected']
       ).then(response => {
-        if (response.data.status == 200) {
-          length = response.data.data.length
+        if (response.data.status === 200) {
           // 清空原来的数据
-          this.saasProblemTypeInVersionsDetail = []
-          for ( let i = 0; i < length; i++) {
-            this.saasProblemTypeInVersionsDetail.push(response.data.data[i]['problemData'])
+          this.saasProblemTypeInVersions = []
+          for ( let i = 0; i < response.data.data.length; i++) {
+            this.saasProblemTypeInVersions.push(response.data.data[i]['problemData'])
           }
           console.log('response data: ', response.data.data)
-          console.log('update local saasProblemTypeInVersionsDetail data: ', this.saasProblemTypeInVersionsDetail)
+          console.log('update local saasProblemTypeInVersions data: ', this.saasProblemTypeInVersions)
+        }else{
+          console.log(response.message)
+          this.$message.error(response.message)
+        }
+      }).catch((error) => {
+        console.log("失败" + error)
+        this.$message.error('错了哦，仔细看错误信息弹窗')
+        alert('失败' + error)
+      })
+    },
+
+    async searchSaasProblemTypeDetailInVersions(searchValue) {
+      this.$http.get(
+        '/api/CMC/workrecords/analysis_saas_problem_type_detail_in_versions_new?beginData=' +
+        searchValue['beginData'] +
+        '&endData=' +
+        searchValue['endData'] +
+        '&partySelected=' +
+        searchValue['partySelected']
+      ).then(response => {
+        if (response.data.status == 200) {
+          // 清空原来的数据
+          this.saasProblemTypeInVersionsDetail = []
+          for ( let i = 0; i < response.data.data.length; i++) {
+            this.saasProblemTypeInVersionsDetail.push(response.data.data[i]['problemData'])
+          }
         }else{
           console.log(response.message)
           this.$message.error(response.message)

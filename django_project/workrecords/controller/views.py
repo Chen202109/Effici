@@ -534,11 +534,11 @@ def analysis_saas_privatization_license_register_province(request):
         # [{'上海': 2, '北京':3, '广东':3}]  
         # 生成要转化成的数据类型, 并加入表头表尾
         license_data = [{"省份": "单位申请数"}]
-        sumLicenseRegister = 0
+        sum_license_register = 0
         for item in license_register_province_data:
-            sumLicenseRegister += item["count"]
+            sum_license_register += item["count"]
             license_data.append({item["region"]: item["count"]})
-        license_data.append({"合计": sumLicenseRegister})
+        license_data.append({"合计": sum_license_register})
 
 
         data.append({'seriesName': "v4 license受理数据统计", 'seriesData': license_data})

@@ -240,7 +240,6 @@ def analysis_select_new(request):
                     if i != 0:
                         # 到了不同版本了,添加产品bug等错误因素信息添加，存入数据data，新开一行
                         error_factor_row = next(item for item in error_factor_result if item.get("softversion") == row["程序版本"])
-                        # row.update({key["name"]: error_factor_row[key["name"]] for key in error_factor_list})
                         for key in error_factor_list:
                             row.update({key["name"]: error_factor_row[key["name"]]})
                             sum_row.update({key["name"]: sum_row[key["name"]]+error_factor_row[key["name"]]})
@@ -253,6 +252,10 @@ def analysis_select_new(request):
                 sum_row[result[i]["errorfunction"]] += result[i]["amount"]
                 sum_row["受理合计"] += result[i]["amount"]
             # 最后一行，因为循环到结尾，没有添加，这里添加最后一行version, 然后添加上合计栏
+            error_factor_row = next(item for item in error_factor_result if item.get("softversion") == row["程序版本"])
+            for key in error_factor_list:
+                row.update({key["name"]: error_factor_row[key["name"]]})
+                sum_row.update({key["name"]: sum_row[key["name"]] + error_factor_row[key["name"]]})
             data.append(row)
             data.append(sum_row)
 
@@ -262,6 +265,48 @@ def analysis_select_new(request):
 
 
 def analysis_saas_problem_type_in_versions_new(request):
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData')
+        end_date = request.GET.get('endData')
+        party_selected = request.GET.get('partySelected')
+
+        db = mysql_base.Db()
+        condition_dict = {}
+        condition_dict["createtime>="] = begin_date
+        condition_dict["createtime<="] = end_date
+        if party_selected != "全部":
+            party_encoded = encode_data_item(party_selected, constant.data_dict_code_map["error_attribution"])
+            # 10^3 是因为party的二级现在是3位数，所以是10^3
+            condition_dict["belong>="] = party_encoded * 1000
+            condition_dict["belong<"] = (party_encoded + 1) * 1000
+        result = db.select(["errortypefactor", "softversion", "count(*) as amount"], "workrecords_2024", condition_dict,
+                           "GROUP BY errortypefactor, softversion")
+        version_list = sorted(set(item["softversion"].replace(".", "_") for item in result))
+
+        # 要处理成这样的类型给前端渲染 [{"问题因素": "产品bug", "V4_3_2_1":3},{"问题因素": "实施配置", }]
+        error_factor_col1_table = []
+        error_factor_col2_table = []
+        data = [{"problem":"问题因素", "problemData": error_factor_col1_table},{"problem":"问题因素", "problemData": error_factor_col2_table}]
+
+        for item in result :
+            error_factor = decode_data_item(item["errortypefactor"], constant.data_dict_code_map["error_type_factor"]).split("-")
+            error_factor_col1 = error_factor[0]
+            error_factor_col2 = error_factor[1]
+            version = item["softversion"].replace(".", "_")
+            amount = item["amount"]
+
+            # 去找是否有登记过这个因素
+            error_factor_col1_label = "问题因素" if party_selected == "全部" else f"{party_selected}-问题因素"
+            error_factor_col2_label = "问题因素(细)" if party_selected == "全部" else f"{party_selected}-问题因素(细)"
+            insert_version_into_list(error_factor_col1_table, error_factor_col1_label, error_factor_col1, version_list, version, amount, "合计")
+            insert_version_into_list(error_factor_col2_table, error_factor_col2_label, error_factor_col2, version_list, version, amount, "合计")
+
+        return JsonResponse({'status': 200, 'data': data}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse({'status': 405, 'message': "请求方法错误, 需要GET请求。"})
+
+
+def analysis_saas_problem_type_detail_in_versions_new(request):
     """
     数据汇报界面的， 新版本的，问题分类和各版本和功能的详细对比
     """
@@ -270,70 +315,79 @@ def analysis_saas_problem_type_in_versions_new(request):
         end_date = request.GET.get('endData')
         party_selected = request.GET.get('partySelected')
 
-        if party_selected =="全部":
-            parties = ["财政","行业","第三方"]
-        else:
-            parties = [party_selected]
-
         db = mysql_base.Db()
 
         data = []
-        for party in parties:
-            party_encoded = encode_data_item(party, constant.data_dict_code_map["error_attribution"])
 
-            condition_dict = {}
-            condition_dict["createtime>="] = begin_date
-            condition_dict["createtime<="] = end_date
+        condition_dict = {}
+        condition_dict["createtime>="] = begin_date
+        condition_dict["createtime<="] = end_date
+        if party_selected != "全部":
+            party_encoded = encode_data_item(party_selected, constant.data_dict_code_map["error_attribution"])
             # 10^3 是因为party的二级现在是3位数，所以是10^3
             condition_dict["belong>="] = party_encoded * 1000
-            condition_dict["belong<"] = (party_encoded+1) * 1000
-            result = db.select(["errortypefactor", "softversion", "errortype", "count(*) as amount"], "workrecords_2024", condition_dict, "GROUP BY errortypefactor, softversion, errortype")
-            print(f"workrecord 2024 table result : {result}")
-            version_list = sorted(set(item["softversion"].replace(".", "_") for item in result))
+            condition_dict["belong<"] = (party_encoded + 1) * 1000
+        result = db.select(["errortypefactor", "softversion", "errortype", "count(*) as amount"], "workrecords_2024", condition_dict,
+                           "GROUP BY errortypefactor, softversion, errortype")
+        print(f"workrecord 2024 table result : {result}")
+        version_list = sorted(set(item["softversion"].replace(".", "_") for item in result))
 
-            # 转化成前端可以直接渲染上el-table的形式,格式像这样
-            # [{'异常数据处理': '报表功能', 'V3': 1, 'V4_3_1_2': 0, 'V4_3_1_3': 0, 'V4_3_2_0': 2, 'V4_3_2_1': 0}, {...}]
-            error_factor_col1_list = {}
-            after_time = time.time()
-            for item in result:
-                # 获取errorfactor大类的decode，如产品bug，实施配置等， errorfactor的码去掉后面两位的小类的编码所以除以100
-                error_factor_col1_decoded = decode_data_item(int(item["errortypefactor"]/100), constant.data_dict_code_map["error_type_factor"])
-                error_type_decoded = decode_data_item(item["errortype"], constant.data_dict_code_map["error_type"])
-                # 因为前端的el-table的表头如果字符串带'.'会失效，转换成"_"传给前端
-                version = item["softversion"].replace(".", "_")
-                amount = item["amount"]
+        # 转化成前端可以直接渲染上el-table的形式,格式像这样
+        # [{'异常数据处理': '报表功能', 'V3': 1, 'V4_3_1_2': 0, 'V4_3_1_3': 0, 'V4_3_2_0': 2, 'V4_3_2_1': 0}, {...}]
+        error_factor_col1_list = {}
+        after_time = time.time()
+        for item in result:
+            # 获取errorfactor大类的decode，如产品bug，实施配置等， errorfactor的码去掉后面两位的小类的编码所以除以100
+            error_factor_col1_decoded = decode_data_item(int(item["errortypefactor"] / 100), constant.data_dict_code_map["error_type_factor"])
+            error_type_decoded = decode_data_item(item["errortype"], constant.data_dict_code_map["error_type"])
+            # 因为前端的el-table的表头如果字符串带'.'会失效，转换成"_"传给前端
+            version = item["softversion"].replace(".", "_")
+            amount = item["amount"]
 
-                # 如果data里面还没有这一项errorfactor大类，添加这一个项目的字典，并且记录下这个在data中的index
-                if error_factor_col1_list.get(error_factor_col1_decoded) is None:
-                    error_factor_col1_list[error_factor_col1_decoded] = len(data)
-                    data.append({
-                        "problemParty": party,
-                        "problemType": error_factor_col1_decoded,
-                        "problemData": []
-                    })
+            # 如果data里面还没有这一项errorfactor大类，添加这一个项目的字典，并且记录下这个在data中的index
+            if error_factor_col1_list.get(error_factor_col1_decoded) is None:
+                error_factor_col1_list[error_factor_col1_decoded] = len(data)
+                data.append({
+                    "problemParty": party_selected,
+                    "problemType": error_factor_col1_decoded,
+                    "problemData": []
+                })
 
-                # 从data中找到这一项errorfactor大类对应的问题分类的列表
-                problem_data = data[error_factor_col1_list[error_factor_col1_decoded]]["problemData"]
-                # 从问题分类的列表去查找当前这个问题的版本字典在列表中的位置，为了后边的添加数据
-                problem_data_func_index = None
-                for index, error_type_item in enumerate(problem_data):
-                    # 如果这个问题分类已经在这个问题因素中登记过，返回这个问题分类所在的位置
-                    if error_factor_col1_decoded in error_type_item and error_type_item[error_factor_col1_decoded] == error_type_decoded:
-                        problem_data_func_index = index
-                # 这个问题分类没有在这个问题因素中登记过，新增一个
-                if problem_data_func_index is None:
-                    # 放入该问题因素和问题分类的标记，然后放入所有的查询结果的version
-                    new_problem_data_func_dict = {error_factor_col1_decoded: error_type_decoded}
-                    new_problem_data_func_dict.update({v: 0 for v in version_list})
-                    new_problem_data_func_dict["合计"] = amount
-                    new_problem_data_func_dict[version] = amount
-                    problem_data.append(new_problem_data_func_dict)
-                else:
-                    # 往版本字典添加
-                    problem_data[problem_data_func_index][version] = amount
-                    problem_data[problem_data_func_index]["合计"] += amount
+            # 从data中找到这一项errorfactor大类对应的问题分类的列表
+            problem_data = data[error_factor_col1_list[error_factor_col1_decoded]]["problemData"]
+            problem_data_func_label = error_factor_col1_decoded if party_selected == "全部" else f"{party_selected}-{error_factor_col1_decoded}"
+            insert_version_into_list(problem_data, problem_data_func_label, error_type_decoded, version_list, version, amount, "合计")
 
         return JsonResponse({'status': 200, 'data': data}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse({'status': 405, 'message': "请求方法错误, 需要GET请求。"})
 
+
+def insert_version_into_list(list, label_key, label_value, version_list, version, amount, summary_row_label):
+    """
+    当需要数据结构为 [ {错误标签: 错误1, 版本号1: 错误数量, 版本号2: 错误数量, ... , 合计: 合计错误数量}, {...}, {...} ]
+    想往里面插入一个错误的版本号的错误数量信息。
+    :param list: 错误列表, 里面的元素是字典
+    :param label_key: 错误标签，代表这个错误列表是关于什么错误的
+    :param label_value: 错误标签的值，代表这个错误列表里的某个元素字典里面存放的数据是关于什么错误的
+    :param version_list: 版本号的列表
+    :param version: 需要插入的那个错误的版本号
+    :param amount: 需要插入的那个错误的版本号的错误数量
+    :param summary_row_label: 合计栏的标签，一般为"合计"
+    """
+    error_item_index = None
+    for index, item in enumerate(list):
+        # 如果这个错误已经在这个错误列表中登记过，返回这个错误所在的字典元素的位置
+        if label_key in item and item[label_key] == label_value:
+            error_item_index = index
+    if error_item_index is None:
+        # 放入该问题标签(如问题分类)和问题名字(如实施配置,异常数据处理等)，然后放入所有的查询结果的version
+        new_error_factor_col1_dict = {label_key: label_value}
+        new_error_factor_col1_dict.update({v: 0 for v in version_list})
+        new_error_factor_col1_dict[summary_row_label] = amount
+        new_error_factor_col1_dict[version] = amount
+        list.append(new_error_factor_col1_dict)
+    else:
+        # 往版本字典添加更新错误数量
+        list[error_item_index][version] += amount
+        list[error_item_index][summary_row_label] += amount
