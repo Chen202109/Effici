@@ -225,25 +225,31 @@ def analysis_select_new(request):
               f'GROUP BY softversion'
         error_factor_result = db.select_offset(1, 1000, sql)
 
-        data = []
+        saas_problem_table_data = []
+        saas_problem_bar_chart_data = []
+        saas_problem_pie_chart_data = []
+        data = [{"problem":"saasProblemTableData", "problemData": saas_problem_table_data},
+                {"problem":"saasProblemBarChart", "problemData": saas_problem_bar_chart_data},
+                {"problem":"saasProblemPieChart", "problemData": saas_problem_pie_chart_data}]
         row_template = {"程序版本": "合计", "受理合计": 0}
         row_template.update({key["name"]:0 for key in function_list})
         row_template.update({key["name"]: 0 for key in error_factor_list})
 
         if len(result) == 0:
-            data.append(row_template)
+            saas_problem_table_data.append(row_template)
         else:
+            # saas_problem_table_data
             row = copy.deepcopy(row_template)
             sum_row = copy.deepcopy(row_template)
             for i in range(len(result)):
                 if row["程序版本"] != result[i]["softversion"]:
                     if i != 0:
-                        # 到了不同版本了,添加产品bug等错误因素信息添加，存入数据data，新开一行
+                        # 到了不同版本了,添加产品bug等错误因素信息添加，存入数据saas_problem_table_data，新开一行
                         error_factor_row = next(item for item in error_factor_result if item.get("softversion") == row["程序版本"])
                         for key in error_factor_list:
                             row.update({key["name"]: error_factor_row[key["name"]]})
                             sum_row.update({key["name"]: sum_row[key["name"]]+error_factor_row[key["name"]]})
-                        data.append(row)
+                        saas_problem_table_data.append(row)
                         row = copy.deepcopy(row_template)
                     row["程序版本"] = result[i]["softversion"]
                 # 进行对应的版本errorfunction数量添加和合计累计
@@ -256,10 +262,20 @@ def analysis_select_new(request):
             for key in error_factor_list:
                 row.update({key["name"]: error_factor_row[key["name"]]})
                 sum_row.update({key["name"]: sum_row[key["name"]] + error_factor_row[key["name"]]})
-            data.append(row)
-            data.append(sum_row)
+            saas_problem_table_data.append(row)
+            saas_problem_table_data.append(sum_row)
 
-        return JsonResponse({'status': 200, 'data': data}, json_dumps_params={'ensure_ascii': False})
+            # total_amount = sum_row["受理合计"]
+            # series_data = []
+            # # saas_problem_bar_chart_data
+            # # 遍历saas_problem_table_data找出每个版本的"受理合计",然后对应总的受理合计数量进行计算这个版本出错的percentage
+            # for i in range(len(saas_problem_table_data)-1):
+            #     series_data.append({ "x":saas_problem_table_data[i]["程序版本"], "y":saas_problem_table_data[i]["受理合计"],"percent": saas_problem_table_data[i]["受理合计"]/total_amount})
+            # saas_problem_bar_chart_data.append({"seriesName":"SaaS各版本受理汇总", "seriesData": series_data})
+            # # saas_problem_pie_chart_data
+            # series_data = []
+
+        return JsonResponse({'status': 200, 'data': saas_problem_table_data}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse({'status': 405, 'message': "请求方法错误, 需要GET请求。"})
 

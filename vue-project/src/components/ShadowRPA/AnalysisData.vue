@@ -23,7 +23,7 @@
 
     <div style="height: 20px;"></div>
 
-    <div id='saasProblemCharts'>
+    <div class='saasProblemCharts'>
       <!-- 放入Echarts 可视化图形 组件 -->
       <div class="myChart" id="myChart" :style="{ width: getPageWidth * 0.5 + 'px', height: '420px' }"></div>
       <div class="saasProblemPieChart" id="saasProblemPieChart" :style="{ width: getPageWidth * 0.5 + 'px', height: '420px' }"></div>
@@ -537,9 +537,9 @@ export default {
 }
 </style>
 
-<style>
+<style scoped>
 
-#saasProblemCharts {
+.saasProblemCharts {
   margin: 15px 0; 
   display: block
 }

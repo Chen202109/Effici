@@ -39,7 +39,6 @@
 
       <el-table-column v-for="(item, index) in tableTitle" :key="index" :prop="item.prop" :label="item.label"
                 :width="columnWidth(item.label, 'saasWorkRecordDetailTable')" align="center"> </el-table-column>
-      <el-table-column label="问题归属" :width="100" align="center"></el-table-column>
     </el-table>
   </div>
 </template>
@@ -69,6 +68,7 @@ export default {
         { prop: 'problemType', label: '问题分类' },
         { prop: 'version', label: '程序版本' },
         { prop: 'DBType', label: '数据库类型' },
+        { prop: 'problemAttribution', label: '问题归属' },
       ],
     };
   },
@@ -119,7 +119,17 @@ export default {
 
     handleSingleRecordOperation(operation, recordInfoData, rowIndex) {
       console.log("子组件", operation, recordInfoData, rowIndex);
-      this.$emit("handleSingleRecordOperation", operation, recordInfoData, rowIndex);
+      // 避免修改原来的值，进行浅拷贝
+      var recordInfoDataCopy = Object.assign({}, recordInfoData);
+      // 因为如果是要打开form，form里将problemAttribution分成了可以选择的两个下拉框，所以这里需要将problemAttribution进行拆分
+      if (recordInfoDataCopy.problemAttribution == ""){
+        recordInfoDataCopy["problemParty"] = ""
+        recordInfoDataCopy["problemAttribution"] = ""
+      }else {
+        recordInfoDataCopy["problemParty"] = recordInfoDataCopy.problemAttribution.split("-")[0];
+        recordInfoDataCopy["problemAttribution"] = recordInfoDataCopy.problemAttribution.split("-")[1];
+      }
+      this.$emit("handleSingleRecordOperation", operation, recordInfoDataCopy, rowIndex);
     },
     
   },

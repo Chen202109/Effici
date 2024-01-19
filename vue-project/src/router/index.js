@@ -9,7 +9,7 @@ import Article from '@/views/article'
 import Jira from '@/views/jira'
 
 import ShadowRPA from '@/components/ShadowRPA/ShadowRPA.vue'
-import AssistSubmit from "@/components/ShadowRPA/AssistSubmit.vue"
+import AssistSubmit from "@/components/ShadowRPA/AssistSubmit/AssistSubmit.vue"
 import AnalysisData from "@/components/ShadowRPA/AnalysisData.vue"
 import AnalysisDataNew from "@/components/ShadowRPA/AnalysisData/AnalysisDataNew.vue"
 import AnalysisUpgradeTrend from "@/components/ShadowRPA/AnalysisUpgradeTrend.vue"

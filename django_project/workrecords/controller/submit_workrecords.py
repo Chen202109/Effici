@@ -1,8 +1,6 @@
-from django.shortcuts import render
 from django.http import JsonResponse
-from mydata import mysql_base
 from workrecords.config import constant
-
+from workrecords.services import work_record_service
 
 import json
 from mydata import mysql_base
@@ -21,14 +19,18 @@ def work_record(request):
         # 获得GET请求后面的参数信息
         search_filter = request.GET.get('searchFilter')
         search_filter = json.loads(search_filter)
+
+        # 因为2023年和2024年是两个模板所以不能跨越这两个时间段查询，只能2023年查2023以前的，2024查2024以后的
+        if search_filter["beginData"] <= "2023-12-31" and search_filter["endData"] >= "2024-01-01":
+            return JsonResponse({'status': 400, 'message': "因为两个模板，请求时间不得跨越2023与2024年。"})
         
         curr_page = int(request.GET.get('page', default='1'))
         curr_page_size = int(request.GET.get('pageSize', default='10'))
 
-        detail = get_work_record_detail(search_filter, curr_page, curr_page_size)
-        amount = get_work_record_count(search_filter)
+        detail = work_record_service.get_work_record_detail(search_filter, curr_page, curr_page_size)
+        amount = work_record_service.get_work_record_count(search_filter)
 
-        return JsonResponse({'data': detail, 'amount': amount}, json_dumps_params={'ensure_ascii': False})
+        return JsonResponse({'status': 200, 'data': detail, 'amount': amount}, json_dumps_params={'ensure_ascii': False})
 
     elif request.method == 'POST':
         work_record_detail_form = json.loads(request.body)
@@ -36,20 +38,17 @@ def work_record(request):
         hash_original = str(work_record_detail_form.get("registerDate"))+"-"+str(work_record_detail_form.get("agencyName"))
         md5 = hashlib.md5()
         md5.update(hash_original.encode("utf-8"))
-        encrypted_data = md5.hexdigest()
+        fid = md5.hexdigest()
 
-        fieldDict = {}
-        fieldDict["fid"] = encrypted_data
+        # try:
+        #     work_record_service.add_work_record(fid, work_record_detail_form)
+        # except Exception as e:
+        #     print(str(e))
+        #     return JsonResponse({'status': 500, 'message': "插入失败"}, json_dumps_params={'ensure_ascii': False})
 
-        # 进行别名的转换，转换成数据库里字段名
-        for key, value in constant.work_record_col_alias_map.items():
-            temp_value = work_record_detail_form.get(value)
-            fieldDict[key] = "" if temp_value is None else temp_value
-        
-        db = mysql_base.Db()
-        db.insert_copy("workrecords_2023", fieldDict)
+        work_record_service.add_work_record(fid, work_record_detail_form)
 
-        return JsonResponse({'data': "Adding successfully!"}, json_dumps_params={'ensure_ascii': False})
+        return JsonResponse({'status': 200, 'message': "插入成功!"}, json_dumps_params={'ensure_ascii': False})
 
 
 def work_record_group_add(request):
@@ -142,24 +141,25 @@ def work_record_update(request):
     if request.method == 'POST':
         work_record_detail_form = json.loads(request.body)
 
+        # 因为2023年和2024年是两个模板所以不能跨越这两个时间段查询，只能2023年查2023以前的，2024查2024以后的
+        if work_record_detail_form["registerDate"] <= "2023-12-31" and work_record_detail_form["solveDate"] >= "2024-01-01":
+            return JsonResponse({'status': 400, 'message': "因为是两个模板，请求时间不得跨越2023与2024年。"})
+
+        # 查询fid，暂且先通过登记日期和单位名称来
         hash_original = str(work_record_detail_form.get("registerDate"))+"-"+str(work_record_detail_form.get("agencyName"))
         md5 = hashlib.md5()
         md5.update(hash_original.encode("utf-8"))
-        encrypted_data = md5.hexdigest()
+        fid = md5.hexdigest()
 
-        fieldDict = {}
-        # 进行别名的转换，转换成数据库里字段名
-        for key, value in constant.work_record_col_alias_map.items():
-            if value == "registerDate": continue
-            temp_value = work_record_detail_form.get(value)
-            fieldDict[key] = "" if temp_value is None else temp_value
-        
-        print(f"wwwwwwww{fieldDict}")
-        
-        db = mysql_base.Db()
-        db.update("workrecords_2023", fieldDict, {"fid=" : encrypted_data})
+        try:
+            work_record_service.update_work_record(fid, work_record_detail_form)
+        except Exception as e:
+            print(str(e))
+            return JsonResponse({'status': 500, 'message': "更新失败"}, json_dumps_params={'ensure_ascii': False})
 
-        return JsonResponse({'data': "Update successfully!"}, json_dumps_params={'ensure_ascii': False})
+        return JsonResponse({'status': 200, 'message': "更新成功!"}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse({'status': 405, 'message': "请求方法错误, 需要POST请求。"})
     
 
 def work_record_delete(request):
@@ -184,58 +184,3 @@ def work_record_init(request):
     if request.method == 'GET':
         data = []
     return JsonResponse({'data': []}, json_dumps_params={'ensure_ascii': False})
-
-
-
-def get_work_record_detail(search_filter, curr_page, curr_page_size):
-    """
-    获取搜索条件下的工单的详细信息，分页搜索
-    """
-    # 工单搜索条件
-    isSolvedSql = "" if search_filter["isSolved"] == "" else f'AND issolve = "{search_filter["isSolved"]}"'
-    errorFunctionSql = "" if search_filter["errorFunction"] == "" else f'AND errorfunction = "{search_filter["errorFunction"]}"'
-    errorTypeSql = "" if search_filter["errorType"] == "" else f'AND errortype = "{search_filter["errorType"]}"'
-    softVersionSql = "" if search_filter["softVersion"] == "" else f'AND softversion = "{search_filter["softVersion"]}"'
-    problemDescriptionSql = "" if search_filter["problemDescription"] == "" else f'AND problem LIKE "%{search_filter["problemDescription"]}%"'
-
-    db =mysql_base.Db()
-    sql = f' SELECT {cat_all_work_record_table_cols_alias()} from workrecords_2023 ' \
-            f' WHERE createtime>="{search_filter["beginData"]}" and createtime<="{search_filter["endData"]}" '\
-            f' {isSolvedSql} {errorFunctionSql} {errorTypeSql} {softVersionSql} {problemDescriptionSql} '\
-            f' ORDER BY createtime'
-    results = db.select_offset(curr_page, curr_page_size, sql)
-    return results
-
-
-def get_work_record_count(search_filter):
-    # 获取符合搜索的工单的总数
-    if not search_filter['requestTotal']:
-        return -1
-    else:
-        # 工单搜索条件
-        condition_dict = {}
-        condition_dict["createtime>="] = search_filter["beginData"]
-        condition_dict["createtime<="] = search_filter["endData"]
-        if search_filter["isSolved"] != "": condition_dict["issolve="] = search_filter["isSolved"]
-        if search_filter["errorFunction"] != "": condition_dict["errorfunction="] = search_filter["errorFunction"]
-        if search_filter["errorType"] != "": condition_dict["errortype="] = search_filter["errorType"]
-        if search_filter["softVersion"] != "": condition_dict["softversion="] = search_filter["softVersion"]
-        if search_filter["problemDescription"] != "": condition_dict["problem LIKE"] = "%"+search_filter["problemDescription"]+"%"
-
-        db =mysql_base.Db()
-        total_work_record_amount = db.select(["count(fid)"], "workrecords_2023", condition_dict, "")
-        return total_work_record_amount
-    
-
-# --------------------------------------------------------------------- help functions ------------------------------------------------------
-
-def cat_all_work_record_table_cols_alias():
-    """
-    select * from table 的情况下， 因为不想直接查询出现列名， 给所有列名起个别名
-    """
-    cat_alias_str = ''
-    for key, value in constant.work_record_col_alias_map.items():
-        cat_alias_str += f'{key} as {value}, '
-    return cat_alias_str[:-2]
-
-# --------------------------------------------------------------------- help functions ------------------------------------------------------

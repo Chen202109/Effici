@@ -23,7 +23,7 @@
 
 <script>
 import LeftMenu from "@/components/ShadowRPA/LeftMenu.vue"
-import AssistSubmit from "@/components/ShadowRPA/AssistSubmit.vue"
+import AssistSubmit from "@/components/ShadowRPA/AssistSubmit/AssistSubmit.vue"
 import AnalysisData from "@/components/ShadowRPA/AnalysisData.vue"
 import AnalysisUpgradeTrend from "@/components/ShadowRPA/AnalysisUpgradeTrend.vue"
 import AnalysisCountryData from "@/components/ShadowRPA/AnalysisCountryData.vue"

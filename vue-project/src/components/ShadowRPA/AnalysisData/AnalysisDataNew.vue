@@ -20,6 +20,14 @@
       </template>
     </div>
 
+    <div class='saasProblemCharts'>
+      <!-- 放入Echarts 可视化图形 组件 -->
+      <div class="saasProblemBarChartNew" id="saasProblemBarChartNew" :style="{ width: getPageWidth * 0.5 + 'px', height: '420px' }"></div>
+      <div class="saasProblemPieChartNew" id="saasProblemPieChartNew" :style="{ width: getPageWidth * 0.5 + 'px', height: '420px' }"></div>
+    </div>
+
+    <div class="clearFloat"></div>
+
     <div style="height: 30px;"></div>
 
     <div>
@@ -30,7 +38,8 @@
       <el-button type="primary" @click="search()">查询</el-button>
     </div>
     <div style="margin: 15px 20px 15px 0;">
-      <el-table v-for="(item, index) in saasProblemTypeInVersions" :key="index" :data="item"
+      <!-- v-for里key多添加一个值是因为有时候会和其他v-for冲突在一起，这里的是有可能v-for这里寻找key去update的时候会update到下面的saasProblemTypeInVersionsDetail -->
+      <el-table v-for="(item, index) in saasProblemTypeInVersions" :key="index+saasProblemTypeInVersions" :data="item"
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
         :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
         <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
@@ -38,7 +47,7 @@
         </el-table-column>
       </el-table>
 
-      <el-table v-for="(item, index) in saasProblemTypeInVersionsDetail" :key="index" :data="item"
+      <el-table v-for="(item, index) in saasProblemTypeInVersionsDetail" :key="index+saasProblemTypeInVersionsDetail" :data="item"
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
         :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
         <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
@@ -52,7 +61,10 @@
 
 <script>
 import { getMainPageWidth } from '@/utils/layoutUtil'
+import { updateBarChartBasic} from '@/utils/echartBasic'
 import saasProblemTable from '@/components/ShadowRPA/AnalysisData/AnalysisDataProblemTable.vue'
+// 引入基本模板
+let echarts = require('echarts/lib/echarts')
 
 export default {
   name: 'AnalysisData',
@@ -97,6 +109,10 @@ export default {
     getPageWidth: getMainPageWidth
   },
 
+  mounted() {
+    this.drawLine()
+  },
+
   methods: {
 
     saasProblemTypeInVersionTableCellStyle(row) {
@@ -138,6 +154,147 @@ export default {
     },
 
 
+    drawLine() {
+      let saasProblemBarChartNew = echarts.init(document.getElementById('saasProblemBarChartNew'))
+      let saasProblemPieChartNew = echarts.init(document.getElementById('saasProblemPieChartNew'))
+
+      saasProblemBarChartNew.setOption({
+        color: ['#3398DB'], // 设置柱形图颜色
+        //设置 title 的 字体大小 和颜色
+        title: {
+          text: 'SaaS各版本受理汇总',
+          left: 'left',
+          top: '1%',
+          textStyle: {
+            fontSize: 18,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            color: '#3398DB',
+          },
+        },
+        xAxis: {
+          axisLabel: { interval: 0 },
+          data: [
+            'V3',
+            'V4.0.4.7',
+            'V4.3.1.0',
+            'V4.3.1.2',
+            'V4.0.4.6',
+            'V4.0.4.5',
+          ],
+        },
+        yAxis: {},
+        grid: {
+          left: '5%',
+          right: '5%',
+          top: '15%',
+          bottom: '10%',
+        },
+        series: [
+          {
+            name: '数量',
+            type: 'bar',
+            data: [5, 20, 36, 10, 10, 20],
+            // label 是说是否显示柱形图上的数值，position 表示数值的位置
+            label: {
+              show: true,
+              position: 'top',
+              //字体大小
+              fontSize: 14,
+            },
+          },
+        ],
+      }),
+      
+      saasProblemPieChartNew.setOption({
+        title: {
+          text: 'SaaS受理问题分类',
+          left: 'left',
+          top: '1%',
+          textStyle: {
+            fontSize: 18,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            color: '#3398DB',
+          },
+        },
+        tooltip: {
+          trigger: 'item',
+          formatter: '{a} <br/>{b}: {c} ({d}%)'
+        },
+        series: [
+          {
+            name: 'Access From',
+            type: 'pie',
+            selectedMode: 'single',
+            radius: [0, '40%'],
+            top: "1%",
+            label: {
+              show: true, // 是否显示标签
+              formatter: '{b}\n{c}次 \n {d}%',
+              position: 'inside', // 设置标签位置为内部
+              fontSize: 12, // 设置标签字体大小为14px
+              color: '#000000',
+            },
+            labelLine: {
+              show: false
+            },
+            data: []
+          },
+          {
+            name: 'Access From',
+            type: 'pie',
+            // 设定外圈的环的大小
+            radius: ['48%', '62%'],
+            top: "1%",
+            left: 'center',
+            // width不直接指定，因为这个图的大小是通过整个屏幕计算宽度除以2得到的，所以和这个图的宽度保持一直，具体算法见util中的layoutUtil的getMainPageWidth()方法
+            width: (window.screen.width - 20 * 2 - 220 - 10 * 2 - 1 * 2 - 15 * 2 - 20 - 15)/2,
+            labelLine: {
+              length: 15,
+              maxSurfaceAngle: 80
+            },
+            label: {
+              alignTo: 'edge',
+              formatter: '{b|{b}：}{c}次 {per|{d}%}  ',
+              minMargin: 5,
+              edgeDistance: 10,
+              lineHeight: 15,
+              rich: {
+                b: {
+                  color: '#4C5058',
+                  fontSize: 12,
+                  fontWeight: 'bold',
+                  lineHeight: 25
+                },
+                per: {
+                  color: '#fff',
+                  backgroundColor: '#4C5058',
+                  padding: [3, 4],
+                },
+              }
+            },
+            // 给标签线设置格式
+            labelLayout: function (params) {
+              // 通过标签魔性labelRect的x，查看是在这张图左边还是右边 （不能使用params.label.x直接看label的文字的坐标，不知道为什么直接整个回调所有设置失效）
+              const isLeft = params.labelRect.x < saasProblemPieChartNew.getWidth() / 2;
+              const points = params.labelLinePoints;
+              // 更新水平方向的标签线的末尾坐标，看是左边的标签还是右边的标签，如果是右边的标签的话就取到标签的x值也就是标签最靠左的点然后加上标签宽度
+              points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
+              // 更新竖直方向的标签线的末尾坐标，因为想要label显示在线上方，所以加上label的高度。
+              points[1][1] = params.labelRect.y+params.labelRect.height
+              points[2][1] = params.labelRect.y+params.labelRect.height
+              return {
+                labelLinePoints: points
+              };
+            },
+            data: []
+          }
+        ]
+      })
+    },
+
+
    /**
     * 进行 查询 事件,因为axios是异步的请求，所以会先处理数据，空闲了才处理异步数据
     * @param {*} searchFlag 如果为1，则代表全局搜索，会将这个页面所有需要搜索的东西都搜索了。
@@ -169,7 +326,11 @@ export default {
       ).then(response => {
         if (response.data.status === 200) {
           this.tableData = response.data.data
+          console.log('response data: ', response.data.data)
           console.log('update local tableData data: ', response.data.data)
+          this.updateSaasProblemBarChart()
+          this.updateSaasProblemPieChart()
+          
         }else{
           console.log(response.message)
           this.$message.error(response.message)
@@ -233,9 +394,82 @@ export default {
         this.$message.error('错了哦，仔细看错误信息弹窗')
         alert('失败' + error)
       })
-    }
+    },
 
+    updateSaasProblemBarChart(){
+      var saasProblemBarChartNewData = [{"seriesName":"SaaS各版本受理汇总", "seriesData":[]}]
+      var totalAmount = this.tableData[this.tableData.length-1]["受理合计"]
+      for(var i = 0; i < this.tableData.length-1; i++){
+        saasProblemBarChartNewData[0]["seriesData"].push({'x':this.tableData[i]["程序版本"], "y": this.tableData[i]["受理合计"], "percent":((this.tableData[i]["受理合计"] / totalAmount) * 100).toFixed(2)})
+      }
+      updateBarChartBasic(document, saasProblemBarChartNewData, 'SaaS各版本受理汇总', "category", false, true, 'saasProblemBarChartNew')
+      let saasProblemBarChartNew = echarts.getInstanceByDom(document.getElementById("saasProblemBarChartNew"))
+      saasProblemBarChartNew && saasProblemBarChartNew.setOption({
+        series: {
+          label : {
+            show: true,
+            formatter: function (params) {
+              const index = params.dataIndex; // 当前数据点的索引
+              const dataPoint = saasProblemBarChartNewData[0]["seriesData"][index]
+              return '{c|{c}}次\n({d|{d}%})'.replace('{c}', dataPoint.y).replace('{d}', dataPoint.percent);
+            },
+            position: 'top',
+            rich: {
+              c: {
+                color: '#4C5058',
+                fontSize: 14,
+              },
+              d: {
+                color: 'red',
+                fontSize: 14,
+              }
+            }
+          },
+        },
+      })
+    },
+
+    updateSaasProblemPieChart() {
+      // 嵌套环形图的数据放入
+      let summaryRow = this.tableData.length - 1
+      let summaryData = []
+      for (let key in this.tableData[summaryRow]) {
+        summaryData.push({ value: this.tableData[summaryRow][key], name: key })
+      }
+      let saasProblemPieChartNew = echarts.getInstanceByDom(document.getElementById('saasProblemPieChartNew'))
+      // 问题因素只展示最多的前三项
+      var errorFactorData = summaryData.slice(summaryData.length - 5, summaryData.length)
+      errorFactorData.sort((a, b) => b.value - a.value)
+      errorFactorData = errorFactorData.slice(0,3)
+      saasProblemPieChartNew && saasProblemPieChartNew.setOption({
+          series: [
+            { data:  errorFactorData},
+            { data: summaryData.slice(2, summaryData.length - 5) }
+          ]
+      })
+    }
 
   },
 }
 </script>
+
+<style scoped>
+
+.saasProblemCharts {
+  margin: 15px 0; 
+  display: block
+}
+.saasAnalysisTitle {
+  color: #3398DB;
+  font-size: 18;
+  margin: 5px 10px 5px 0;
+}
+
+.saasProblemBarChartNew, .saasProblemPieChartNew {
+  float: left;
+}
+
+.clearFloat {
+  clear: both;
+}
+</style>

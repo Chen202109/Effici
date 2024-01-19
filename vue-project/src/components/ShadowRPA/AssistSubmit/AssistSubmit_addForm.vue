@@ -45,7 +45,7 @@
       <el-row>
         <el-col :span = 23>
           <el-form-item label="单位名称" prop="agencyName">
-            <el-input v-model="form.agencyName" placeholder="请输入单位名称" :disabled="this.operation==='view'"></el-input>
+            <el-input v-model="form.agencyName" placeholder="请输入单位名称" :disabled="this.operation!=='add'"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
@@ -69,7 +69,7 @@
           </el-form-item>
         </el-col>
         <el-col :span = 16>
-          <el-form-item label="问题分类" prop="problemType">
+          <el-form-item label="问题归属" prop="problemAttribution">
             <el-col :span="9">
               <el-select v-model="form.problemParty" clearable placeholder="请选择" @change="problemPartyChange" :disabled="this.operation==='view'">
                 <el-option v-for="(item, index) in problemPartyOptions" :key="index" :label="item" :value="item"></el-option>
@@ -77,7 +77,7 @@
             </el-col>
             <el-col :span = 2 style="border: 1px solid transparent;"></el-col>
             <el-col :span="13">
-              <el-select v-model="form.problemType" clearable placeholder="请选择" :disabled="this.operation==='view'">
+              <el-select v-model="form.problemAttribution" clearable placeholder="请选择" :disabled="this.operation==='view'">
                 <el-option v-for="(item, index) in problemTypeOptions" :key="index" :label="item" :value="item"></el-option>
               </el-select>
             </el-col>
@@ -87,8 +87,8 @@
 
       <el-row>
         <el-col :span = 23>
-          <el-form-item label="问题归属" prop="problemAttribution">
-            <el-input v-model="form.problemAttribution" placeholder="请输入问题归属, 格式如: 开票管理-批量开票-程序bug" :disabled="this.operation==='view'"></el-input>
+          <el-form-item label="问题分类" prop="problemType">
+            <el-input v-model="form.problemType" placeholder="请输入问题分类, 格式如: 开票管理-批量开票-程序bug" :disabled="this.operation==='view'"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
@@ -234,12 +234,18 @@ export default {
         errorFunction: [
           { required: true, message: '请选择出错功能', trigger: 'blur' }
         ],
-        problemAttribution: [],
+        problemAttribution: [
+          { required: true, message: '请选择问题归属', trigger: 'blur' }
+        ],
         deployment: [
           { required: true, message: '请选择公/私有化', trigger: 'blur' }
         ],
-        problemParty: [],
-        problemType : [],
+        problemParty: [
+          { required: true, message: '请选择出错方', trigger: 'blur' }
+        ],
+        problemType : [
+          { required: true, message: '请输入问题分类', trigger: 'blur' }
+        ],
         informer : [],
         DBType: [
           { required: true, message: '请选择数据库类型', trigger: 'blur' }
@@ -311,7 +317,17 @@ export default {
       } else {
         this.$refs[formName].validate((valid) => {
           if (valid) {
-            this.$emit('submit', this.operation, this.form)
+            // 将form浅拷贝(都是简单类型string)，避免修改原先form的值
+            var form = Object.assign({}, this.form)
+            
+            // 对problemAttribution进行拼接，因为在form上是两个下拉框
+            if (form["problemParty"] !== "" && form["problemAttribution"]!=="" ){
+              form["problemAttribution"] = form["problemParty"] + "-" + form["problemAttribution"]
+            }else {
+              form["problemAttribution"] = ""
+            }
+
+            this.$emit('submit', this.operation, form)
           } else {
             return false;
           }

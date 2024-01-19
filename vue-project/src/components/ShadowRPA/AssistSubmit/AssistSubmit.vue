@@ -35,9 +35,9 @@
 </template>
 
 <script>
-import search from '@/components/ShadowRPA/AssistSubmit_search.vue'
-import addForm from '@/components/ShadowRPA/AssistSubmit_addForm.vue'
-import ReportTable from '@/components/ShadowRPA/AssistSubmit_table.vue'
+import search from '@/components/ShadowRPA/AssistSubmit/AssistSubmit_search.vue'
+import addForm from '@/components/ShadowRPA/AssistSubmit/AssistSubmit_addForm.vue'
+import ReportTable from '@/components/ShadowRPA/AssistSubmit/AssistSubmit_table.vue'
 import Upload from '@/components/Form/upload.vue'
 
 
@@ -72,7 +72,7 @@ export default {
       pageSizes: [10, 20, 30, 50],
       currentPageSize: 10,
       currentPage: 1,
-      workRecordTotalAmount: 1,
+      workRecordTotalAmount: 0,
 
     }
   },
@@ -103,17 +103,22 @@ export default {
         '&pageSize=' +
         this.currentPageSize
       ).then((response) => {
-        // 更新表格数据和total的amount
-        this.workRecordTableData = response.data.data;
-        this.workRecordTotalAmount = (response.data.amount === -1) ? this.workRecordTotalAmount : response.data.amount;
-        // 如果是搜索的情况而不是翻页的情况，将当前页面重置回1，然后消息提示查询成功
-        if (filter["requestTotal"]) {
-          this.currentPage = 1;
-          //成功的消息提示
-          this.$message({
-            message: filter['beginData'] + ' 到 ' + filter['endData'] + ' 查询成功',
-            type: 'success'
-          });
+        if (response.data.status === 200) {
+          // 更新表格数据和total的amount
+          this.workRecordTableData = response.data.data;
+          this.workRecordTotalAmount = (response.data.amount === -1) ? this.workRecordTotalAmount : response.data.amount;
+          // 如果是搜索的情况而不是翻页的情况，将当前页面重置回1，然后消息提示查询成功
+          if (filter["requestTotal"]) {
+            this.currentPage = 1;
+            //成功的消息提示
+            this.$message({
+              message: filter['beginData'] + ' 到 ' + filter['endData'] + ' 查询成功',
+              type: 'success'
+            });
+          }
+        }else {
+          console.log(response.data.message);
+          this.$message.error(response.data.message);
         }
       }).catch(function (error) {
         console.log(error);
@@ -138,14 +143,19 @@ export default {
           '/api/CMC/workrecords/work_record',
           form
         ).then(response => {
-          this.showRecordDetail = false
-          this.$message({
-            message: '添加成功',
-            type: 'success'
-          })
-          // 将total数量加一，并且进行一次查询更新展示的数据
-          this.workRecordTotalAmount += 1;
-          this.$refs.searchFilter.search(false);
+          if (response.data.status == 200){
+            this.showRecordDetail = false
+            this.$message({
+              message: '添加成功',
+              type: 'success'
+            })
+            // 将total数量加一，并且进行一次查询更新展示的数据
+            this.workRecordTotalAmount += 1;
+            this.$refs.searchFilter.search(false);
+          }else {
+            this.$message.error(response.data.message);
+            console.log(response.data.message);
+          }
         }).catch((error) => {
           console.log(error)
           this.$message.error('错了哦，仔细看错误信息弹窗')
@@ -157,10 +167,15 @@ export default {
           '/api/CMC/workrecords/work_record_update',
           form
         ).then(response => {
-          this.showRecordDetail = false
-          this.$message.success('修改成功')
-          this.workRecordTableData[this.currentRow] = form
-          this.currentRow = -1
+          if (response.data.status === 200){
+            this.showRecordDetail = false
+            this.$message.success(response.data.message)
+            this.workRecordTableData[this.currentRow] = form
+            this.currentRow = -1
+          }else {
+            console.log(response.data.message)
+            this.$message.error(response.data.message)
+          }
         }).catch((error) => {
           console.log(error)
           this.$message.error('错了哦，仔细看错误信息弹窗')

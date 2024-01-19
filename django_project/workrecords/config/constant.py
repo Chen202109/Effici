@@ -1,7 +1,7 @@
 # sql
 work_record_col_alias_map = {
     # "fid":"code",
-    "belong" : "problemParty",
+    "belong" : "problemAttribution",
     "recordcode" : "workRecordCode",
     "recordtitle" : "workRecordTitle",
     "creater" : "informer",
@@ -20,6 +20,7 @@ work_record_col_alias_map = {
     "environment" : "deployment",
     "errorfunction" : "errorFunction",
     "errortype" : "problemType",
+    "errortypefactor":"problemFactor",
     "databasetype" : "DBType",
     "softversion" : "version",
     "jiracode" : "JIRACode",
