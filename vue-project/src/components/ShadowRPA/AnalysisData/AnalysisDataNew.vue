@@ -54,6 +54,14 @@
           :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
         </el-table-column>
       </el-table>
+
+      <el-table v-for="(item, index) in saasProblemTypeFunctionInVersions" :key="index+saasProblemTypeFunctionInVersions" :data="item"
+        :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
+        :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
+        <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
+          :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
+        </el-table-column>
+      </el-table>
     </div>
 
   </div>
@@ -314,6 +322,7 @@ export default {
       if (searchFlag === 1) this.searchProblemTableData(searchValue)
       this.searchSaasProblemTypeInVersions(searchValue)
       this.searchSaasProblemTypeDetailInVersions(searchValue)
+      this.searchSaasProblemTypeFunctionInVersionsDetail(searchValue)
 
     },
 
@@ -384,6 +393,31 @@ export default {
           this.saasProblemTypeInVersionsDetail = []
           for ( let i = 0; i < response.data.data.length; i++) {
             this.saasProblemTypeInVersionsDetail.push(response.data.data[i]['problemData'])
+          }
+        }else{
+          console.log(response.message)
+          this.$message.error(response.message)
+        }
+      }).catch((error) => {
+        console.log(error)
+        this.$message.error('错了哦，仔细看错误信息弹窗')
+        alert('失败' + error)
+      })
+    },
+
+    async searchSaasProblemTypeFunctionInVersionsDetail(searchValue) {
+      this.$http.get(
+        '/api/CMC/workrecords/analysis_saas_problem_type_in_function_version_view_new?beginData=' +
+        searchValue['beginData'] +
+        '&endData=' +
+        searchValue['endData'] +
+        '&partySelected=' +
+        searchValue['partySelected']
+      ).then(response => {
+        if (response.data.status == 200) {
+          this.saasProblemTypeFunctionInVersions = []
+          for ( let i = 0; i < response.data.data.length; i++) {            
+            this.saasProblemTypeFunctionInVersions.push(response.data.data[i]['problemData'])
           }
         }else{
           console.log(response.message)

@@ -203,7 +203,7 @@ def analysis_select_new(request):
         function_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
 
         condition_dict = {
-            # error_function是dict 004代表的是问题功能的那个数据字典
+            # error_type_factor 005代表的是问题因素的那个数据字典
             "dictCode=": constant.data_dict_code_map["error_type_factor"],
             "level=": 1
         }
@@ -226,11 +226,6 @@ def analysis_select_new(request):
         error_factor_result = db.select_offset(1, 1000, sql)
 
         saas_problem_table_data = []
-        saas_problem_bar_chart_data = []
-        saas_problem_pie_chart_data = []
-        data = [{"problem":"saasProblemTableData", "problemData": saas_problem_table_data},
-                {"problem":"saasProblemBarChart", "problemData": saas_problem_bar_chart_data},
-                {"problem":"saasProblemPieChart", "problemData": saas_problem_pie_chart_data}]
         row_template = {"程序版本": "合计", "受理合计": 0}
         row_template.update({key["name"]:0 for key in function_list})
         row_template.update({key["name"]: 0 for key in error_factor_list})
@@ -265,16 +260,6 @@ def analysis_select_new(request):
             saas_problem_table_data.append(row)
             saas_problem_table_data.append(sum_row)
 
-            # total_amount = sum_row["受理合计"]
-            # series_data = []
-            # # saas_problem_bar_chart_data
-            # # 遍历saas_problem_table_data找出每个版本的"受理合计",然后对应总的受理合计数量进行计算这个版本出错的percentage
-            # for i in range(len(saas_problem_table_data)-1):
-            #     series_data.append({ "x":saas_problem_table_data[i]["程序版本"], "y":saas_problem_table_data[i]["受理合计"],"percent": saas_problem_table_data[i]["受理合计"]/total_amount})
-            # saas_problem_bar_chart_data.append({"seriesName":"SaaS各版本受理汇总", "seriesData": series_data})
-            # # saas_problem_pie_chart_data
-            # series_data = []
-
         return JsonResponse({'status': 200, 'data': saas_problem_table_data}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse({'status': 405, 'message': "请求方法错误, 需要GET请求。"})
@@ -302,7 +287,7 @@ def analysis_saas_problem_type_in_versions_new(request):
         # 要处理成这样的类型给前端渲染 [{"问题因素": "产品bug", "V4_3_2_1":3},{"问题因素": "实施配置", }]
         error_factor_col1_table = []
         error_factor_col2_table = []
-        data = [{"problem":"问题因素", "problemData": error_factor_col1_table},{"problem":"问题因素", "problemData": error_factor_col2_table}]
+        data = [{"problem":"问题因素", "problemData": error_factor_col1_table},{"problem":"问题因素(细)", "problemData": error_factor_col2_table}]
 
         for item in result :
             error_factor = decode_data_item(item["errortypefactor"], constant.data_dict_code_map["error_type_factor"]).split("-")
@@ -320,6 +305,64 @@ def analysis_saas_problem_type_in_versions_new(request):
         return JsonResponse({'status': 200, 'data': data}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse({'status': 405, 'message': "请求方法错误, 需要GET请求。"})
+
+
+def analysis_saas_problem_type_in_function_version_view_new(request):
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData')
+        end_date = request.GET.get('endData')
+        party_selected = request.GET.get('partySelected')
+
+        data = []
+
+        db = mysql_base.Db()
+
+        condition_dict = {
+            # error_function是dict 004代表的是问题功能的那个数据字典
+            "dictCode=": constant.data_dict_code_map["error_function"],
+            "level=": 1
+        }
+        error_function_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
+
+        condition_dict = {
+            # error_type_factor 005代表的是问题因素的那个数据字典
+            "dictCode=": constant.data_dict_code_map["error_type_factor"],
+            "level=": 1
+        }
+        error_factor_list = db.select(["code, name"], "work_record_data_dict", condition_dict, "")
+
+        for error_factor_col1 in error_factor_list:
+            # 将版本号里的"."转换成"_"，因为前端el-table的表头里如果字符串是带点的话会消失
+            sql = f'SELECT replace(softversion,".","_") as softversion'
+            for function in error_function_list:
+                sql += f', SUM(IF(`errorfunction`="{function["name"]}",amount,0)) AS {function["name"]} '
+            sql += ' FROM '
+            sql += ' (SELECT softversion , errorfunction, errortypefactor, count(*) as amount '
+            sql += ' FROM workrecords_2024 '
+            sql += f' WHERE createtime>="{begin_date}" AND createtime<="{end_date}" '
+            sql += f' AND errortypefactor >= {error_factor_col1["code"] * 100} AND errortypefactor <= { (error_factor_col1["code"]+1) * 100}'
+            sql += ' GROUP BY softversion, errorfunction, errortypefactor ) A '
+            sql += ' GROUP BY softversion '
+            result = db.select_offset(1, 2000, sql)
+
+            # 查询出来的结果像是[{'softversion': 'V4_3_1_3', '开票功能': Decimal('0'), '收缴业务': Decimal('0'), ...}, {...}]
+            # 进行行列翻转
+            saas_problem_type_and_function_data_in_version = []
+            for function in error_function_list:
+                new_item = {error_factor_col1["name"]: function["name"]}
+                total = 0
+                for item in result:
+                    new_item[item["softversion"]] = int(item[function["name"]])
+                    total += int(item[function["name"]])
+                new_item["合计"] = total
+                saas_problem_type_and_function_data_in_version.append(new_item)
+
+            data.append({"problem":error_factor_col1["name"],"problemData":saas_problem_type_and_function_data_in_version})
+
+        return JsonResponse({'status': 200, 'data': data}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse({'status': 405, 'message': "请求方法错误, 需要GET请求。"})
+
 
 
 def analysis_saas_problem_type_detail_in_versions_new(request):
