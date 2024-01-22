@@ -1,10 +1,15 @@
 <template>
   <div class="component-wrapper">
-    <search v-on:search="onSearch" ref="searchFilter"></search>
+    <search v-on:search="onSearch" :errorFunctionOptions="this.errorFunctionOptions" ref="searchFilter"></search>
 
     <!-- 让新增记录的页面进行弹窗式的页面 :visible.sync是来控制dialog显示的属性，v-if是因为打开dialog之后会有上次的数据的缓存，使用v-if可以清空内存来清除之前的数据 -->
     <el-dialog :title=this.recordDetailInfoFormTitle :visible.sync="showRecordDetail" v-if="showRecordDetail" :close-on-click-modal="false">
-      <add-form v-on:submit="onSubmit" ref="recordDetailInfoForm"></add-form>
+      <add-form 
+      v-on:submit="onSubmit" 
+      :errorFunctionOptions="this.errorFunctionOptions" 
+      :productTypeOptions="this.productTypeOptions" 
+      :problemAttributionOptionsDict = "this.problemAttributionOptionsDict"
+      ref="recordDetailInfoForm"></add-form>
     </el-dialog>
 
     <el-dialog title="批量新增" :visible.sync="showGroupAdd" v-if="showGroupAdd" :close-on-click-modal="false">
@@ -50,6 +55,11 @@ export default {
   },
   data() {
     return {
+      // 下拉框的选项的信息
+      errorFunctionOptions:[],
+      productTypeOptions:[],
+      problemAttributionOptionsDict: {},
+
       // 控制新增记录对话框的显示与隐藏
       showRecordDetail: false,
       showGroupAdd : false,
@@ -81,10 +91,28 @@ export default {
   },
 
   methods: {
+    
+
     /**
      * 最开始页面加载的时候，默认查询前10条数据显示在表格上
      */
     searchBasicInfo() {
+      this.$http.get(
+        '/api/CMC/workrecords/work_record_init'
+      ).then(response => {
+        if (response.status == 200) {
+          this.productTypeOptions = response.data.productTypeOptions;
+          this.errorFunctionOptions = response.data.errorFunctionOptions;
+          this.problemAttributionOptionsDict = response.data.problemAttributionOptions;
+        }else{
+          console.log(response.data.message)
+          this.$message.error(response.data.message)
+        }
+      }).catch((error) => {
+        console.log(error)
+        this.$message.error('错了哦，仔细看错误信息弹窗')
+        alert('失败' + error)
+      })
       // 触发子组件的search函数，那样就等于点击了一遍搜索那边的查询按钮进行请求
       this.$refs.searchFilter.search(true);
     },
@@ -197,10 +225,15 @@ export default {
           '/api/CMC/workrecords/work_record_delete',
           recordInfoData
         ).then(response => {
-          this.$message.success('删除成功')
-          // 将total数量减一，并且进行一次查询更新展示的数据
-          this.workRecordTotalAmount -= 1;
-          this.$refs.searchFilter.search(false);
+          if (response.data.status === 200){
+            this.$message.success('删除成功')
+            // 将total数量减一，并且进行一次查询更新展示的数据
+            this.workRecordTotalAmount -= 1;
+            this.$refs.searchFilter.search(false);
+          }else {
+            console.log(response.data.message)
+            this.$message.error(response.data.message)
+          }
         }).catch((error) => {
           console.log(error)
           this.$message.error('错了哦，仔细看错误信息弹窗')

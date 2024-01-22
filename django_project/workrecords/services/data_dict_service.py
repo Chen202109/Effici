@@ -75,9 +75,6 @@ def update_error_type_data_dict(error_type_new):
         # 没有匹配到，说明以前没有这个条目，新增
         print("新增")
 
-
-        
-
     return
 
 
@@ -146,7 +143,7 @@ def decode_data_item(item_code, dict_code):
         condition_dict["code="] = parent_code
         node = db.select(["name", "parentCode"], table_name, condition_dict, "")
         print(f"node is {node}")
-        if isinstance(parent_code, tuple):
+        if isinstance(node, tuple):
             parent_code = None
             continue
         item = node[0]['name'] +"-" + item

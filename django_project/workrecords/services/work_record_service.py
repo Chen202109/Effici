@@ -25,6 +25,9 @@ def get_work_record_detail(search_filter, curr_page, curr_page_size):
     # 如果是新版本的工单记录模板，因为问题分类,问题归属是编码，所以进行转码
     if search_filter["beginData"] >= "2024-01-01":
         for item in results:
+            print(item)
+            print(item["problemFactor"])
+            print(data_dict_service.decode_data_item(item["problemFactor"], constant.data_dict_code_map["error_type_factor"]))
             error_attribution =data_dict_service.decode_data_item(item["problemAttribution"], constant.data_dict_code_map["error_attribution"])
             item["problemAttribution"] = error_attribution
             error_type = str(data_dict_service.decode_data_item(item["problemType"], constant.data_dict_code_map["error_type"]))
@@ -39,6 +42,7 @@ def get_work_record_count(search_filter):
         return -1
     else:
         # 工单搜索条件
+        table_name = "workrecords_2024" if search_filter["beginData"] >= "2024-01-01" else "workrecords_2023"
         condition_dict = {}
         condition_dict["createtime>="] = search_filter["beginData"]
         condition_dict["createtime<="] = search_filter["endData"]
@@ -49,25 +53,18 @@ def get_work_record_count(search_filter):
         if search_filter["problemDescription"] != "": condition_dict["problem LIKE"] = "%"+search_filter["problemDescription"]+"%"
 
         db =mysql_base.Db()
-        total_work_record_amount = db.select(["count(fid)"], "workrecords_2023", condition_dict, "")
+        total_work_record_amount = db.select(["count(fid)"], table_name, condition_dict, "")
         return total_work_record_amount
 
 def add_work_record(work_record_id, work_record_data):
     if work_record_data["registerDate"] >= "2024-01-01":
-        print(f"aaaa{work_record_data}")
-
         # 对问题归属，问题分类等进行编码
         if work_record_data["problemAttribution"] != "":
             work_record_data["problemAttribution"] = data_dict_service.encode_data_item(work_record_data["problemAttribution"],constant.data_dict_code_map["error_attribution"])
-
         if work_record_data["problemType"] != "":
-            problem_type = work_record_data["problemType"].rsplit("-", 1)
-            work_record_data["problemType"] = data_dict_service.encode_data_item(problem_type[0], constant.data_dict_code_map["error_type"])
-            work_record_data["problemFactor"] = data_dict_service.encode_data_item(problem_type[1], constant.data_dict_code_map["error_type_factor"])
-            print(problem_type[1])
-            print(f"aaaabbb{work_record_data['problemFactor']}")
-
-        print(f"bbbb{work_record_data}")
+            problem_type = str(data_dict_service.encode_data_item(work_record_data["problemType"], constant.data_dict_code_map["error_type"]))
+            work_record_data["problemType"] = int(problem_type[0:-4])
+            work_record_data["problemFactor"] = int("1"+ problem_type[-4:])
 
     fieldDict = {}
     fieldDict["fid"] = work_record_id
@@ -80,19 +77,18 @@ def add_work_record(work_record_id, work_record_data):
     table_name = "workrecords_2024" if work_record_data["registerDate"] >= "2024-01-01" else "workrecords_2023"
     db = mysql_base.Db()
     error = db.insert_copy(table_name, fieldDict)
-    print(f"field dict: {fieldDict}")
-    print(f"error: {error}")
-    if error != "": raise Exception()
+
+    if error is not None: raise Exception()
 
 def update_work_record(work_record_id, work_record_data):
     if work_record_data["registerDate"] >= "2024-01-01":
-        print(f"aaaa{work_record_data}")
         # 对问题归属，问题分类等进行编码
-        work_record_data["problemAttribution"] = data_dict_service.encode_data_item(work_record_data["problemAttribution"], constant.data_dict_code_map["error_attribution"])
-        problem_type = work_record_data["problemType"].rsplit("-", 1)
-        work_record_data["problemType"] = data_dict_service.encode_data_item(problem_type[0], constant.data_dict_code_map["error_type"])
-        work_record_data["problemFactor"] = data_dict_service.encode_data_item(problem_type[1], constant.data_dict_code_map["error_type_factor"])
-        print(f"bbbb{work_record_data}")
+        if work_record_data["problemAttribution"] != "":
+            work_record_data["problemAttribution"] = data_dict_service.encode_data_item(work_record_data["problemAttribution"], constant.data_dict_code_map["error_attribution"])
+        if work_record_data["problemType"] != "":
+            problem_type = str(data_dict_service.encode_data_item(work_record_data["problemType"], constant.data_dict_code_map["error_type"]))
+            work_record_data["problemType"] = int(problem_type[0:-4])
+            work_record_data["problemFactor"] = int("1" + problem_type[-4:])
 
     fieldDict = {}
 
@@ -105,6 +101,11 @@ def update_work_record(work_record_id, work_record_data):
     table_name = "workrecords_2024" if work_record_data["registerDate"] >= "2024-01-01" else "workrecords_2023"
     db = mysql_base.Db()
     db.update(table_name, fieldDict, {"fid=": work_record_id})
+
+def delete_work_record(work_record_id, work_record_data):
+    db = mysql_base.Db()
+    table_name = "workrecords_2024" if work_record_data["registerDate"] >= "2024-01-01" else "workrecords_2023"
+    db.delete(table_name, {"fid=": work_record_id})
 
 def cat_all_work_record_table_cols_alias():
     """

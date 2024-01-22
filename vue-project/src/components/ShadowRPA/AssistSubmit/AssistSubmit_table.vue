@@ -122,7 +122,7 @@ export default {
       // 避免修改原来的值，进行浅拷贝
       var recordInfoDataCopy = Object.assign({}, recordInfoData);
       // 因为如果是要打开form，form里将problemAttribution分成了可以选择的两个下拉框，所以这里需要将problemAttribution进行拆分
-      if (recordInfoDataCopy.problemAttribution == ""){
+      if (recordInfoDataCopy.problemAttribution == "" || recordInfoDataCopy.problemAttribution == null){
         recordInfoDataCopy["problemParty"] = ""
         recordInfoDataCopy["problemAttribution"] = ""
       }else {

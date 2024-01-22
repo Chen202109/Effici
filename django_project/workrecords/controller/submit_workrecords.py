@@ -61,7 +61,7 @@ def work_record_group_add(request):
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
         except:
-            return JsonResponse({'status': 500, 'message': "服务端创建缓存文件夹失败。"}, json_dumps_params={'ensure_ascii': False})
+            return JsonResponse({'status': 500, 'data': "", 'message': "服务端创建缓存文件夹失败。"}, json_dumps_params={'ensure_ascii': False})
 
         files = request.FILES.values()
         for i in range(len(files)):
@@ -169,18 +169,72 @@ def work_record_delete(request):
         hash_original = str(work_record_detail_form.get("registerDate"))+"-"+str(work_record_detail_form.get("agencyName"))
         md5 = hashlib.md5()
         md5.update(hash_original.encode("utf-8"))
-        encrypted_data = md5.hexdigest()
+        fid = md5.hexdigest()
 
-        db = mysql_base.Db()
-        db.delete("workrecords_2023", {"fid=" : encrypted_data})
+        try:
+            work_record_service.delete_work_record(fid, work_record_detail_form)
+        except Exception as e:
+            print(str(e))
+            return JsonResponse({'status': 500, 'message': "删除失败"}, json_dumps_params={'ensure_ascii': False})
 
         return JsonResponse({'data': "Delete successfully!"}, json_dumps_params={'ensure_ascii': False})
-
+    else:
+        return JsonResponse({'status': 405, 'message': "请求方法错误, 需要POST请求。"})
 
 def work_record_init(request):
     """
     获取工单详细界面查询的初始配置，如一些问题分类的种类，出错功能有哪些功能等
     """
     if request.method == 'GET':
-        data = []
-    return JsonResponse({'data': []}, json_dumps_params={'ensure_ascii': False})
+        data = {}
+
+        db = mysql_base.Db()
+
+        # 查询所有问题功能
+        condition_dict = {
+            # error_function是dict 004代表的是问题功能的那个数据字典
+            "dictCode=": constant.data_dict_code_map["error_function"],
+            "level=": 1
+        }
+        error_function_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
+        data["errorFunctionOptions"] = [ item["name"] for item in error_function_list]
+
+        # 查询所有产品类型
+        condition_dict = {
+            # product_type 003代表的是产品类型的那个数据字典
+            "dictCode=": constant.data_dict_code_map["product_type"],
+            "level=": 1
+        }
+        product_type_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
+        data["productTypeOptions"] = [ item["name"] for item in product_type_list]
+
+        # 查询所有问题归属, 然后以 { party1: [xxx, xxx], party2:[xxx, xxx]}这样方式传给前端
+        condition_dict = {
+            # product_type 001代表的是问题归属的那个数据字典
+            "t1.dictCode=":constant.data_dict_code_map["error_attribution"],
+            "t2.dictCode=":constant.data_dict_code_map["error_attribution"],
+            "t1.level=":1,
+            "t2.level=":2,
+        }
+        problem_attribution_list = db.select(["t1.name as level1_name, t2.name as level2_name"],
+                                        "work_record_data_dict t1 JOIN work_record_data_dict t2 ON t1.code = t2.parentCode",
+                                        condition_dict, "")
+        data["problemAttributionOptions"] = {}
+        for item in problem_attribution_list:
+            if data["problemAttributionOptions"].get(item["level1_name"]) is None:
+                data["problemAttributionOptions"][item["level1_name"]] = []
+            data["problemAttributionOptions"][item["level1_name"]].append(item["level2_name"])
+
+
+        # 查询所有问题分类
+        condition_dict = {
+            # error_type_factor 005代表的是问题因素的那个数据字典
+            "dictCode=": constant.data_dict_code_map["error_type_factor"],
+            "level=": 2
+        }
+        error_factor_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
+        data["errorFactorOptions"] = [ item["name"] for item in error_factor_list]
+
+        return JsonResponse(status=200, data=data, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse(data={'message': "请求方法错误, 需要POST请求。"}, status=405)
