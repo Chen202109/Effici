@@ -1,21 +1,23 @@
 <template>
   <div class="component-wrapper">
-    <search v-on:search="onSearch" :errorFunctionOptions="this.errorFunctionOptions" ref="searchFilter"></search>
+    <search v-on:search="onSearch" :errorFunctionOptions="this.errorFunctionOptions"
+      :problemAttributionOptionsDict="this.problemAttributionOptionsDict" ref="searchFilter">
+    </search>
 
     <!-- 让新增记录的页面进行弹窗式的页面 :visible.sync是来控制dialog显示的属性，v-if是因为打开dialog之后会有上次的数据的缓存，使用v-if可以清空内存来清除之前的数据 -->
-    <el-dialog :title=this.recordDetailInfoFormTitle :visible.sync="showRecordDetail" v-if="showRecordDetail" :close-on-click-modal="false">
-      <add-form 
-      v-on:submit="onSubmit" 
-      :errorFunctionOptions="this.errorFunctionOptions" 
-      :productTypeOptions="this.productTypeOptions" 
-      :problemAttributionOptionsDict = "this.problemAttributionOptionsDict"
-      ref="recordDetailInfoForm"></add-form>
+    <el-dialog :title=this.recordDetailInfoFormTitle :visible.sync="showRecordDetail" v-if="showRecordDetail"
+      :close-on-click-modal="false">
+      <add-form v-on:submit="onSubmit" :errorFunctionOptions="this.errorFunctionOptions"
+        :productTypeOptions="this.productTypeOptions" :problemAttributionOptionsDict="this.problemAttributionOptionsDict"
+        ref="recordDetailInfoForm">
+      </add-form>
     </el-dialog>
 
     <el-dialog title="批量新增" :visible.sync="showGroupAdd" v-if="showGroupAdd" :close-on-click-modal="false">
       <el-form style="text-align: center;">
         <el-form-item>
-          <Upload ref="groupAddWorkRecord" :fileType="fileType" :fileLimitSize="fileLimitSize" :url="uploadUri" :fileLimit="fileLimitAmount" @closeUploadDialog="closeUploadDialog"></Upload>
+          <Upload ref="groupAddWorkRecord" :fileType="fileType" :fileLimitSize="fileLimitSize" :url="uploadUri"
+            :fileLimit="fileLimitAmount" @closeUploadDialog="closeUploadDialog"></Upload>
         </el-form-item>
         <el-form-item>
           <el-button size=“medium” type="primary" @click="submitGroupAddWorkRecord">确认</el-button>
@@ -24,8 +26,10 @@
       </el-form>
     </el-dialog>
 
-    <el-button v-if="!showRecordDetail" type="primary" class="add-button" icon="el-icon-plus" @click="showRecordDetailForm('add', -1)">新增受理信息</el-button>
-    <el-button v-if="!showGroupAdd" type="primary" class="add-button" icon="el-icon-plus" @click="showGroupAddDialog">批量新增</el-button>
+    <el-button v-if="!showRecordDetail" type="primary" class="add-button" icon="el-icon-plus"
+      @click="showRecordDetailForm('add', -1)">新增受理信息</el-button>
+    <el-button v-if="!showGroupAdd" type="primary" class="add-button" icon="el-icon-plus"
+      @click="showGroupAddDialog">批量新增</el-button>
 
 
     <ReportTable :table-data="workRecordTableData" v-on:handleSingleRecordOperation="onHandleSingleRecordOperation">
@@ -56,19 +60,19 @@ export default {
   data() {
     return {
       // 下拉框的选项的信息
-      errorFunctionOptions:[],
-      productTypeOptions:[],
+      errorFunctionOptions: [],
+      productTypeOptions: [],
       problemAttributionOptionsDict: {},
 
       // 控制新增记录对话框的显示与隐藏
       showRecordDetail: false,
-      showGroupAdd : false,
+      showGroupAdd: false,
 
       // 上传文件的控制
-      fileType  : ["xlsx", "csv", "xls", "xml"],
+      fileType: ["xlsx", "csv", "xls", "xml"],
       fileLimitSize: 3,
-      fileLimitAmount : 2,
-      uploadUri : '/api/CMC/workrecords/work_record_group_add',
+      fileLimitAmount: 2,
+      uploadUri: '/api/CMC/workrecords/work_record_group_add',
 
       // 记录详情表单的数据
       recordDetailInfoFormTitle: "",
@@ -91,7 +95,7 @@ export default {
   },
 
   methods: {
-    
+
 
     /**
      * 最开始页面加载的时候，默认查询前10条数据显示在表格上
@@ -104,7 +108,7 @@ export default {
           this.productTypeOptions = response.data.productTypeOptions;
           this.errorFunctionOptions = response.data.errorFunctionOptions;
           this.problemAttributionOptionsDict = response.data.problemAttributionOptions;
-        }else{
+        } else {
           console.log(response.data.message)
           this.$message.error(response.data.message)
         }
@@ -144,7 +148,7 @@ export default {
               type: 'success'
             });
           }
-        }else {
+        } else {
           console.log(response.data.message);
           this.$message.error(response.data.message);
         }
@@ -171,7 +175,7 @@ export default {
           '/api/CMC/workrecords/work_record',
           form
         ).then(response => {
-          if (response.data.status == 200){
+          if (response.data.status == 200) {
             this.showRecordDetail = false
             this.$message({
               message: '添加成功',
@@ -180,7 +184,7 @@ export default {
             // 将total数量加一，并且进行一次查询更新展示的数据
             this.workRecordTotalAmount += 1;
             this.$refs.searchFilter.search(false);
-          }else {
+          } else {
             this.$message.error(response.data.message);
             console.log(response.data.message);
           }
@@ -195,12 +199,12 @@ export default {
           '/api/CMC/workrecords/work_record_update',
           form
         ).then(response => {
-          if (response.data.status === 200){
+          if (response.data.status === 200) {
             this.showRecordDetail = false
             this.$message.success(response.data.message)
             this.workRecordTableData[this.currentRow] = form
             this.currentRow = -1
-          }else {
+          } else {
             console.log(response.data.message)
             this.$message.error(response.data.message)
           }
@@ -225,12 +229,12 @@ export default {
           '/api/CMC/workrecords/work_record_delete',
           recordInfoData
         ).then(response => {
-          if (response.data.status === 200){
+          if (response.data.status === 200) {
             this.$message.success('删除成功')
             // 将total数量减一，并且进行一次查询更新展示的数据
             this.workRecordTotalAmount -= 1;
             this.$refs.searchFilter.search(false);
-          }else {
+          } else {
             console.log(response.data.message)
             this.$message.error(response.data.message)
           }
@@ -258,22 +262,22 @@ export default {
       })
     },
 
-    showGroupAddDialog(){
+    showGroupAddDialog() {
       this.showGroupAdd = true;
     },
 
-    closeUploadDialog(){
+    closeUploadDialog() {
       this.showGroupAdd = false;
     },
 
     /**
      * 进行批量新增操作，调用子组件的方法将文件进行上传检验，如果成功则关闭这个弹窗
      */
-    submitGroupAddWorkRecord(){
+    submitGroupAddWorkRecord() {
       this.$refs.groupAddWorkRecord.submitFiles();
     },
 
-    cancelGroupAddWorkRecord(){
+    cancelGroupAddWorkRecord() {
       this.closeUploadDialog()
     },
 

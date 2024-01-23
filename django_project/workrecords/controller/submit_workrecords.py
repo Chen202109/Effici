@@ -27,8 +27,11 @@ def work_record(request):
         curr_page = int(request.GET.get('page', default='1'))
         curr_page_size = int(request.GET.get('pageSize', default='10'))
 
-        detail = work_record_service.get_work_record_detail(search_filter, curr_page, curr_page_size)
-        amount = work_record_service.get_work_record_count(search_filter)
+        try:
+            detail = work_record_service.get_work_record_detail(search_filter, curr_page, curr_page_size)
+            amount = work_record_service.get_work_record_count(search_filter)
+        except Exception as e:
+            return JsonResponse({'status': 400, 'message': str(e)}, json_dumps_params={'ensure_ascii': False})
 
         return JsonResponse({'status': 200, 'data': detail, 'amount': amount}, json_dumps_params={'ensure_ascii': False})
 
@@ -216,7 +219,7 @@ def work_record_init(request):
             "t1.level=":1,
             "t2.level=":2,
         }
-        problem_attribution_list = db.select(["t1.name as level1_name, t2.name as level2_name"],
+        problem_attribution_list = db.select([" t1.name as level1_name ", " t2.name as level2_name "],
                                         "work_record_data_dict t1 JOIN work_record_data_dict t2 ON t1.code = t2.parentCode",
                                         condition_dict, "")
         data["problemAttributionOptions"] = {}

@@ -118,17 +118,17 @@ def encode_data_item(item, dict_code):
     # 因为第一层是null 
     parent_code = None
     for i in range(len(item_cols)):
-        condition_dict = {}
-        condition_dict["dictCode="] = dict_code
-        condition_dict["level="] = i+1
-        condition_dict["name="] = item_cols[i]
-        condition_dict["parentCode="] = parent_code
+        condition_dict = {
+            "dictCode=": dict_code,
+            "level=": i + 1,
+            "name=": item_cols[i],
+            "parentCode=": parent_code
+        }
         parent_code = db.select(["code"], table_name, condition_dict, "")
         if isinstance(parent_code, tuple):
             return None
     return parent_code
 
-    
 
 def decode_data_item(item_code, dict_code):
     """
@@ -151,6 +151,19 @@ def decode_data_item(item_code, dict_code):
     return item[:-1]
 
 
+def encode_single_item(item, dict_code):
+    """
+    对一个不知层级关系只有名字的条目进行查询，如果有重复的条目，返回list, 如果是单个，返回list里面只有一个元素，如果没有查询到，返回None
+    :param item 一个不知层级关系只有名字的条目, 如单位断电（这个是在问题归属的第二层，当不知道第一层是行业的时候，使用该方法进行查询）
+    :param dict_code 所属的数据字典的编码
+    """
+    db = mysql_base.Db()
+    condition_dict = {
+        "dictCode=": dict_code,
+        "name=": item,
+    }
+    result = db.select(["code"], table_name, condition_dict, "")
+    return None if isinstance(result, tuple) else result
 
 def get_data_dict(dict_code):
     db =mysql_base.Db()

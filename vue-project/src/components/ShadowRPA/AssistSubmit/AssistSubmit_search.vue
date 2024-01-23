@@ -4,10 +4,7 @@
       <el-row>
         <el-col :span="6">
           <el-form-item label="问题分类">
-            <el-select v-model="searchForm.errorType" :clearable="true" placeholder="请选择">
-              <el-option v-for="(item, index) in errorTypeList" :key="index" :label="item" :value="item">
-              </el-option>
-            </el-select>
+            <el-input v-model="searchForm.errorType" :clearable="true" placeholder="请输入问题分类"></el-input>
           </el-form-item>
           <!-- 出错功能 errorfunction -->
           <el-form-item label="出错功能">
@@ -30,11 +27,25 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-           <!-- 问题描述 problemDescription -->
+          <!-- 问题描述 problemDescription -->
           <el-form-item label="问题描述">
-            <el-input type="textarea" v-model="searchForm.problemDescription" :rows="4" placeholder="请输入问题描述内容"></el-input>
+            <el-input type="textarea" v-model="searchForm.problemDescription" :rows="4"
+              placeholder="请输入问题描述内容"></el-input>
           </el-form-item>
         </el-col>
+      </el-row>
+
+      <el-row>
+        <el-form-item label="问题归属">
+          <el-select v-model="searchForm.problemParty" :clearable="true" placeholder="请选择" style="width: 140px;" @change="problemPartyChange">
+            <el-option v-for="(item, index) in this.problemPartyOptions" :key="index" :label="item" :value="item">
+            </el-option>
+          </el-select>
+          <el-select v-model="searchForm.problemAttribution" :clearable="true" filterable placeholder="请选择" style="width: 200px;">
+            <el-option v-for="(item, index) in this.problemAttributionOptions" :key="index" :label="item" :value="item">
+            </el-option>
+          </el-select>
+        </el-form-item>
       </el-row>
 
       <el-row>
@@ -43,7 +54,7 @@
             end-placeholder="结束日期">
           </el-date-picker>
           <el-button type="primary" @click="search(true)">查询</el-button>
-        </el-form-item>        
+        </el-form-item>
       </el-row>
 
     </el-form>
@@ -61,6 +72,12 @@ export default {
         return [];
       },
     },
+    problemAttributionOptionsDict: {
+      type: Object,
+      default() {
+        return {};
+      },
+    }
   },
   data() {
     return {
@@ -72,14 +89,35 @@ export default {
         errorType: '', // 问题分类初始值
         isSolved: '', // 是否解决初始值
         problemDescription: "", // 问题描述初始值
+        problemParty: "",
+        problemAttribution: ""
       },
       // 默认为最近一周的
       dateRange: [new Date(new Date().setDate(new Date().getDate() - 7)), new Date()],
       errorTypeList: ["产品BUG", "实施配置", "异常数据处理", "需求", "需求未覆盖", "重大生产事故", "安全漏洞", "his传参错误"],
       isSolvedList: ["是", "否"],
+      problemPartyOptions: [],
+      problemAttributionOptions: [],
     };
   },
+  watch: {
+    problemAttributionOptionsDict: {
+      handler(newVal, oldVal) {
+        this.problemPartyOptions = Object.keys(newVal)
+        this.problemPartyChange()
+      }
+    }
+  },
   methods: {
+
+    /**
+     * 选择问题分类的出错方，同步出错方对应的问题分类的具体属性
+     * @param {*} value 
+     */
+    problemPartyChange(value) {
+      this.searchForm.problemAttribution = ''
+      this.problemAttributionOptions = this.problemAttributionOptionsDict[this.searchForm.problemParty]
+    },
 
     /**
      * 触发查询事件，将筛选条件传给父组件
@@ -109,6 +147,6 @@ export default {
 }
 
 .el-form-item .el-select {
-    width: 100%;
-  }
+  width: 100%;
+}
 </style>
