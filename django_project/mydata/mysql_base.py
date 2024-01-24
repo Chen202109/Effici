@@ -1,3 +1,5 @@
+from workrecords.exception.dao.MyConnectionException import MyConnectionException
+from workrecords.exception.dao.EfficiDaoException import EfficiDaoException
 import json
 import sys
 import pymysql
@@ -16,9 +18,9 @@ class Db(object):
             )
             self.begin = self.configure.cursor(pymysql.cursors.DictCursor)
         except pymysql.err.OperationalError:
-            sys.exit()
+            raise MyConnectionException("未能连接数据库, 可能数据库连接参数有误。")
         except pymysql.err.InternalError:
-            sys.exit()
+            raise MyConnectionException("未能连接数据库, 可能python版本、python引用数据库的引擎版本与Mysql服务端版本不相匹配。")
 
     # select查询语句
     def select(self,field: list, table: str, where: dict = None, other: str = ""):
@@ -57,31 +59,23 @@ class Db(object):
             self.configure.commit()
             results = self.begin.fetchall()
 
-            if len(field) == 1:
-                if field[0] == "*":
-                    return results
-                else:
-                    try:
-                        if len(results) == 1:
-                            return results[0][field[0]]
-                        else:
-                            return results
-                    # 查询数据为空时
-                    except IndexError:
-                        print("询数据为空 SQL statement: ", sql)  # 打印SQL语句
-                        return results
-            else:
-                return results
+            if len(field) == 1 and field[0] != "*":
+                try:
+                    if len(results) == 1:
+                        return results[0][field[0]]
+                except IndexError:
+                    print("询数据为空 SQL statement: ", sql)  # 打印SQL语句
 
+            return results
         except pymysql.err.ProgrammingError as error:
             self.configure.close()
-            return error
+            raise EfficiDaoException(str(error))
         except pymysql.err.InternalError as error:
             self.configure.close()
-            return error
+            raise EfficiDaoException(str(error))
         except pymysql.err.OperationalError as error:
             self.configure.close()
-            return error
+            raise MyConnectionException("未能连接数据库。")
 
     # 分页方式查询
     # def select_offset(self, page, page_size,table,final_key,final_where,other):
@@ -179,24 +173,23 @@ class Db(object):
         except pymysql.err.ProgrammingError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise EfficiDaoException(str(error))
         except pymysql.err.InternalError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise EfficiDaoException(str(error))
         except pymysql.err.OperationalError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise MyConnectionException("未能连接数据库。")
         except pymysql.err.InterfaceError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise EfficiDaoException(str(error))
         except pymysql.err.DataError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
-
+            raise EfficiDaoException(str(error))
 
     # insert 语句
     # 批量插入
@@ -361,19 +354,19 @@ class Db(object):
         except pymysql.err.ProgrammingError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise EfficiDaoException(str(error))
         except pymysql.err.InternalError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise EfficiDaoException(str(error))
         except pymysql.err.OperationalError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise MyConnectionException("未能连接数据库。")
         except pymysql.err.DataError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise EfficiDaoException(str(error))
 
     # delete语句
     # DELETE FROM 表名称 WHERE 列名称 = 值
@@ -406,19 +399,19 @@ class Db(object):
         except pymysql.err.ProgrammingError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise EfficiDaoException(str(error))
         except pymysql.err.InternalError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise EfficiDaoException(str(error))
         except pymysql.err.OperationalError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise MyConnectionException("未能连接数据库。")
         except pymysql.err.DataError as error:
             self.configure.rollback()
             self.configure.close()
-            return error
+            raise EfficiDaoException(str(error))
 
     def rollBack(self):
         self.configure.rollback()

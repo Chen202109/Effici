@@ -1,6 +1,7 @@
 from mydata import mysql_base
 from workrecords.config import constant
 from workrecords.services import data_dict_service
+from workrecords.exception.service.MyInvalidInputException import MyInvalidInputException
 
 def get_work_record_detail(search_filter, curr_page, curr_page_size):
     """
@@ -10,12 +11,10 @@ def get_work_record_detail(search_filter, curr_page, curr_page_size):
     db = mysql_base.Db()
     table_name = "workrecords_2024" if search_filter["beginData"] >= "2024-01-01" else "workrecords_2023"
     condition_dict = translate_search_filter(search_filter)
-    try:
-        results = db.select(cat_all_work_record_table_cols_alias(), table_name, condition_dict,
-                            f" ORDER BY createtime limit {str((curr_page - 1) * curr_page_size)}, {curr_page_size}")
-    except Exception as e:
-        print(str(e))
-        return None
+
+    results = db.select(cat_all_work_record_table_cols_alias(), table_name, condition_dict,
+                        f" ORDER BY createtime limit {str((curr_page - 1) * curr_page_size)}, {curr_page_size}")
+
     # 如果是新版本的工单记录模板，因为问题分类,问题归属是编码，所以进行转码
     if search_filter["beginData"] >= "2024-01-01":
         for item in results:
@@ -60,9 +59,7 @@ def add_work_record(work_record_id, work_record_data):
 
     table_name = "workrecords_2024" if work_record_data["registerDate"] >= "2024-01-01" else "workrecords_2023"
     db = mysql_base.Db()
-    error = db.insert_copy(table_name, fieldDict)
-
-    if error is not None: raise Exception()
+    db.insert_copy(table_name, fieldDict)
 
 def update_work_record(work_record_id, work_record_data):
     if work_record_data["registerDate"] >= "2024-01-01":
@@ -114,19 +111,20 @@ def translate_search_filter(search_filter):
     }
     if search_filter["isSolved"] != "": condition_dict["issolve="] = search_filter["isSolved"]
     if search_filter["errorFunction"] != "": condition_dict["errorfunction="] = search_filter["errorFunction"]
-    if search_filter["errorType"] != "": condition_dict["errortype="] = search_filter["errorType"]
     if search_filter["softVersion"] != "": condition_dict["softversion="] = search_filter["softVersion"]
     if search_filter["problemDescription"] != "": condition_dict["problem LIKE"] = "%" + search_filter["problemDescription"] + "%"
     if search_filter["beginData"] >= "2024-01-01":
         # 对问题归属的查询进行编码
         if search_filter["problemParty"] != "" and search_filter["problemAttribution"] != "":
             # 如果两项都有，说明是完整的一个问题归属，直接进行encode
-            condition_dict["belong="] = data_dict_service.encode_data_item(f"{search_filter['problemParty']}-{search_filter['problemAttribution']}",
+            problem_party_encoded = data_dict_service.encode_data_item(f"{search_filter['problemParty']}-{search_filter['problemAttribution']}",
                                                                            constant.data_dict_code_map["error_attribution"])
+            if problem_party_encoded is None: raise MyInvalidInputException(status=400, msg=f"问题归属的 {search_filter['problemParty']}-{search_filter['problemAttribution']} 的值不存在!")
+            condition_dict["belong="] = problem_party_encoded
         elif search_filter["problemParty"] != "":
             # 如果只有出错方，那么需要查询出出错方的编号然后进行一个范围的查询
-            problem_party_encoded = data_dict_service.encode_data_item(f"{search_filter['problemParty']}",
-                                                                       constant.data_dict_code_map["error_attribution"])
+            problem_party_encoded = data_dict_service.encode_data_item(f"{search_filter['problemParty']}", constant.data_dict_code_map["error_attribution"])
+            if problem_party_encoded is None: raise MyInvalidInputException(status=400, msg=f"问题归属的 {search_filter['problemParty']} 的值不存在!")
             condition_dict["belong>="] = problem_party_encoded * 1000
             condition_dict["belong<="] = (problem_party_encoded + 1) * 1000
         elif search_filter["problemAttribution"] != "":
@@ -139,57 +137,59 @@ def translate_search_filter(search_filter):
                 # 查出多个问题归属，进行遍历使用 or 进行拼接
                 # 生成一串的or的拼接，因为是一串的 or 语句，要给前后加上 ( 和 )。
                 # 效果为 ... and ( belong=xxx and 0=0 or belong = xxx and 1=1 or belong = xxx and 1=1) ... and
-                condition_dict["belong="] = problem_attribution_encoded[0]
+                condition_dict["(belong="] = problem_attribution_encoded[0]
                 for i in range(1, len(problem_attribution_encoded)):
                     condition_dict[f"{i}={i} OR belong="] = problem_attribution_encoded[i]
+                condition_dict["1"] = "1)"
             else:
-                raise Exception("没有该问题归属!")
+                raise MyInvalidInputException(status=400, msg=f"问题归属的 {search_filter['problemAttribution']} 的值不存在!")
 
         # 对问题分类的查询进行编码
-        if search_filter["errorType"] != "":
-            # 先当成正常层级输入的问题分类，如 收缴管理 或者 收缴管理-直缴缴款书 或者 收缴管理-直缴缴款书-需求不满足。
-            error_type_encoded = str(data_dict_service.encode_data_item(f"{search_filter['errorType']}", constant.data_dict_code_map["error_type"]))
-            if error_type_encoded != "None":
-                if len(error_type_encoded) == 3:
-                    condition_dict["errortype>="] = int(error_type_encoded) * 1000
-                    condition_dict["errortype<="] = (int(error_type_encoded) + 1) * 1000
-                elif len(error_type_encoded) == 6:
-                    condition_dict["errortype="] = int(error_type_encoded)
-                elif len(error_type_encoded) == 10:
-                    condition_dict["errortype="] = int(error_type_encoded[0:-4])
-                    condition_dict["errortypefactor="] = int("1" + error_type_encoded[-4:])
-                else:
-                    raise Exception("没有此问题分类，请再次查询")
+        if search_filter["errorType"] != "" and search_filter["errorTypeDetail"]!="":
+            # 如果两项都有，说明是完整的一个问题分类，直接进行encode
+            error_service_encoded = data_dict_service.encode_data_item(f"{search_filter['errorType']}-{search_filter['errorTypeDetail']}",
+                                                                           constant.data_dict_code_map["error_type"])
+            if error_service_encoded is None: raise MyInvalidInputException(status=400, msg=f"问题分类的 {search_filter['errorType']}-{search_filter['errorTypeDetail']} 的值不存在!")
+            condition_dict["errortype="] = error_service_encoded
+        elif search_filter["errorType"] != "":
+            # 如果只有出错服务，那么需要查询出服务的编号然后进行一个范围的查询
+            error_service_encoded = data_dict_service.encode_data_item(f"{search_filter['errorType']}", constant.data_dict_code_map["error_type"])
+            if error_service_encoded is None: raise MyInvalidInputException(status=400, msg=f"问题分类的 {search_filter['errorType']} 的值不存在!")
+            condition_dict["errorType>="] = error_service_encoded * 1000
+            condition_dict["errorType<="] = (error_service_encoded + 1) * 1000
+        elif search_filter["errorTypeDetail"] != "":
+            # 如果只有出错服务，搜索出所有包含该出错服务的问题分类，以or的方式进行查询
+            error_service_encoded = data_dict_service.encode_single_item(f"{search_filter['errorTypeDetail']}",
+                                                                               constant.data_dict_code_map["error_type"])
+            if isinstance(error_service_encoded, int):
+                # 查出唯一值，那么就是定位到了这个问题分类
+                condition_dict["errorType="] = error_service_encoded
+            elif isinstance(error_service_encoded, list):
+                # 查出多个问题分类，进行遍历使用 or 进行拼接
+                # 生成一串的or的拼接，因为是一串的 or 语句，要给前后加上 ( 和 )。
+                # 效果为 ... and ( belong=xxx and 0=0 or belong = xxx and 1=1 or belong = xxx and 1=1) ... and
+                condition_dict["(errorType="] = error_service_encoded[0]
+                for i in range(1, len(error_service_encoded)):
+                    condition_dict[f"{i}={i} OR errorType="] = error_service_encoded[i]
+                condition_dict["1"] = "1)"
             else:
-                # 说明不是正常层级输入的问题分类，有可能输入的直缴缴款书，或者程序bug这样的单独一个项，或者是不在问题分类项中的乱码
-                error_type_list = search_filter['errorType'].split("-")
-                if len(error_type_list == 1):
-                    # 只有单项，进行单项查询
-                    error_type_encoded = data_dict_service.encode_single_item(f"{error_type_list[0]}", constant.data_dict_code_map["error_type"])
-                    if isinstance(error_type_encoded, int):
-                        error_type_encoded = str(error_type_encoded)
-                        # 定位到唯一值
-                        if len(error_type_encoded) == 3:
-                            condition_dict["errortype>="] = int(error_type_encoded) * 1000
-                            condition_dict["errortype<="] = (int(error_type_encoded) + 1) * 1000
-                        elif len(error_type_encoded) == 6:
-                            condition_dict["errortype="] = int(error_type_encoded)
-                        elif len(error_type_encoded) == 10:
-                            condition_dict["errortype="] = int(error_type_encoded[0:-4])
-                            condition_dict["errortypefactor="] = int("1" + error_type_encoded[-4:])
-                        else:
-                            raise Exception("没有此问题分类，请再次查询")
-                    elif isinstance(error_type_encoded, list):
-                        # 生成一串的or的拼接，因为是一串的 or 语句，要给前后加上 ( 和 )。
-                        # 效果为 ... and ( belong=xxx and 0=0 or belong = xxx and 1=1 or belong = xxx and 1=1) ... and
-                        condition_dict["(errortype="] = error_type_encoded[0]
-                        for i in range(1, len(error_type_encoded)):
-                            condition_dict[f"{i}={i} OR errortype="] = error_type_encoded[i]
-                        condition_dict["1=1"] = ")"
-                    else:
-                        raise Exception("没有该问题归属!")
-                elif len(error_type_list == 2):
-                    print()
-                else:
-                    raise Exception("没有此问题分类，请检查输入")
+                raise MyInvalidInputException(status=400, msg=f"问题分类的 {search_filter['errorTypeDetail']} 的值不存在!")
+        if search_filter["errorFactor"] != "":
+            error_factor_encoded = data_dict_service.encode_single_item( search_filter["errorFactor"], constant.data_dict_code_map["error_type_factor"])
+
+            if isinstance(error_factor_encoded, int):
+                # 查出唯一值，那么就是定位到了这个问题分类
+                condition_dict["errortypefactor="] = error_factor_encoded
+            elif isinstance(error_factor_encoded, list):
+                # 查出多个问题分类，进行遍历使用 or 进行拼接
+                # 生成一串的or的拼接，因为是一串的 or 语句，要给前后加上 ( 和 )。
+                # 效果为 ... and ( errortypefactor=xxx and 0=0 or errortypefactor = xxx and 1=1 or errortypefactor = xxx and 1=1) ... and
+                condition_dict["(errortypefactor="] = error_factor_encoded[0]
+                for i in range(1, len(error_factor_encoded)):
+                    condition_dict[f"{i}={i} OR errortypefactor="] = error_factor_encoded[i]
+                condition_dict["1"] = "1)"
+            else:
+                raise MyInvalidInputException(status=400, msg=f"问题分类的 {search_filter['errorFactor']} 的值不存在!")
+    else:
+        if search_filter["errorTypeOld"] != "": condition_dict["errortype="] = search_filter["errorTypeOld"]
     return condition_dict

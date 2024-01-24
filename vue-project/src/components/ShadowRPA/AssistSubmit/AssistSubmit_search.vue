@@ -1,15 +1,19 @@
 <template>
   <div>
-    <el-form :model="searchForm" class="searchForm" label-width="80px">
+    <el-form :model="searchForm" class="searchForm" label-width="100px">
+
       <el-row>
         <el-col :span="6">
-          <el-form-item label="问题分类">
-            <el-input v-model="searchForm.errorType" :clearable="true" placeholder="请输入问题分类"></el-input>
-          </el-form-item>
           <!-- 出错功能 errorfunction -->
           <el-form-item label="出错功能">
             <el-select v-model="searchForm.errorFunction" :clearable="true" placeholder="请选择">
               <el-option v-for="(item, index) in errorFunctionOptions" :key="index" :label="item" :value="item">
+              </el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="问题分类(旧)">
+            <el-select v-model="searchForm.errorTypeOld" :clearable="true" placeholder="请选择">
+              <el-option v-for="(item, index) in this.errorTypeOldOptions" :key="index" :label="item" :value="item">
               </el-option>
             </el-select>
           </el-form-item>
@@ -19,9 +23,8 @@
             <el-select v-model="searchForm.isSolved" :clearable="true" placeholder="请选择">
               <el-option v-for="(item, index) in isSolvedList" :key="index" :label="item" :value="item">
               </el-option>
-            </el-select>
+            </el-select>      
           </el-form-item>
-          <!-- 问题描述 softversion -->
           <el-form-item label="程序版本">
             <el-input v-model="searchForm.softVersion" placeholder="请输入版本号"></el-input>
           </el-form-item>
@@ -37,15 +40,35 @@
 
       <el-row>
         <el-form-item label="问题归属">
-          <el-select v-model="searchForm.problemParty" :clearable="true" placeholder="请选择" style="width: 140px;" @change="problemPartyChange">
-            <el-option v-for="(item, index) in this.problemPartyOptions" :key="index" :label="item" :value="item">
-            </el-option>
-          </el-select>
-          <el-select v-model="searchForm.problemAttribution" :clearable="true" filterable placeholder="请选择" style="width: 200px;">
-            <el-option v-for="(item, index) in this.problemAttributionOptions" :key="index" :label="item" :value="item">
-            </el-option>
-          </el-select>
-        </el-form-item>
+            <el-select v-model="searchForm.problemParty" :clearable="true" placeholder="请选择" style="width: 140px;"
+              @change="problemPartyChange">
+              <el-option v-for="(item, index) in this.problemPartyOptions" :key="index" :label="item" :value="item">
+              </el-option>
+            </el-select>
+            <el-select v-model="searchForm.problemAttribution" :clearable="true" filterable placeholder="请选择"
+              style="width: 200px;">
+              <el-option v-for="(item, index) in this.problemAttributionOptions" :key="index" :label="item" :value="item">
+              </el-option>
+            </el-select>
+          </el-form-item>
+        <el-form-item label="问题分类">
+            <el-select v-model="searchForm.errorType" :clearable="true" filterable placeholder="请选择" style="width: 140px;"
+              @change="errorTypeChange">
+              <el-option v-for="(item, index) in this.errorTypeOptions" :key="index" :label="item" :value="item">
+              </el-option>
+            </el-select>
+            <el-select v-model="searchForm.errorTypeDetail" :clearable="true" filterable placeholder="请选择"
+              style="width: 200px;">
+              <el-option v-for="(item, index) in this.errorTypeDetailOptions" :key="index" :label="item" :value="item">
+              </el-option>
+            </el-select>
+            <el-select v-model="searchForm.errorFactor" :clearable="true" filterable placeholder="请选择"
+              style="width: 200px;">
+              <el-option v-for="(item, index) in this.errorFactorOptions" :key="index" :label="item" :value="item">
+              </el-option>
+            </el-select>
+          </el-form-item>
+
       </el-row>
 
       <el-row>
@@ -77,6 +100,18 @@ export default {
       default() {
         return {};
       },
+    },
+    errorTypeOptionsDict: {
+      type: Object,
+      default() {
+        return {};
+      },
+    },
+    errorFactorOptions: {
+      type: Array,
+      default() {
+        return [];
+      },
     }
   },
   data() {
@@ -86,18 +121,23 @@ export default {
         endData: '', //结束日期
         softVersion: '', // 程序版本号初始值
         errorFunction: '', //出错功能初始值
-        errorType: '', // 问题分类初始值
+        errorTypeOld: '', // 问题分类旧初始值
         isSolved: '', // 是否解决初始值
         problemDescription: "", // 问题描述初始值
-        problemParty: "",
-        problemAttribution: ""
+        problemParty: "", // 问题涉及方初始值
+        problemAttribution: "", // 问题归属初始值
+        errorType: '', // 问题分类初始值
+        errorTypeDetail: '', // 问题分类明细初始值
+        errorFactor: '', // 问题因素初始值
       },
       // 默认为最近一周的
       dateRange: [new Date(new Date().setDate(new Date().getDate() - 7)), new Date()],
-      errorTypeList: ["产品BUG", "实施配置", "异常数据处理", "需求", "需求未覆盖", "重大生产事故", "安全漏洞", "his传参错误"],
+      errorTypeOldOptions: ["产品BUG", "实施配置", "异常数据处理", "需求", "需求未覆盖", "重大生产事故", "安全漏洞", "his传参错误"],
       isSolvedList: ["是", "否"],
       problemPartyOptions: [],
       problemAttributionOptions: [],
+      errorTypeOptions: [],
+      errorTypeDetailOptions: [],
     };
   },
   watch: {
@@ -106,17 +146,32 @@ export default {
         this.problemPartyOptions = Object.keys(newVal)
         this.problemPartyChange()
       }
+    },
+    errorTypeOptionsDict: {
+      handler(newVal, oldVal) {
+        this.errorTypeOptions = Object.keys(newVal)
+        this.errorTypeChange()
+      }
     }
   },
   methods: {
 
     /**
-     * 选择问题分类的出错方，同步出错方对应的问题分类的具体属性
+     * 选择问题归属的出错方，同步出错方对应的问题分类的具体属性
      * @param {*} value 
      */
     problemPartyChange(value) {
       this.searchForm.problemAttribution = ''
       this.problemAttributionOptions = this.problemAttributionOptionsDict[this.searchForm.problemParty]
+    },
+
+    /**
+     * 选择问题分类的出错服务，同步出错服务对应的详细出错接口/功能的选择。
+     * @param {*} value 
+     */
+    errorTypeChange(value) {
+      this.searchForm.errorTypeDetail = ''
+      this.errorTypeDetailOptions = this.errorTypeOptionsDict[this.searchForm.errorType]
     },
 
     /**

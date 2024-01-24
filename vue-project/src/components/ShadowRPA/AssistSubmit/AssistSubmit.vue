@@ -1,6 +1,7 @@
 <template>
   <div class="component-wrapper">
     <search v-on:search="onSearch" :errorFunctionOptions="this.errorFunctionOptions"
+      :errorTypeOptionsDict="this.errorTypeOptionsDict" :errorFactorOptions="this.errorFactorOptions"
       :problemAttributionOptionsDict="this.problemAttributionOptionsDict" ref="searchFilter">
     </search>
 
@@ -108,6 +109,8 @@ export default {
           this.productTypeOptions = response.data.productTypeOptions;
           this.errorFunctionOptions = response.data.errorFunctionOptions;
           this.problemAttributionOptionsDict = response.data.problemAttributionOptions;
+          this.errorTypeOptionsDict = response.data.errorTypeOptions;
+          this.errorFactorOptions = response.data.errorFactorOptions;
         } else {
           console.log(response.data.message)
           this.$message.error(response.data.message)
@@ -135,7 +138,7 @@ export default {
         '&pageSize=' +
         this.currentPageSize
       ).then((response) => {
-        if (response.data.status === 200) {
+        if (response.status === 200) {
           // 更新表格数据和total的amount
           this.workRecordTableData = response.data.data;
           this.workRecordTotalAmount = (response.data.amount === -1) ? this.workRecordTotalAmount : response.data.amount;
@@ -175,7 +178,7 @@ export default {
           '/api/CMC/workrecords/work_record',
           form
         ).then(response => {
-          if (response.data.status == 200) {
+          if (response.status == 200) {
             this.showRecordDetail = false
             this.$message({
               message: '添加成功',
@@ -199,7 +202,7 @@ export default {
           '/api/CMC/workrecords/work_record_update',
           form
         ).then(response => {
-          if (response.data.status === 200) {
+          if (response.status === 200) {
             this.showRecordDetail = false
             this.$message.success(response.data.message)
             this.workRecordTableData[this.currentRow] = form
@@ -229,8 +232,8 @@ export default {
           '/api/CMC/workrecords/work_record_delete',
           recordInfoData
         ).then(response => {
-          if (response.data.status === 200) {
-            this.$message.success('删除成功')
+          if (response.status === 200) {
+            this.$message.success(response.data.message)
             // 将total数量减一，并且进行一次查询更新展示的数据
             this.workRecordTotalAmount -= 1;
             this.$refs.searchFilter.search(false);
