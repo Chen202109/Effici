@@ -193,3 +193,34 @@ def translate_search_filter(search_filter):
     else:
         if search_filter["errorTypeOld"] != "": condition_dict["errortype="] = search_filter["errorTypeOld"]
     return condition_dict
+
+
+
+def get_work_record_single_column_summary(begin_date, end_date, col_name, db=None, conditions=None, x_alias="x", y_alias="y"):
+    db = get_db(db)
+    table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
+    condition_dict = {
+        "createtime>=": begin_date,
+        "createtime<=": end_date,
+    }
+    if conditions is not None: condition_dict.update(conditions)
+    saas_version_data = db.select([f"{col_name} as {x_alias}", f"count(*) as {y_alias}"], table_name, condition_dict, f" group by {x_alias} ")
+    return saas_version_data
+
+def get_work_record_distinct_version(begin_date, end_date, db=None, conditions=None, x_alias="x"):
+    db = get_db(db)
+    table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
+    condition_dict = {
+        "createtime>=": begin_date,
+        "createtime<=": end_date,
+    }
+    if conditions is not None: condition_dict.update(conditions)
+    saas_version_data = db.select(["DISTINCT softversion as x"], table_name, condition_dict, " ORDER BY softversion ")
+    return saas_version_data
+
+
+
+def get_db(db):
+    if db is None:
+        db = mysql_base.Db()
+    return db

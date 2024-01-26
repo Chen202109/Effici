@@ -3,7 +3,7 @@ from django.urls import path
 from workrecords.controller import views
 from workrecords.controller import submit_workrecords
 from workrecords.controller import workrecords_report
-from workrecords.controller import workrecord_summary
+from workrecords.controller import workrecord_summary, upgrade_record_summary
 
 urlpatterns = [
 
@@ -20,9 +20,9 @@ urlpatterns = [
     path('analysis_saas_problem_type_detail_in_versions_new',workrecords_report.analysis_saas_problem_type_detail_in_versions_new),
     path('analysis_saas_problem_type_in_function_version_view_new',workrecords_report.analysis_saas_problem_type_in_function_version_view_new),
 
-    path('analysis_saas_upgrade_problem_type',views.analysis_saas_upgrade_problem_type),
-    path('analysis_service_upgrade_trend',views.analysis_service_upgrade_trend),
-    path('analysis_version_problem_by_resource_pool',views.analysis_version_problem_by_resource_pool),
+    path('analysis_saas_upgrade_problem_type',upgrade_record_summary.analysis_saas_upgrade_problem_type),
+    path('analysis_service_upgrade_trend',upgrade_record_summary.analysis_service_upgrade_trend),
+    path('analysis_version_problem_by_resource_pool',upgrade_record_summary.analysis_version_problem_by_resource_pool),
 
     path('analysis_saas_large_problem_province_list',views.analysis_saas_large_problem_province_list),
     path('analysis_saas_large_problem_by_function_and_province',views.analysis_saas_large_problem_by_function_and_province),

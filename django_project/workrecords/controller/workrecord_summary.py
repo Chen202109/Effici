@@ -2,7 +2,6 @@ from workrecords.services import work_record_summary_service
 from workrecords.exception.service.EfficiServiceException import EfficiServiceException
 from django.http import JsonResponse
 from workrecords.config import constant
-from datetime import datetime,timedelta # 用于传入的字符串转换成日期 datetime.strptime
 from mydata import mysql_base
 import pandas as pd
 

@@ -1,10 +1,11 @@
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 from mydata import mysql_base
-from collections import Counter
 from workrecords.config import constant
 import pandas as pd
 
 from workrecords.services.data_dict_service import decode_data_item
+from workrecords.services.work_record_service import get_work_record_single_column_summary
+
 
 def get_work_record_month_summary(begin_date, end_date):
     """
@@ -37,14 +38,14 @@ def get_work_record_month_summary(begin_date, end_date):
         curr_month = saas_month_data[i]['Month']
         month_amount += saas_month_data[i]['ProblemAmount']
         month_function_list.append({"function": saas_month_data[i]['errorfunction'], 'amount': saas_month_data[i]['ProblemAmount']})
-    if len(month_function_list)!= 0:
+    if len(month_function_list) != 0:
         # 已经到查询的月份的末尾了跳出了，但是最后一个月份的数据还未进行sort和加入seriesData之中，进行添加
         month_function_list.sort(key=lambda x: x['amount'], reverse=True)
         series_data.append({'x': str(curr_month) + '月', 'y': month_amount, 'functionType': month_function_list[0:5]})
     return series_data
 
-def get_work_record_version_function_summary(begin_date, end_date, province, function_list ):
 
+def get_work_record_version_function_summary(begin_date, end_date, province, function_list):
     data = []
 
     db = mysql_base.Db()
@@ -53,18 +54,19 @@ def get_work_record_version_function_summary(begin_date, end_date, province, fun
         "createtime>=": begin_date,
         "createtime<=": end_date
     }
-    if province!='全国' : condition_dict["region="] = province
+    if province != '全国': condition_dict["region="] = province
     saas_version_data = db.select(["DISTINCT softversion as x"], table_name, condition_dict, " ORDER BY softversion ")
 
     for function_item in function_list:
         condition_dict["errorfunction="] = function_item
-        saas_function_data = db.select(["softversion as x","COUNT(*) as y"], table_name, condition_dict, " GROUP BY softversion ")
-        saas_version_data = [{'x': entry['x'], 'y': next((value['y'] for value in saas_function_data if value['x'] == entry['x']), 0)} for entry in saas_version_data]
+        saas_function_data = db.select(["softversion as x", "COUNT(*) as y"], table_name, condition_dict, " GROUP BY softversion ")
+        saas_version_data = [{'x': entry['x'], 'y': next((value['y'] for value in saas_function_data if value['x'] == entry['x']), 0)} for entry in
+                             saas_version_data]
         data.append({'seriesName': function_item, 'seriesData': saas_version_data})
     return data
 
-def get_work_record_province_function_summary(begin_date, end_date, function_list):
 
+def get_work_record_province_function_summary(begin_date, end_date, function_list):
     data = []
     db = mysql_base.Db()
     table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
@@ -73,13 +75,13 @@ def get_work_record_province_function_summary(begin_date, end_date, function_lis
         "createtime<=": end_date
     }
     region_list = db.select(["DISTINCT region as x"], table_name, condition_dict, "")
-    saas_province_data = [{'x': d["x"], 'y': 0} for d in region_list if "x" in d]
 
     # 对每个功能进行查找
     for function_item in function_list:
         condition_dict["errorfunction="] = function_item
-        saas_function_data = db.select(["*"], table_name, condition_dict, " ")
-        saas_province_data = [{'x': entry['x'], 'y': Counter(item['region'] for item in saas_function_data)[entry['x']]} for entry in saas_province_data]
+        saas_function_data = db.select(["region as x", "count(*) as y"], table_name, condition_dict, " group by x")
+        saas_province_data = [{'x': entry['x'], 'y': next((value['y'] for value in saas_function_data if value['x'] == entry['x']), 0)} for entry in
+                              region_list]
         data.append({'seriesName': function_item, 'seriesData': saas_province_data})
 
     # 对省份按受理数量进行排序
@@ -109,6 +111,7 @@ def get_work_record_province_function_summary(begin_date, end_date, function_lis
 
     return data
 
+
 def get_work_record_product_type_summary(begin_date, end_date, province="全国", db=None):
     db = get_db(db)
     table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
@@ -120,14 +123,15 @@ def get_work_record_product_type_summary(begin_date, end_date, province="全国"
     saas_agency_type_data = db.select(["agentype as name", "count(*) as value"], table_name, condition_dict, " group by agentype ")
     return [{'seriesName': province + "受理行业种类", 'seriesData': saas_agency_type_data}]
 
+
 def get_summary_item_amount(begin_date, end_date, province="全国", db=None):
     db = get_db(db)
     real_date_begin = datetime.strptime(begin_date, '%Y-%m-%d')
     real_date_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
-    province_condition_sql = "" if province=="全国" else f' AND region = "{province}" '
+    province_condition_sql = "" if province == "全国" else f' AND region = "{province}" '
 
     work_record_table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
-    
+
     # 对合计的数据进行统计添加
     sql = f'SELECT "受理问题合计" as name, count(*) as value from {work_record_table_name} WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} ' \
           f'UNION ALL ' \
@@ -154,6 +158,7 @@ def get_summary_item_amount(begin_date, end_date, province="全国", db=None):
             begin_time_year += 1
             continue
         if begin_time_year == end_time_year:
+            # 找到相同年份了，那么就持续相加直到月份相同为止
             while True:
                 agency_amount += int(dataframe.loc[province, str(begin_time_month) + '月'])
                 if begin_time_month == end_time_month:
@@ -161,6 +166,7 @@ def get_summary_item_amount(begin_date, end_date, province="全国", db=None):
                 begin_time_month += 1
             break
         else:
+            # 还没到相同年份， 将这一年到年末的数据相加
             while begin_time_month <= 12:
                 agency_amount += int(dataframe.loc[province, str(begin_time_month) + '月'])
                 begin_time_month += 1
@@ -174,6 +180,7 @@ def get_summary_item_amount(begin_date, end_date, province="全国", db=None):
 
     return saas_country_summary_table
 
+
 def get_work_record_error_function_summary(begin_date, end_date, province="全国", db=None):
     db = get_db(db)
     table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
@@ -185,6 +192,7 @@ def get_work_record_error_function_summary(begin_date, end_date, province="全�
     saas_function_type_data = db.select(["errorfunction as x", "count(*) as y"], table_name, condition_dict, " group by errorfunction ")
     return saas_function_type_data
 
+
 def get_work_record_problem_type_summary(begin_date, end_date, province="全国", db=None):
     db = get_db(db)
     table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
@@ -193,7 +201,7 @@ def get_work_record_problem_type_summary(begin_date, end_date, province="全国"
         "createtime<=": end_date
     }
     if province != '全国': condition_dict["region="] = province
-    if begin_date< "2024-01-01":
+    if begin_date < "2024-01-01":
         saas_problem_type_data = db.select(["errorType as x", "count(*) as y"], table_name, condition_dict, " group by x ")
     else:
         # 因为2024年的模板中，产品bug,异常因素等被归为问题错误因素，是存在errortypefactor中的前三位数字来标识的
@@ -203,6 +211,7 @@ def get_work_record_problem_type_summary(begin_date, end_date, province="全国"
             item["x"] = decode_data_item(int(item["x"]), constant.data_dict_code_map["error_type_factor"])
     return saas_problem_type_data
 
+
 def get_work_record_version_summary(begin_date, end_date, province="全国", db=None):
     db = get_db(db)
     table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
@@ -211,7 +220,8 @@ def get_work_record_version_summary(begin_date, end_date, province="全国", db=
         "createtime<=": end_date
     }
     if province != '全国': condition_dict["region="] = province
-    saas_soft_version_data = db.select(["softversion as x", "errorfunction", "count(*) as y"], table_name, condition_dict, " group by softversion, errorfunction ")
+    saas_soft_version_data = db.select(["softversion as x", "errorfunction", "count(*) as y"], table_name, condition_dict,
+                                       " group by softversion, errorfunction ")
 
     # 因为前端想要tooltip展示每个版本号出错功能的前三，所以在这里进行每个版本出错功能的排序
     series_data = []
@@ -239,6 +249,7 @@ def get_work_record_version_summary(begin_date, end_date, province="全国", db=
             series_data.append({'x': curr_version, 'y': version_amount, 'functionType': version_function_list[0:3]})
     return series_data
 
+
 def get_work_record_province_summary(begin_date, end_date, db=None, region_alias="x", value_alias="y"):
     db = get_db(db)
     table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
@@ -246,8 +257,10 @@ def get_work_record_province_summary(begin_date, end_date, db=None, region_alias
         "createtime>=": begin_date,
         "createtime<=": end_date
     }
-    saas_province_problem_data = db.select([f"region as {region_alias}", f"count(*) as {value_alias}"], table_name, condition_dict," group by region ")
+    saas_province_problem_data = db.select([f"region as {region_alias}", f"count(*) as {value_alias}"], table_name, condition_dict,
+                                           " group by region ")
     return saas_province_problem_data
+
 
 def get_work_record_country_map_summary(saas_province_problem_data, saas_province_agency_account_data):
     # 生成关于全国省份的数据, 这里因为saas_province_problem_data和saas_province_agency_account_data查询的地区的顺序不一致，
@@ -266,11 +279,38 @@ def get_work_record_country_map_summary(saas_province_problem_data, saas_provinc
     data.append({"valueMax": value_max})
     return data
 
+
+def get_work_record_resource_pool_error_function_summary(begin_date, end_date, resource_pool, function_names, version_list, db=None):
+    db = get_db(db)
+    # 生成对受理问题查询时候省份条件的语句
+    province_list = constant.source_pool_province_map[resource_pool]
+    resource_pool_condition = '('
+    for i in province_list:
+        resource_pool_condition += f'region = "{i}" or '
+    resource_pool_condition = resource_pool_condition[:-3] + ")"
+
+    data = []
+
+    # 对每个功能的受理问题进行统计
+    for function_name in function_names:
+        condition_dict = {
+            "errorfunction=": function_name,
+            "environment=": "公有云",
+            "softversion!=": "V3",
+            f"{resource_pool_condition} and 1=": "1"
+        }
+        saas_function_data = get_work_record_single_column_summary(begin_date, end_date, "softversion", conditions=condition_dict, db=db)
+        series_data = [{'x': entry['x'], 'y': next((value['y'] for value in saas_function_data if value['x'] == entry['x']), 0)} for entry in version_list]
+        data.append({'seriesName': function_name, 'seriesData': series_data})
+
+    return data
+
+
 def get_work_record_province_agency_summary():
     print()
 
 
-
+# 暂时放放在这个service
 
 def get_large_problem_province_summary(begin_date, end_date, db=None):
     db = get_db(db)
@@ -283,6 +323,7 @@ def get_large_problem_province_summary(begin_date, end_date, db=None):
     saas_large_problem_province_data = db.select(["region as x", "count(*) as y"], table_name, condition_dict, " group by region ")
     return saas_large_problem_province_data
 
+
 def get_large_problem_type_summary(begin_date, end_date, province="全国", db=None):
     db = get_db(db)
     table_name = "majorrecords"
@@ -294,6 +335,7 @@ def get_large_problem_type_summary(begin_date, end_date, province="全国", db=N
     if province != '全国': condition_dict["region="] = province
     saas_large_problem_type_data = db.select(["errorType as x", "count(*) as y"], table_name, condition_dict, " group by errorType ")
     return saas_large_problem_type_data
+
 
 def get_monitor_problem_type_summary(begin_date, end_date, province="全国", db=None):
     db = get_db(db)

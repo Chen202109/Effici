@@ -38,28 +38,23 @@
 
     <div style="margin: 5px 20px 5px 0;">
       <div class="dailyUpgradeTable">
-          <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4日常升级次数统计</p>
-          <el-table :data="this.saasUpgradeProblemTypeTableData[0]['seriesData']"
-            :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
-            :row-style="{ height: '35px' }" 
-            :cell-style="upgradeTableCellStyle" 
-            border
-            style="width: 100%">
-            <el-table-column v-for="(value, key) in this.saasUpgradeProblemTypeTableData[0]['seriesData'][0]" :key="key" :prop="key" :label="key"
-              :width="columnWidth(key)" align="center">
-            </el-table-column>
-          </el-table>
+        <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4日常升级次数统计</p>
+        <el-table :data="this.saasUpgradeProblemTypeTableData[0]['seriesData']"
+          :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
+          :row-style="{ height: '35px' }" :cell-style="upgradeTableCellStyle" border style="width: 100%">
+          <el-table-column v-for="(value, key) in this.saasUpgradeProblemTypeTableData[0]['seriesData'][0]" :key="key"
+            :prop="key" :label="key" :width="columnWidth(key)" align="center">
+          </el-table-column>
+        </el-table>
       </div>
       <div class="addedUpgradeTable">
-        <p class="saasAnalysisTitle" style="margin: 10px 0;"> {{ this.saasUpgradeProblemTypeTableData[1]["seriesName"] }}</p>
+        <p class="saasAnalysisTitle" style="margin: 10px 0;"> {{ this.saasUpgradeProblemTypeTableData[1]["seriesName"] }}
+        </p>
         <el-table :data="this.saasUpgradeProblemTypeTableData[1]['seriesData']"
           :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
-          :row-style="{ height: '35px' }" 
-          :cell-style="upgradeTableCellStyle" 
-          border
-          style="width: 100%">
-          <el-table-column v-for="(value, key) in this.saasUpgradeProblemTypeTableData[1]['seriesData'][0]" :key="key" :prop="key" :label="key"
-            :width="columnWidth(key)" align="center">
+          :row-style="{ height: '35px' }" :cell-style="upgradeTableCellStyle" border style="width: 100%">
+          <el-table-column v-for="(value, key) in this.saasUpgradeProblemTypeTableData[1]['seriesData'][0]" :key="key"
+            :prop="key" :label="key" :width="columnWidth(key)" align="center">
           </el-table-column>
         </el-table>
       </div>
@@ -67,9 +62,10 @@
 
     <div style="height: 20px;"></div>
 
-    <div class="saasUpgradeTrendChart" id="saasUpgradeTrendChart" :style="{ width: getPageWidth+ 'px', height: '400px' }">
+    <div class="saasUpgradeTrendChart" id="saasUpgradeTrendChart" :style="{ width: getPageWidth + 'px', height: '400px' }">
     </div>
-    <div class="saasVersionTrendByResourcePoolChart" id="saasVersionTrendByResourcePoolChart" :style="{ width: getPageWidth+ 'px', height: '400px' }">
+    <div class="saasVersionTrendByResourcePoolChart" id="saasVersionTrendByResourcePoolChart"
+      :style="{ width: getPageWidth + 'px', height: '400px' }">
     </div>
 
   </div>
@@ -106,7 +102,7 @@ export default {
       dateRange: [new Date(new Date().getFullYear() + '-01-01'), new Date()],
 
       // 公有云saas_v4日常和增值升级统计，第一个元素是日常的表格的数据，第二个元素是增值表格的数据
-      saasUpgradeProblemTypeTableData: [ {'seriesName': "", 'seriesData': []}, {'seriesName': "", 'seriesData': []} ],
+      saasUpgradeProblemTypeTableData: [{ 'seriesName': "", 'seriesData': [] }, { 'seriesName': "", 'seriesData': [] }],
       // 这个页面各类图的数据
       saasUpgradeLineChartData: [],
       saasVersionByResoucePoolBarChartData: [],
@@ -142,8 +138,8 @@ export default {
     /**
      * 计算el-table列的宽度
      */
-     columnWidth(key, tableName) {
-      key= key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
+    columnWidth(key, tableName) {
+      key = key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
       let widthDict = {
         2: 57,
         3: 70,
@@ -153,7 +149,7 @@ export default {
         10: 130,
       }
       let width
-      if (key.length in widthDict){
+      if (key.length in widthDict) {
         width = widthDict[key.length]
       }
       return width
@@ -316,13 +312,13 @@ export default {
         var year = this.dateRange[i].getFullYear()
         var month = ('0' + (this.dateRange[i].getMonth() + 1)).slice(-2)
         var day = ('0' + this.dateRange[i].getDate()).slice(-2)
-        searchValue[(i==0)?"beginData":"endData"] = year + "-" + month + "-" + day;
+        searchValue[(i == 0) ? "beginData" : "endData"] = year + "-" + month + "-" + day;
       } //结束for，完成日期的拼接
-      
+
       this.searchSaasUpgradeProblemTypeTable(searchValue)
       this.searchSaaSServiceUpgradeTrend(searchValue)
       this.searchSaaSVersionUpgradeTrendByResoucePool(searchValue)
-      
+
     },
 
     /**
@@ -330,20 +326,23 @@ export default {
      * @description 查询更新升级和所属问题分类的数据信息的后端数据请求
      */
     async searchSaasUpgradeProblemTypeTable(searchValue) {
-      try {
-        const response = await this.$http.get(
-          '/api/CMC/workrecords/analysis_saas_upgrade_problem_type?beginData=' +
-          searchValue['beginData'] +
-          '&endData=' +
-          searchValue['endData']
-        )
-        this.saasUpgradeProblemTypeTableData = response.data.data
-        console.log('update local saasUpgradeProblemTypeTableData data: ', response.data.data)
-      } catch (error) {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
-      }
+      this.$http.get(
+        '/api/CMC/workrecords/analysis_saas_upgrade_problem_type?beginData=' +
+        searchValue['beginData'] +
+        '&endData=' +
+        searchValue['endData']
+      ).then(response => {
+        if (response.status === 200) {
+          this.saasUpgradeProblemTypeTableData = response.data.data
+          console.log('update local saasUpgradeProblemTypeTableData data: ', response.data.data)
+        } else {
+          console.log(response.data.message)
+          this.$message.error(response.data.message)
+        }
+      }).catch((error) => {
+        console.log(error.response.data.message)
+        this.$message.error(error.response.data.message)
+      })
     },
 
     /**
@@ -351,8 +350,7 @@ export default {
      * @description 对升级趋势折线图的后端数据请求
      */
     async searchSaaSServiceUpgradeTrend(searchValue) {
-      try {
-        const response = await this.$http.get(
+      this.$http.get(
           '/api/CMC/workrecords/analysis_service_upgrade_trend?beginData=' +
           searchValue['beginData'] +
           '&endData=' +
@@ -361,24 +359,27 @@ export default {
           searchValue['resourcePool'] +
           '&function_name=' +
           searchValue['function_name']
-        )
-        this.saasUpgradeLineChartData = response.data.data
-        this.updateSaaSUpgradeTrendLineChart()
-        console.log('update local linechart data: ', this.saasUpgradeLineChartData)
-      } catch (error) {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
-      }
+        ).then(response => {
+        if (response.status === 200) {
+          this.saasUpgradeLineChartData = response.data.data
+          this.updateSaaSUpgradeTrendLineChart()
+          console.log('update local linechart data: ', this.saasUpgradeLineChartData)
+        } else {
+          console.log(response.data.message)
+          this.$message.error(response.data.message)
+        }
+      }).catch((error) => {
+        console.log(error.response.data.message)
+        this.$message.error(error.response.data.message)
+      })
     },
 
     /**
      * @param {searchValue} searchValue 搜索参数的字典
      * @description 对公有云指定资源池的版本和受理数量对比的查询
      */
-     async searchSaaSVersionUpgradeTrendByResoucePool(searchValue) {
-      try {
-        const response = await this.$http.get(
+    async searchSaaSVersionUpgradeTrendByResoucePool(searchValue) {
+      this.$http.get(
           '/api/CMC/workrecords/analysis_version_problem_by_resource_pool?beginData=' +
           searchValue['beginData'] +
           '&endData=' +
@@ -387,16 +388,19 @@ export default {
           searchValue['resourcePool'] +
           '&function_name=' +
           searchValue['function_name']
-        )
-        this.saasVersionByResoucePoolBarChartData = response.data.data
-        updateBarChartBasic(document, this.saasVersionByResoucePoolBarChartData, searchValue['resourcePool']+'SaaS版本受理及升级统计', "category", false, true, 'saasVersionTrendByResourcePoolChart')
-        console.log('update local month bar chart data: ', this.saasVersionByResoucePoolBarChartData)
-
-      } catch (error) {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
-      }
+        ).then(response => {
+        if (response.status === 200) {
+          this.saasVersionByResoucePoolBarChartData = response.data.data
+          updateBarChartBasic(document, this.saasVersionByResoucePoolBarChartData, searchValue['resourcePool'] + 'SaaS版本受理及升级统计', "category", false, true, 'saasVersionTrendByResourcePoolChart')
+          console.log('update local month bar chart data: ', this.saasVersionByResoucePoolBarChartData)
+        } else {
+          console.log(response.data.message)
+          this.$message.error(response.data.message)
+        }
+      }).catch((error) => {
+        console.log(error.response.data.message)
+        this.$message.error(error.response.data.message)
+      })
     },
   }
 }
@@ -431,5 +435,4 @@ export default {
 .el-icon-arrow-down {
   font-size: 12px;
 }
-
 </style>

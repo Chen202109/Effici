@@ -5,7 +5,16 @@
       <el-aside style="width: 220px">
 		    <!-- <el-menu :default-active="$route.path" class="el-menu-vertical-demo" router> -->
         <el-menu :default-active="$route.path" router class="el-menu-vertical-demo">
-          <el-submenu index="1">
+          <el-submenu index="2">
+            <template slot="title">
+              <i class="el-icon-location"></i>
+              <span>系统管理</span>
+            </template>
+            <el-menu-item-group>
+              <el-menu-item index="/saasDataDict">全国数据统计</el-menu-item>
+            </el-menu-item-group>
+          </el-submenu>
+          <el-submenu index="1" default-active="1">
             <template slot="title">
               <i class="el-icon-location"></i>
               <span>SaaS运营</span>
