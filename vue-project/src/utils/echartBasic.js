@@ -220,7 +220,7 @@ function addBarChartAxisData(barChartData, option, xAxisType, xAxisLabelNewLine,
 
     // 统计x轴所有标签的长度，用于判断是否需要x轴进行分行
     let labelTotalLength = 0
-    xAxisData.forEach((item) => { labelTotalLength += countLabelLength(item) })
+    xAxisData.forEach((item) => { labelTotalLength += countLabelLength(String(item)) })
     if (!xAxisLabelNewLine && labelTotalLength > 55) xAxisLabelNewLine = true
     // 看看是否要给x轴数据添加换行
     let xAxisNewLineData = (xAxisLabelNewLine) ? xAxisData.map((item, index) => (index % 2 === 0) ? item : '\n' + item) : xAxisData

@@ -33,7 +33,7 @@ def work_record(request):
             detail = work_record_service.get_work_record_detail(search_filter, curr_page, curr_page_size)
             amount = work_record_service.get_work_record_count(search_filter)
         except EfficiServiceException as e:
-            return JsonResponse(status=400, data={'message': str(e)}, json_dumps_params={'ensure_ascii': False})
+            return JsonResponse(status=e.status, data={'message': str(e)}, json_dumps_params={'ensure_ascii': False})
         return JsonResponse(status=200, data={'data': detail, 'amount': amount}, json_dumps_params={'ensure_ascii': False})
 
     elif request.method == 'POST':

@@ -155,11 +155,10 @@ export default {
           console.log(response.data.message);
           this.$message.error(response.data.message);
         }
-      }).catch(function (error) {
-        console.log(error);
-        this.$message.error('错了哦，仔细看错误信息弹窗');
-        alert("失败" + error);
-      });
+      }).catch((error) => {
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
     },
 
     /**
@@ -192,10 +191,9 @@ export default {
             console.log(response.data.message);
           }
         }).catch((error) => {
-          console.log(error)
-          this.$message.error('错了哦，仔细看错误信息弹窗')
-          alert('失败' + error)
-        })
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
       } else {
         // 修改工单记录
         this.$http.post(
@@ -212,10 +210,9 @@ export default {
             this.$message.error(response.data.message)
           }
         }).catch((error) => {
-          console.log(error)
-          this.$message.error('错了哦，仔细看错误信息弹窗')
-          alert('失败' + error)
-        })
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
       }
     },
 
@@ -242,10 +239,9 @@ export default {
             this.$message.error(response.data.message)
           }
         }).catch((error) => {
-          console.log(error)
-          this.$message.error('错了哦，仔细看错误信息弹窗')
-          alert('失败' + error)
-        })
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
       } else {
         if (operation === "edit") this.currentRow = rowIndex;
         this.showRecordDetailForm(operation, recordInfoData)
