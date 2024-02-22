@@ -1,4 +1,3 @@
-import os
 import workrecords.services.data_dict_service as data_dict_service
 
 from django.test import TestCase

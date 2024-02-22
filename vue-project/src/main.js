@@ -17,24 +17,6 @@ Vue.prototype.$echarts = echarts
 
 Vue.config.productionTip = false
 
-// 导航守卫限制路由跳转
-router.beforeEach((to, from, next) => { 
-	let tokenStr = sessionStorage.getItem('token')
-	console.log("session token: ",tokenStr)
-	
-	// 如果是login界面放行，不是login界面的查看是否有token，没有token重定向给login界面，有token的情况再做具体判断（当前先全部放行）
-	if (to.path === '/CMC/login') {
-		next()
-		console.log("now session token: ",sessionStorage.getItem('token'))
-	}else{
-		if (tokenStr) {
-			next()
-		} else {
-			next('/CMC/login')
-		}
-	}
-})
-
 
 new Vue({
   el: '#app',

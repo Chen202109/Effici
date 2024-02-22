@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 from mydata import mysql_base
 from django.http import JsonResponse
 

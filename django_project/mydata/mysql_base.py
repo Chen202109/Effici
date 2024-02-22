@@ -1,7 +1,6 @@
 from workrecords.exception.dao.MyConnectionException import MyConnectionException
 from workrecords.exception.dao.EfficiDaoException import EfficiDaoException
 import json
-import sys
 import pymysql
 import pandas as pd
 
@@ -65,6 +64,9 @@ class Db(object):
                         return results[0][field[0]]
                 except IndexError:
                     print("询数据为空 SQL statement: ", sql)  # 打印SQL语句
+                except KeyError:
+                    print("使用别名查询")
+                    return results
 
             return results
         except pymysql.err.ProgrammingError as error:
@@ -156,6 +158,8 @@ class Db(object):
                 value = field_value
             elif type(field_value) == float:
                 value = field_value
+            elif field_value is None:
+                value = field_value
             else:
                 value = str(field_value)
                 value = value.replace("'", '"')
@@ -165,11 +169,16 @@ class Db(object):
         final_key = ','.join(key_list)
         final_value = str(value_list)[1:-1]
 
+        print(f"final key is: {final_key}, final value is {final_value}")
+
         sql = "INSERT INTO " + table + " (" + final_key + ")" + " VALUES (" + final_value + ")"
+        # 因为python中是没有null，而且这里好像不能自动转换，所以在语句中进行转换。
+        sql = sql.replace("None", "Null")
         try:
             self.configure.ping(reconnect=True)
-            self.begin.execute(sql)
+            result = self.begin.execute(sql)
             self.configure.commit()
+            return result
         except pymysql.err.ProgrammingError as error:
             self.configure.rollback()
             self.configure.close()

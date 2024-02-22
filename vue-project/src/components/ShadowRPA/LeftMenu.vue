@@ -11,7 +11,7 @@
               <span>系统管理</span>
             </template>
             <el-menu-item-group>
-              <el-menu-item index="/saasDataDict">全国数据统计</el-menu-item>
+              <el-menu-item index="/saasDataDict">数据字典</el-menu-item>
             </el-menu-item-group>
           </el-submenu>
           <el-submenu index="1" default-active="1">
