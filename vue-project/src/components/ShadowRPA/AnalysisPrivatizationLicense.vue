@@ -118,7 +118,7 @@
     }
   </script>
   
-  <style>
+  <style scoped>
     .saasAnalysisTitle {
         color: #3398DB;
         font-size: 18;

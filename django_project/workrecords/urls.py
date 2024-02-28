@@ -12,14 +12,13 @@ urlpatterns = [
     path('get_data_dict_detail', system_functions.get_data_dict_detail),
     path('add_data_dict', system_functions.add_data_dict),
     path('add_data_dict_record', system_functions.add_data_dict_record),
+    path('work_record_init', system_functions.work_record_init),
 
     path('work_record', submit_workrecords.work_record),
     path('work_record_group_add', submit_workrecords.work_record_group_add),
     path('work_record_update', submit_workrecords.work_record_update),
     path('work_record_delete', submit_workrecords.work_record_delete),
-    path('work_record_init', submit_workrecords.work_record_init),
 
-    path('analysisselect',workrecords_report.analysisselect),
     path('analysis_saas_problem_type_in_versions',workrecords_report.analysis_saas_problem_type_in_versions),
     path('analysis_select_new',workrecords_report.analysis_select_new),
     path('analysis_saas_problem_type_in_versions_new',workrecords_report.analysis_saas_problem_type_in_versions_new),
@@ -45,6 +44,7 @@ urlpatterns = [
     path('analysis_saas_added_service_by_province',views.analysis_saas_added_service_by_province),
     path('analysis_saas_added_service_by_function',views.analysis_saas_added_service_by_function),
 
+    path('analysisselect',workrecord_summary.analysis_work_record_report_error_function_count_old),
     path('analysis_saas_problem_by_country', workrecord_summary.analysis_saas_problem_by_country),
     path('analysis_saas_problem_by_country_region', workrecord_summary.analysis_saas_problem_by_country_region),
     path('analysis_saas_function_by_province', workrecord_summary.analysis_saas_function_by_province),

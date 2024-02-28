@@ -43,7 +43,7 @@ def work_record(request):
             work_record_service.add_work_record(fid, work_record_detail_form)
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': str(e)}, json_dumps_params={'ensure_ascii': False})
-        return JsonResponse(status=200, data={ 'message': "插入成功!"}, json_dumps_params={'ensure_ascii': False})
+        return JsonResponse(status=200, data={}, json_dumps_params={'ensure_ascii': False})
 
 def work_record_group_add(request):
     if request.method == 'POST':
@@ -124,11 +124,11 @@ def work_record_group_add(request):
         # 看是否有error
         has_error = any(item != "" for item in error_msg)
         if has_error:
-            return JsonResponse({'status': 406, 'message': "批量导入失败。", 'data': error_msg}, json_dumps_params={'ensure_ascii': False}) 
+            return JsonResponse(status=406, data={'message': error_msg}, json_dumps_params={'ensure_ascii': False})
         else:
-            return JsonResponse({'status': 200, 'message': "批量导入成功。"}, json_dumps_params={'ensure_ascii': False})
+            return JsonResponse(status=200, data={}, json_dumps_params={'ensure_ascii': False})
     else:
-        return JsonResponse({'status': 405, 'message': "请求方法错误, 需要POST请求。"})
+        return JsonResponse(status=405, data={'message': "请求方法错误, 需要POST请求。"})
 
 def work_record_update(request):
     if request.method == 'POST':
@@ -146,7 +146,7 @@ def work_record_update(request):
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={ 'message': str(e)}, json_dumps_params={'ensure_ascii': False})
 
-        return JsonResponse(status=200, data={'message': "更新成功!"}, json_dumps_params={'ensure_ascii': False})
+        return JsonResponse(status=200, data={}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要POST请求。"})
 
@@ -159,82 +159,6 @@ def work_record_delete(request):
             work_record_service.delete_work_record(fid, work_record_detail_form)
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={ 'message': str(e)}, json_dumps_params={'ensure_ascii': False})
-        return JsonResponse(status=200, data={'message': "删除成功!"}, json_dumps_params={'ensure_ascii': False})
+        return JsonResponse(status=200, data={}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要POST请求。"})
-
-def work_record_init(request):
-    """
-    获取工单详细界面查询的初始配置，如一些问题分类的种类，出错功能有哪些功能等
-    """
-    if request.method == 'GET':
-        data = {}
-
-        db = mysql_base.Db()
-
-        # 查询所有问题归属, 然后以 { party1: [xxx, xxx], party2:[xxx, xxx]}这样方式传给前端
-        condition_dict = {
-            # error_attribution 001代表的是问题归属的那个数据字典
-            "t1.dictCode=":constant.data_dict_code_map["error_attribution"],
-            "t2.dictCode=":constant.data_dict_code_map["error_attribution"],
-            "t1.level=":1,
-            "t2.level=":2,
-        }
-        problem_attribution_list = db.select([" t1.name as level1_name ", " t2.name as level2_name "],
-                                        "work_record_data_dict t1 JOIN work_record_data_dict t2 ON t1.code = t2.parentCode",
-                                        condition_dict, "")
-        data["problemAttributionOptions"] = {}
-        for item in problem_attribution_list:
-            if data["problemAttributionOptions"].get(item["level1_name"]) is None:
-                data["problemAttributionOptions"][item["level1_name"]] = []
-            data["problemAttributionOptions"][item["level1_name"]].append(item["level2_name"])
-
-
-        # 查询所有的问题分类
-        condition_dict = {
-            # error_type 002代表的是问题归属的那个数据字典
-            "t1.dictCode=": constant.data_dict_code_map["error_type"],
-            "t2.dictCode=": constant.data_dict_code_map["error_type"],
-            "t1.level=": 1,
-            "t2.level=": 2,
-        }
-        error_type_list = db.select([" t1.name as level1_name ", " t2.name as level2_name "],
-                                             "work_record_data_dict t1 JOIN work_record_data_dict t2 ON t1.code = t2.parentCode",
-                                             condition_dict, "")
-        data["errorTypeOptions"] = {}
-        for item in error_type_list:
-            if data["errorTypeOptions"].get(item["level1_name"]) is None:
-                data["errorTypeOptions"][item["level1_name"]] = []
-            data["errorTypeOptions"][item["level1_name"]].append(item["level2_name"])
-
-
-        # 查询所有产品类型
-        condition_dict = {
-            # product_type 003代表的是产品类型的那个数据字典
-            "dictCode=": constant.data_dict_code_map["product_type"],
-            "level=": 1
-        }
-        product_type_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
-        data["productTypeOptions"] = [ item["name"] for item in product_type_list]
-
-        # 查询所有问题功能
-        condition_dict = {
-            # error_function是dict 004代表的是问题功能的那个数据字典
-            "dictCode=": constant.data_dict_code_map["error_function"],
-            "level=": 1
-        }
-        error_function_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
-        data["errorFunctionOptions"] = [ item["name"] for item in error_function_list]
-
-        # 查询所有问题因素
-        condition_dict = {
-            # error_type_factor 005代表的是问题因素的那个数据字典
-            "dictCode=": constant.data_dict_code_map["error_type_factor"],
-            "level=": 2
-        }
-        error_factor_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
-        data["errorFactorOptions"] = [ item["name"] for item in error_factor_list]
-
-        return JsonResponse(status=200, data=data, json_dumps_params={'ensure_ascii': False})
-    else:
-        return JsonResponse(status=405, data={'message': "请求方法错误, 需要POST请求。"} )

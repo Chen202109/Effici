@@ -59,9 +59,9 @@ data_dict_code_map = {
     "error_type_factor" : "005",
 }
 
+
 # error function
 work_record_error_function_list = ["开票功能","核销功能","收缴业务","通知交互","报表功能","数据同步","票据管理","license重置","单位开通","增值服务","打印功能","安全漏洞","反算功能"]
-
 
 saas_service_function_map = {
     'saas-invoice-ebill-server' : '开票功能',
@@ -128,7 +128,15 @@ province_source_pool_map = {
     "山东": "04资源池",
 }
 
+
 #path
+# 开发环境下的配置
 MEDIA_ROOT = r"E:\myWork\Effici\django_project\media_files\workrecords"
 AGENCY_ACCOUNT_FILE_ROOT = './workrecords/config/agency_account/'
+
+# 生产环境下的路径配置
+# import os
+# BACKEND_CODE_DIR = os.environ.get('backendCodeDir')
+# MEDIA_ROOT = os.path.join(BACKEND_CODE_DIR, 'media_files/workrecords/')
+# AGENCY_ACCOUNT_FILE_ROOT = os.path.join(BACKEND_CODE_DIR, 'workrecords/config/agency_account/')
 

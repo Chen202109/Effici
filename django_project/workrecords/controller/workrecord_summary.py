@@ -184,9 +184,26 @@ def analysis_saas_problem_by_month(request):
             series_data = work_record_summary_service.get_work_record_month_summary(begin_date, end_date)
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': str(e)}, json_dumps_params={'ensure_ascii': False})
-
         data.append({'seriesName': "问题受理数量", 'seriesData': series_data})
         return JsonResponse(status=200, data={'data': data}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
+
+def analysis_work_record_report_error_function_count_old(request):
+
+    # 判断请求类型
+    if request.method == 'GET':
+        # 获得GET请求后面的参数信息
+        beginData = request.GET.get('beginData', default='2023-07-01')
+        endData = request.GET.get('endData', default='2023-07-31')
+        try:
+            data = work_record_summary_service.get_work_record_report_error_function_count_old(beginData,endData)
+        except EfficiServiceException as e:
+            return JsonResponse(status=e.status, data={'message': str(e)}, json_dumps_params={'ensure_ascii': False})
+        return JsonResponse(status=200, data={'data': data}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
+
+
+
 

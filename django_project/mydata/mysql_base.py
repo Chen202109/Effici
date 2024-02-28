@@ -169,16 +169,14 @@ class Db(object):
         final_key = ','.join(key_list)
         final_value = str(value_list)[1:-1]
 
-        print(f"final key is: {final_key}, final value is {final_value}")
-
         sql = "INSERT INTO " + table + " (" + final_key + ")" + " VALUES (" + final_value + ")"
         # 因为python中是没有null，而且这里好像不能自动转换，所以在语句中进行转换。
         sql = sql.replace("None", "Null")
         try:
             self.configure.ping(reconnect=True)
+            print(f"Insert sql is: {sql}")
             result = self.begin.execute(sql)
             self.configure.commit()
-            return result
         except pymysql.err.ProgrammingError as error:
             self.configure.rollback()
             self.configure.close()
@@ -356,6 +354,7 @@ class Db(object):
                 where_str += " AND " + "%s" % where_key + " " + "'%s'" % where_value
 
         sql = 'UPDATE ' + table + ' SET ' + final_field + ' WHERE ' + ' 1 = 1 ' + where_str
+        print(f"update sql is : {sql}")
         try:
             self.configure.ping(reconnect=True)
             self.begin.execute(sql)

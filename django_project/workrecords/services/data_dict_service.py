@@ -4,6 +4,7 @@ import pandas as pd
 import datetime
 
 from workrecords.utils.type_casting_utils import cast_int_to_string
+from workrecords.config import constant
 
 table_name = "work_record_data_dict"
 
@@ -53,6 +54,7 @@ def add_data_dict_record_by_full_label(dict_code, label, db):
     :param db: 和数据库的连接
     """
     data_dict_records = label.split("-")
+    print("---------------")
     parent_code = None
     for i in range(len(data_dict_records)):
         code = add_data_dict_record_by_node(dict_code, i+1, parent_code, data_dict_records[i], db)
@@ -66,16 +68,16 @@ def add_data_dict_record_by_node(dict_code, level, parent_code, name, db):
 
     # 先尝试查找，看看是否已经存在这一项
     condition_dict = {
-        "dictCode": dict_code,
-        "level": level,
-        "parentCode": parent_code,
-        "name": name
+        "dictCode=": dict_code,
+        "level=": level,
+        "parentCode=": parent_code,
+        "name=": name
     }
     result = db.select(["code", "enable", "childrenLength"], table_name, condition_dict, "")
 
     if isinstance(result, tuple):
         # 没有找到这一项, 先查看parentCode是否属实，不valid的parentCode要返回报错
-        parent_result = db.select(["*"], table_name, {"dictCode": dict_code, "level": level - 1, "code": parent_code, "enable": 1}, "")
+        parent_result = db.select(["*"], table_name, {"dictCode=": dict_code, "level=": level - 1, "code=": parent_code, "enable=": 1}, "")
         if isinstance(parent_result, tuple):
             raise MyInvalidInputException(status=400, msg=f"输入的父节点编码 {parent_code} 的值不存在!")
 
@@ -92,12 +94,13 @@ def add_data_dict_record_by_node(dict_code, level, parent_code, name, db):
             "childrenLength": 0
         }
 
-        # 生成code
-        fields["code"] = determine_data_dict_record_code(dict_code, level, parent_result[0]["childrenLength"])
-        fields["fid"] = fields["dict_code"] + fields["parent_code"] + fields["code"]
+        # 生成code, 通过父级节点的childrenLength来知道已经有了多少个节点，所以正常的话编号从这个的length+1
+        new_code =  determine_code_dict.get(dict_code)(level, parent_result[0]["childrenLength"]+1, name, db)
+        fields["code"] = str(fields["parentCode"]) + new_code if fields["parentCode"] is not None else int("1"+str(new_code))
+        fields["fid"] = str(fields["dictCode"]) + str(fields["code"])
         try:
             code = db.insert_copy(table_name, fields)
-            db.update(table_name, {"childrenLength": parent_result["childrenLength"] + 1}, {"dictCode": dict_code, "level": level - 1, "code": parent_code, "enable": 1})
+            db.update(table_name, {"childrenLength": parent_result[0]["childrenLength"] + 1}, {"dictCode=": dict_code, "level=": level - 1, "code=": parent_code, "enable=": 1})
             return code
         except Exception as e:
             print(f"添加数据字典出错，报错为: {str(e)}")
@@ -107,9 +110,6 @@ def add_data_dict_record_by_node(dict_code, level, parent_code, name, db):
         if result[0]["enable"] == 0:
             db.update(table_name, { "enableTime" : str(datetime.date.today()), "enable" : 1, "disableTime" : None }, condition_dict)
         return result[0]["code"]
-
-def determine_data_dict_record_code(dict_code, level, sibling_length, name, db):
-    determine_code_dict.get(dict_code)(level, sibling_length, name, db)
 
 def determine_problem_attribution_code(level, sibling_length):
     if level == 1:
@@ -332,6 +332,78 @@ def get_data_dict_amount(db=None):
     condition_dict = {"level=": -1}
     amount = db.select(["childrenLength"], table_name, condition_dict, "")
     return amount
+
+
+def get_data_dict_record_full_label_for_work_record(db=None):
+    """
+    获取以层级字典的数据格式的数据字典
+    """
+    db=get_db(db)
+
+    data = {}
+
+    # 查询所有问题归属, 然后以 { party1: [xxx, xxx], party2:[xxx, xxx]}这样方式传给前端
+    condition_dict = {
+        # error_attribution 001代表的是问题归属的那个数据字典
+        "t1.dictCode=": constant.data_dict_code_map["error_attribution"],
+        "t2.dictCode=": constant.data_dict_code_map["error_attribution"],
+        "t1.level=": 1,
+        "t2.level=": 2,
+    }
+    problem_attribution_list = db.select([" t1.name as level1_name ", " t2.name as level2_name "],
+                                         "work_record_data_dict t1 JOIN work_record_data_dict t2 ON t1.code = t2.parentCode",
+                                         condition_dict, "")
+    data["problemAttributionOptions"] = {}
+    for item in problem_attribution_list:
+        if data["problemAttributionOptions"].get(item["level1_name"]) is None:
+            data["problemAttributionOptions"][item["level1_name"]] = []
+        data["problemAttributionOptions"][item["level1_name"]].append(item["level2_name"])
+
+    # 查询所有的问题分类
+    condition_dict = {
+        # error_type 002代表的是问题归属的那个数据字典
+        "t1.dictCode=": constant.data_dict_code_map["error_type"],
+        "t2.dictCode=": constant.data_dict_code_map["error_type"],
+        "t1.level=": 1,
+        "t2.level=": 2,
+    }
+    error_type_list = db.select([" t1.name as level1_name ", " t2.name as level2_name "],
+                                "work_record_data_dict t1 JOIN work_record_data_dict t2 ON t1.code = t2.parentCode",
+                                condition_dict, "")
+    data["errorTypeOptions"] = {}
+    for item in error_type_list:
+        if data["errorTypeOptions"].get(item["level1_name"]) is None:
+            data["errorTypeOptions"][item["level1_name"]] = []
+        data["errorTypeOptions"][item["level1_name"]].append(item["level2_name"])
+
+    # 查询所有产品类型
+    condition_dict = {
+        # product_type 003代表的是产品类型的那个数据字典
+        "dictCode=": constant.data_dict_code_map["product_type"],
+        "level=": 1
+    }
+    product_type_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
+    data["productTypeOptions"] = [item["name"] for item in product_type_list]
+
+    # 查询所有问题功能
+    condition_dict = {
+        # error_function是dict 004代表的是问题功能的那个数据字典
+        "dictCode=": constant.data_dict_code_map["error_function"],
+        "level=": 1
+    }
+    error_function_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
+    data["errorFunctionOptions"] = [item["name"] for item in error_function_list]
+
+    # 查询所有问题因素
+    condition_dict = {
+        # error_type_factor 005代表的是问题因素的那个数据字典
+        "dictCode=": constant.data_dict_code_map["error_type_factor"],
+        "level=": 2
+    }
+    error_factor_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
+    data["errorFactorOptions"] = [item["name"] for item in error_factor_list]
+
+
 
 def get_db(db):
     if db is None:

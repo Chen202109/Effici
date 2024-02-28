@@ -339,7 +339,6 @@ export default {
           console.log('update local tableData data: ', response.data.data)
           this.updateSaasProblemBarChart()
           this.updateSaasProblemPieChart()
-          
         }else{
           console.log(response.message)
           this.$message.error(response.message)

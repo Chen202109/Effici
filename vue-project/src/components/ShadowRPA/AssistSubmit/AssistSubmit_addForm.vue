@@ -237,7 +237,6 @@ export default {
         workRecordCode: '',
         workRecordTitle: '',
         eventType: '',
-        JIRACode: '',
         sourcePool: ''
       },
 
