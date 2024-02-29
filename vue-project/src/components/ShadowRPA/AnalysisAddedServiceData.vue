@@ -23,7 +23,7 @@
             <div class="saasAddedServiceTypeChart" id="saasAddedServiceTypeChart" :style="{ width: getPageWidth * 0.65+ 'px', height: '600px' }">
             </div>
             <div class="saasAddedServiceTopTable" style="width: 35%;">
-                <p>{{ saasAddedServiceTypeChartData[2]['seriesName'] }}: <span style="color: red;">{{ saasAddedServiceTypeChartData[2]['seriesData'] }}</span> 次</p>
+                <p>{{ saasAddedServiceTypeChartData[2]['seriesName'] }}: <span style="color: red;">{{ this.saasAddedServiceCount }}</span> 次</p>
                 <el-table
                 :data="saasAddedServiceTypeChartData[1]['seriesData']" 
                 :header-cell-style="{fontSize:'14px',background: 'rgb(64 158 255 / 65%)',color:'#696969',}"
@@ -73,6 +73,7 @@ export default {
                 {'seriesName': "增值服务top10", 'seriesData': []}, 
                 {'seriesName': "增值服务合计", 'seriesData': 0}
             ],
+            saasAddedServiceCount:0,
         }
     },
     // 计算页面刚加载时候渲染的属性
@@ -149,16 +150,15 @@ export default {
                 searchValue[(i==0)?"beginData":"endData"] = year + "-" + month + "-" + day;
             } 
             this.$http.get(
-                '/api/CMC/workrecords/analysis_saas_added_service_province_list'
+                '/api/CMC/workrecords/get_saas_added_service_province_list'
             ).then(response =>{
-                this.provinceList = response.data.data[0]["seriesData"]
+                this.provinceList = response.data["seriesData"]
                 if (this.provinceList.length !== 0){
                     this.provinceSelected = this.provinceList[0].region
                 }
             }).catch(error =>{
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
             })
         },
 
@@ -167,24 +167,21 @@ export default {
          * @description 对增值服务的服务分类关于省份分类的后端数据请求
          */
          async saasAddedServiceTypeProvince(searchValue) {
-            try {
-                const response = await this.$http.get(
-                '/api/CMC/workrecords/analysis_saas_added_service_by_function_and_province?beginData=' +
+            this.$http.get(
+                '/api/CMC/workrecords/analysis_saas_added_service_by_type_and_province?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData']+
                 '&provinceSelected=' +
                 searchValue['provinceSelected']
-                )
+            ).then(response =>{
                 this.saasAddedServiceTypeProvinceChartData = response.data.data
                 updateBarChartBasic(document, this.saasAddedServiceTypeProvinceChartData, '省份增值服务类型统计', "category", false, true, 'saasAddedServiceTypeProvinceChart')
                 console.log('update local saasAddedServiceTypeProvinceChart data: ', this.saasAddedServiceTypeProvinceChartData)
-
-            } catch (error) {
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
-            }
+            }).catch(error =>{
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
         },
 
         /**
@@ -192,22 +189,19 @@ export default {
          * @description 对增值服务的关于省份的受理数量的后端数据请求
          */
         async saasAddedServiceProvince(searchValue) {
-            try {
-                const response = await this.$http.get(
+            this.$http.get(
                 '/api/CMC/workrecords/analysis_saas_added_service_by_province?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData']
-                )
+            ).then(response =>{
                 this.saasAddedServiceProvinceChartData = response.data.data
                 updateBarChartBasic(document, this.saasAddedServiceProvinceChartData, '省份增值服务数量统计', "category", false, true, 'saasAddedServiceProvinceChart')
                 console.log('update local saasAddedServiceProvinceChart data: ', this.saasAddedServiceProvinceChartData)
-
-            } catch (error) {
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
-            }
+            }).catch(error =>{
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
         },
 
         /**
@@ -215,22 +209,20 @@ export default {
          * @description 对增值服务的服务类别的饼状图的后端数据请求
          */
         async searchSaaSAddedServiceByType(searchValue) {
-            try {
-                const response = await this.$http.get(
-                '/api/CMC/workrecords/analysis_saas_added_service_by_function?beginData=' +
+            this.$http.get(
+                '/api/CMC/workrecords/analysis_saas_added_service_by_type?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData']
-                )
+            ).then(response =>{
                 this.saasAddedServiceTypeChartData = response.data.data
+                this.saasAddedServiceCount = this.saasAddedServiceTypeChartData[2]["seriesData"][0]["value"]
                 updatePieChartBasic(document, this.saasAddedServiceTypeChartData, "增值服务分类", "saasAddedServiceTypeChart")
                 console.log('update local saasAddedServiceTypeChart data: ', this.saasAddedServiceTypeChartData)
-
-            } catch (error) {
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
-            }
+            }).catch(error =>{
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
         },
     },
 };

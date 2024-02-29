@@ -108,10 +108,10 @@ def get_saas_monitor_province_list(request):
     if request.method == 'GET':
         try:
             db = mysql_base.Db()
-            saas_large_problem_province_list = db.select(["distinct region"], "monitorrecords", {}, "")
+            result = db.select(["distinct region"], "monitorrecords", {}, "")
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': e.msg})
-        return JsonResponse(status=200, data={'seriesName': "监控出错省份", 'seriesData': saas_large_problem_province_list}, json_dumps_params={'ensure_ascii': False})
+        return JsonResponse(status=200, data={'seriesName': "监控出错省份", 'seriesData': result}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
@@ -163,7 +163,7 @@ def analysis_saas_monitor_problem_by_province(request):
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
 
-def analysis_saas_minitor_problem_by_function(request):
+def analysis_saas_minitor_problem_by_type(request):
     """
     分析省份出现的重大生产故障的数量
     """
@@ -175,8 +175,6 @@ def analysis_saas_minitor_problem_by_function(request):
 
         data = []
         db =mysql_base.Db()
-
-        # 查询这段时间内的线上重大故障，将他们count一遍然后生成和上面一样的格式append到data中
         sql = f' SELECT errortype as name, count(*) as value from monitorrecords WHERE createtime >= "{real_date_begin}" AND createtime <= "{real_date_end}" group by name'
         saas_monitor_problem_data = db.select_offset(1, 2000, sql)
         data.append({'seriesName': "生产监控异常问题分类", 'seriesData': saas_monitor_problem_data})
@@ -186,7 +184,7 @@ def analysis_saas_minitor_problem_by_function(request):
         sorted_data = sorted(saas_monitor_problem_data, key=lambda x : x['value'], reverse = True)[0:10]
         for item in sorted_data: item['percent'] = f"{((item['value'] / total) * 100):.2f}%" if total!=0 else 0
         data.append({'seriesName': "生产监控异常问题top10", 'seriesData': sorted_data})
-        data.append({'seriesName': "生产监控异常问题合计", 'seriesData': total})
+        data.append({'seriesName': "生产监控异常问题合计", 'seriesData': [{"name":"合计", "value":total, "percent":""}]})
         
         return JsonResponse(status=200, data={"data": data}, json_dumps_params={'ensure_ascii': False})
     else:
@@ -197,88 +195,80 @@ def analysis_saas_minitor_problem_by_function(request):
 
 # ----------------------------------------------------------- AnalysisAddedServiceData.vue 的请求 --------------------------------------------
 
-def analysis_saas_added_service_province_list(request):
+def get_saas_added_service_province_list(request):
     """
     获取增值服务这边的省份
     """
-    data = []
-
     if request.method == 'GET':
-        db =mysql_base.Db()
+        try:
+            db = mysql_base.Db()
+            result = db.select(["distinct region"], "orderprodct_2023", {}, "")
+        except EfficiServiceException as e:
+            return JsonResponse(status=e.status, data={'message': e.msg})
+        return JsonResponse(status=200, data={'seriesName': "订购增值产品省份", 'seriesData': result}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
-        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
-        sql = f' SELECT distinct region from orderprodct_2023'
-        saas_added_service_province_list = db.select_offset(1, 2000, sql)
-        data.append({'seriesName': "增值服务订购省份", 'seriesData': saas_added_service_province_list})
- 
-    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
 
-
-def analysis_saas_added_service_by_function_and_province(request):
+def analysis_saas_added_service_by_type_and_province(request):
     """
     分析增值服务订购的的服务类别和省份的对比
     """
-    data = []
-
     if request.method == 'GET':
-        begin_date = request.GET.get('beginData', default='2023-01-01')
-        end_date = request.GET.get('endData', default='2023-12-31')
+        begin_date = request.GET.get('beginData', default='')
+        end_date = request.GET.get('endData',default='')
         province = request.GET.get('provinceSelected', default='')
-
         real_date_begin = datetime.strptime(begin_date, '%Y-%m-%d')
         real_date_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+        try:
+            db = mysql_base.Db()
+            condition_dict = {"createtime>=": str(real_date_begin), "createtime<=":str(real_date_end), "region=":province}
+            result = db.select(["ordername as x", "count(*) as y"], "orderprodct_2023", condition_dict, "group by x")
+        except EfficiServiceException as e:
+            return JsonResponse(status=e.status, data={'message': e.msg})
 
-        db =mysql_base.Db()
-
-        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
-        sql = f' SELECT distinct ordername as x, count(*) as y from orderprodct_2023 WHERE createtime >= "{real_date_begin}" AND createtime <= "{real_date_end}" and region = "{province}" group by ordername '
-        saas_added_service_function_problem_by_province_data = db.select_offset(1, 2000, sql)
-        data.append({'seriesName': province+"增值服务类别", 'seriesData': saas_added_service_function_problem_by_province_data})
-
-            
-    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+        data = [{'seriesName': province+"增值服务类别", 'seriesData': result}]
+        return JsonResponse(status=200, data={"data":data}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
 
 def analysis_saas_added_service_by_province(request):
     """
     分析增值服务开通的省份对比。
     """
-    data = []
-
     if request.method == 'GET':
-        begin_date = request.GET.get('beginData', default='2023-01-01')
-        end_date = request.GET.get('endData', default='2023-12-31')
-
+        begin_date = request.GET.get('beginData',default='')
+        end_date = request.GET.get('endData',default='')
         real_date_begin = datetime.strptime(begin_date, '%Y-%m-%d')
         real_date_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+        try:
+            db = mysql_base.Db()
+            # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]
+            condition_dict = {"createtime>=": str(real_date_begin), "createtime<=": str(real_date_end)}
+            result = db.select(["region as x", "count(*) as y"], "orderprodct_2023", condition_dict, "group by x")
+        except EfficiServiceException as e:
+            return JsonResponse(status=e.status, data={'message': e.msg})
 
-        db =mysql_base.Db()
-
-        # 查询数据库的所有region并放入数组中，数组格式为[{"x":"省份名称","y":受理问题的数量}]  
-        sql = f' SELECT distinct region as x, count(*) as y from orderprodct_2023 WHERE createtime >= "{real_date_begin}" AND createtime <= "{real_date_end}" group by region '
-        saas_minitor_province_problem_data = db.select_offset(1, 2000, sql)
-        data.append({'seriesName': "增值服务开通数量", 'seriesData': saas_minitor_province_problem_data})
-
-            
-    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+        data = [{'seriesName': "增值服务开通数量", 'seriesData': result}]
+        return JsonResponse(status=200, data={"data": data}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
 
-def analysis_saas_added_service_by_function(request):
+def analysis_saas_added_service_by_type(request):
     """
     分析增值服务的服务分类对比
     """
-    data = []
 
     if request.method == 'GET':
         begin_date = request.GET.get('beginData', default='2023-01-01')
         end_date = request.GET.get('endData', default='2023-12-31')
-
         real_date_begin = datetime.strptime(begin_date, '%Y-%m-%d')
         real_date_end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
 
+        data = []
         db =mysql_base.Db()
-
-        # 查询这段时间内的线上重大故障，将他们count一遍然后生成和上面一样的格式append到data中
         sql = f' SELECT ordername as name, count(*) as value from orderprodct_2023 WHERE createtime >= "{real_date_begin}" AND createtime <= "{real_date_end}" group by name'
         saas_monitor_problem_data = db.select_offset(1, 2000, sql)
         data.append({'seriesName': "增值服务分类", 'seriesData': saas_monitor_problem_data})
@@ -288,10 +278,11 @@ def analysis_saas_added_service_by_function(request):
         sorted_data = sorted(saas_monitor_problem_data, key=lambda x : x['value'], reverse = True)[0:10]
         for item in sorted_data: item['percent'] = f"{((item['value'] / total) * 100):.2f}%" if total!=0 else 0
         data.append({'seriesName': "增值服务top10", 'seriesData': sorted_data})
-        data.append({'seriesName': "增值服务合计", 'seriesData': total})
-        
-            
-    return JsonResponse({'data': data}, json_dumps_params={'ensure_ascii': False})
+        data.append({'seriesName': "增值服务合计", 'seriesData': [{"name":"合计", "value":total, "percent":""}]})
+
+        return JsonResponse(status=200, data={"data": data}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
 # ----------------------------------------------------------- AnalysisAddedServiceData.vue 的请求 --------------------------------------------
 

@@ -22,7 +22,7 @@
             <div class="saasMonitorProblemTypeChart" id="saasMonitorProblemTypeChart" :style="{ width: getPageWidth * 0.65+ 'px', height: '600px' }">
             </div>
             <div class="saasMonitorProblemTopTable" style="width: 35%;">
-                <p>{{ saasMonitorProblemTypeChartData[2]['seriesName'] }}: <span style="color: red;">{{ saasMonitorProblemTypeChartData[2]['seriesData'] }}</span> 次</p>
+                <p>{{ saasMonitorProblemTypeChartData[2]['seriesName'] }}: <span style="color: red;">{{ this.saasMonitorProblemCount }}</span> 次</p>
                 <el-table
                 :data="saasMonitorProblemTypeChartData[1]['seriesData']" 
                 :header-cell-style="{fontSize:'14px',background: 'rgb(64 158 255 / 65%)',color:'#696969',}"
@@ -73,6 +73,7 @@ export default {
                 {'seriesName': "生产监控异常问题top10", 'seriesData': []}, 
                 {'seriesName': "生产监控异常问题合计", 'seriesData': 0}
             ],
+            saasMonitorProblemCount:0,
         }
     },
     // 计算页面刚加载时候渲染的属性
@@ -208,22 +209,20 @@ export default {
          * @description 对监控异常数量和出错功能的饼状图的后端数据请求
          */
         async searchSaaSMonitorProblemByType(searchValue) {
-            try {
-                const response = await this.$http.get(
-                '/api/CMC/workrecords/analysis_saas_minitor_problem_by_function?beginData=' +
+            this.$http.get(
+                '/api/CMC/workrecords/analysis_saas_minitor_problem_by_type?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData']
-                )
+            ).then(response =>{
                 this.saasMonitorProblemTypeChartData = response.data.data
+                this.saasMonitorProblemCount = this.saasMonitorProblemTypeChartData[2]["seriesData"][0]["value"]
                 updatePieChartBasic(document, this.saasMonitorProblemTypeChartData, "生产监控异常问题分类", "saasMonitorProblemTypeChart")
                 console.log('update local saasMonitorProblemTypeChart data: ', this.saasMonitorProblemTypeChartData)
-
-            } catch (error) {
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
-            }
+            }).catch(error =>{
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
         },
     },
 };
