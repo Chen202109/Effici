@@ -7,10 +7,10 @@ import Main from '@/container/Main'
 import Dashboard from '@/views/dashboard'
 import Article from '@/views/article'
 import Jira from '@/views/jira'
+import ShadowRPA from '@/components/ShadowRPA/ShadowRPA.vue'
 
 import SaaSDataDict from '@/components//ShadowRPA/SystemManagement/SaaSDataDict.vue'
 
-import ShadowRPA from '@/components/ShadowRPA/ShadowRPA.vue'
 import AssistSubmit from "@/components/ShadowRPA/AssistSubmit/AssistSubmit.vue"
 import AnalysisData from "@/components/ShadowRPA/AnalysisData.vue"
 import AnalysisDataNew from "@/components/ShadowRPA/AnalysisData/AnalysisDataNew.vue"
@@ -20,6 +20,9 @@ import AnalysisMonitorProblem from "@/components/ShadowRPA/AnalysisMonitorProble
 import AnalysisAddedServiceData from "@/components/ShadowRPA/AnalysisAddedServiceData.vue"
 import AnalysisPrivatizationLicense from "@/components/ShadowRPA/AnalysisPrivatizationLicense.vue"
 import AnalysisLargeProblemData from "@/components/ShadowRPA/AnalysisLargeProblemData.vue"
+
+import SaaSTicketFolderUpgrade from "@/components/ShadowRPA/TicketFolder/AnalysisUpgrade.vue"
+import SaaSTicketFolderAnalysisData from "@/components/ShadowRPA/TicketFolder/AnalysisData/AnalysisData.vue"
 
 Vue.use(Router)
 
@@ -44,15 +47,18 @@ export default new Router({
           component: ShadowRPA,
           children: [
             { path: '/AssistSubmit', component: AssistSubmit, meta: {keepAlive: true, comp: AssistSubmit, name: 'AssistSubmit', title:"受理明细"}},
-            { path: '/AnalysisData', component: AnalysisData, meta: {keepAlive: true, comp: AnalysisData, name: 'AnalysisData', title:"工单受理数据分析"}},
-            { path: '/AnalysisDataNew', component: AnalysisDataNew, meta: {keepAlive: true, comp: AnalysisDataNew, name: 'AnalysisDataNew', title:"工单受理数据分析（新）"}},
-            { path: '/AnalysisUpgradeTrend', component: AnalysisUpgradeTrend, meta: {keepAlive: true, comp: AnalysisUpgradeTrend, name: 'AnalysisUpgrade', title:"公有云升级汇报"}},
+            { path: '/AnalysisData', component: AnalysisData, meta: {keepAlive: true, comp: AnalysisData, name: 'AnalysisData', title:"行业工单受理数据分析"}},
+            { path: '/AnalysisDataNew', component: AnalysisDataNew, meta: {keepAlive: true, comp: AnalysisDataNew, name: 'AnalysisDataNew', title:"行业工单受理数据分析（新）"}},
+            { path: '/AnalysisUpgradeTrend', component: AnalysisUpgradeTrend, meta: {keepAlive: true, comp: AnalysisUpgradeTrend, name: 'AnalysisUpgrade', title:"行业公有云升级汇报"}},
             { path: '/AnalysisCountryData', component: AnalysisCountryData, meta: {keepAlive: true, comp: AnalysisCountryData, name: 'AnalysisCountryData', title:"全国数据统计"}},
-            { path: '/AnalysisLargeProblemData', component: AnalysisLargeProblemData, meta: {keepAlive: true, comp: AnalysisLargeProblemData, name: 'AnalysisLargeProblemData', title:"私有化重大故障统计"}},
+            { path: '/AnalysisLargeProblemData', component: AnalysisLargeProblemData, meta: {keepAlive: true, comp: AnalysisLargeProblemData, name: 'AnalysisLargeProblemData', title:"V4私有化重大故障统计"}},
             { path: '/AnalysisMonitorProblem', component: AnalysisMonitorProblem, meta: {keepAlive: true, comp: AnalysisMonitorProblem, name: 'AnalysisMonitorProblem', title:"生产监控异常统计"}},
-            { path: '/AnalysisAddedServiceData', component: AnalysisAddedServiceData, meta: {keepAlive: true, comp: AnalysisAddedServiceData, name: 'AnalysisAddedServiceData', title:"增值服务开通统计"}},
+            { path: '/AnalysisAddedServiceData', component: AnalysisAddedServiceData, meta: {keepAlive: true, comp: AnalysisAddedServiceData, name: 'AnalysisAddedServiceData', title:"V4增值服务开通统计"}},
             { path: '/AnalysisPrivatizationLicense', component: AnalysisPrivatizationLicense, meta: {keepAlive: true, comp: AnalysisPrivatizationLicense, name: 'AnalysisPrivatizationLicense', title:"v4 license受理数据统计"}},
-            { path: '/saasDataDict', component: SaaSDataDict, meta: {keepAlive: true, comp: SaaSDataDict, name: 'SaaSDataDict', title:"数据字典"}}
+            { path: '/saasDataDict', component: SaaSDataDict, meta: {keepAlive: true, comp: SaaSDataDict, name: 'SaaSDataDict', title:"数据字典"}},
+
+            { path: '/SaaSTicketFolderUpgrade', component: SaaSTicketFolderUpgrade, meta: {keepAlive: true, comp: SaaSTicketFolderUpgrade, name: 'SaaSTicketFolderUpgrade', title:"电子票夹升级汇报"}},
+            { path: '/SaaSTicketFolderAnalysisData', component: SaaSTicketFolderAnalysisData, meta: {keepAlive: true, comp: SaaSTicketFolderAnalysisData, name: 'SaaSTicketFolderAnalysisData', title:"电子票夹受理明细"}}
           ]
         },
         { path: '/CMC/ew', name: '新页面', component: New, },

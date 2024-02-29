@@ -146,27 +146,18 @@ export default {
                 var year = this.dateRange[i].getFullYear()
                 var month = ('0' + (this.dateRange[i].getMonth() + 1)).slice(-2)
                 var day = ('0' + this.dateRange[i].getDate()).slice(-2)
-                if (i == 0) {
-                    // 构建格式化后的日期字符串
-                    var beginData = year + '-' + month + '-' + day
-                    searchValue['beginData'] = beginData
-                }
-                if (i == 1) {
-                    var endData = year + '-' + month + '-' + day
-                    searchValue['endData'] = endData
-                }
+                searchValue[i == 0 ? 'beginData' : 'endData'] = year + '-' + month + '-' + day;
             } 
             this.$http.get(
-                '/api/CMC/workrecords/analysis_saas_monitor_province_list'
+                '/api/CMC/workrecords/get_saas_monitor_province_list'
             ).then(response =>{
-                this.provinceList = response.data.data[0]["seriesData"]
+                this.provinceList = response.data["seriesData"]
                 if (this.provinceList.length !== 0){
                     this.provinceSelected = this.provinceList[0].region
                 }
             }).catch(error =>{
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
             })
         },
 
@@ -175,24 +166,21 @@ export default {
          * @description 对第三方出错的出错问题分类关于省份分类的后端数据请求
          */
          async saasMonitorProblemTypeProvince(searchValue) {
-            try {
-                const response = await this.$http.get(
-                '/api/CMC/workrecords/analysis_saas_monitor_problem_by_function_and_province?beginData=' +
+            this.$http.get(
+                '/api/CMC/workrecords/analysis_saas_monitor_problem_by_type_and_province?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData']+
                 '&provinceSelected=' +
                 searchValue['provinceSelected']
-                )
+            ).then(response =>{
                 this.saasMonitorProblemTypeProvinceChartData = response.data.data
                 updateBarChartBasic(document, this.saasMonitorProblemTypeProvinceChartData, '省份生产监控异常分类统计', "category", false, true, 'saasMonitorProblemTypeProvinceChart')
                 console.log('update local saasMonitorProblemTypeProvinceChart data: ', this.saasMonitorProblemTypeProvinceChartData)
-
-            } catch (error) {
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
-            }
+            }).catch(error =>{
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
         },
 
         /**
@@ -200,22 +188,19 @@ export default {
          * @description 对第三方出错的关于省份的受理数量的后端数据请求
          */
         async saasMonitorProblemProvince(searchValue) {
-            try {
-                const response = await this.$http.get(
+            this.$http.get(
                 '/api/CMC/workrecords/analysis_saas_monitor_problem_by_province?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData']
-                )
+            ).then(response =>{
                 this.saasMonitorProblemProvinceChartData = response.data.data
                 updateBarChartBasic(document, this.saasMonitorProblemProvinceChartData, '省份生产监控异常数量统计', "category", false, true, 'saasMonitorProblemProvinceChart')
                 console.log('update local saasMonitorProblemProvinceChart data: ', this.saasMonitorProblemProvinceChartData)
-
-            } catch (error) {
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
-            }
+            }).catch(error =>{
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
         },
 
         /**

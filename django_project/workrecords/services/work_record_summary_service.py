@@ -310,7 +310,7 @@ def get_work_record_province_agency_summary():
     print()
 
 
-def get_work_record_report_error_function_count_old(beginData, endData):
+def get_work_record_error_function_count_old(beginData, endData):
 
     analysisData={
         'tableData': [],
@@ -422,9 +422,60 @@ def get_work_record_report_error_function_count_old(beginData, endData):
     # ■■■ 结束 升级计划 相关的数据获取
 
 
+def get_work_record_error_type_to_error_function_count_old(begin_date, end_date):
+
+    data = []
+
+    db = mysql_base.Db()
+    problem_type_list = ["产品bug", "实施配置", "异常数据处理"]
+
+    for problem_type in problem_type_list:
+        sql = f'SELECT softversion as softversion,' \
+              f'SUM(IF(`errorfunction`="报表功能",数量,0)) AS 报表功能, ' \
+              f'SUM(IF(`errorfunction`="开票功能",数量,0)) AS 开票功能, ' \
+              f'SUM(IF(`errorfunction`="license重置",数量,0)) AS license重置, ' \
+              f'SUM(IF(`errorfunction`="增值服务",数量,0)) AS 增值服务, ' \
+              f'SUM(IF(`errorfunction`="收缴业务",数量,0)) AS 收缴业务, ' \
+              f'SUM(IF(`errorfunction`="通知交互",数量,0)) AS 通知交互, ' \
+              f'SUM(IF(`errorfunction`="核销功能",数量,0)) AS 核销功能, ' \
+              f'SUM(IF(`errorfunction`="票据管理",数量,0)) AS 票据管理, ' \
+              f'SUM(IF(`errorfunction`="安全漏洞",数量,0)) AS 安全漏洞, ' \
+              f'SUM(IF(`errorfunction`="打印功能",数量,0)) AS 打印功能, ' \
+              f'SUM(IF(`errorfunction`="数据同步",数量,0)) AS 数据同步, ' \
+              f'SUM(IF(`errorfunction`="反算功能",数量,0)) AS 反算功能, ' \
+              f'SUM(IF(`errorfunction`="单位开通",数量,0)) AS 单位开通 ' \
+              f'FROM ' \
+              f'(select softversion , errorfunction, errortype, count(*) as 数量 ' \
+              f'from workrecords_2023 where createtime>="{begin_date}" and createtime<="{end_date}" and errortype = "{problem_type}" ' \
+              f'GROUP BY softversion, errorfunction, errortype ) A ' \
+              f'GROUP BY softversion'
+
+        saas_problem_type_and_function_data = db.select_offset(1, 2000, sql)
+
+        # 转化成前端可以直接渲染上el-table的形式,格式像这样
+        # [{'异常数据处理': '报表功能', 'V3': 1, 'V4_3_1_2': 0, 'V4_3_1_3': 0, 'V4_3_2_0': 2, 'V4_3_2_1': 0},
+        # {'异常数据处理': '开票功能', 'V3': 3, 'V4_3_1_2': 1, 'V4_3_1_3': 3, 'V4_3_2_0': 7, 'V4_3_2_1': 0},]
+        saas_problem_type_and_function_data_in_version = []
+        # 对每个功能生成一条这样的数据{'异常数据处理': '报表功能', 'V3': 1, 'V4_3_1_2': 0, 'V4_3_1_3': 0, 'V4_3_2_0': 2, 'V4_3_2_1': 0}
+        for function_type in constant.work_record_error_function_list:
+            new_item = {problem_type: function_type}
+            total = 0
+            for item in saas_problem_type_and_function_data:
+                # 因为前端那边的el-table，如果是V4.3.2.0这样有带.的，他会没办法自动把数值放上去，所以这边为了前端的格式需要将之转化成V4_3_2_0
+                new_item[item["softversion"].replace(".", "_")] = int(item[function_type])
+                total += int(item[function_type])
+            new_item["合计"] = total
+            saas_problem_type_and_function_data_in_version.append(new_item)
+
+        data.append({'problemType': problem_type, 'problemTypeData': saas_problem_type_and_function_data_in_version})
+
 
 def get_work_record_report_error_function_count_new():
     pass
+
+
+
+
 
 # 暂时放放在这个service
 

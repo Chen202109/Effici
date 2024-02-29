@@ -59,6 +59,16 @@ data_dict_code_map = {
     "error_type_factor" : "005",
 }
 
+table_chinese_alias_map = {
+    "2023工单记录": "workrecords_2023",
+    "2024工单记录" : "workrecords_2024",
+    "license" : "license_2023",
+    "重大故障" : "majorrecords",
+    "监控异常" : "monitorrecords",
+    "增值服务" : "orderprodct_2023",
+    "升级记录" : "upgradeplan_2023",
+    "数据字典" : "work_record_data_dict"
+}
 
 # error function
 work_record_error_function_list = ["开票功能","核销功能","收缴业务","通知交互","报表功能","数据同步","票据管理","license重置","单位开通","增值服务","打印功能","安全漏洞","反算功能"]

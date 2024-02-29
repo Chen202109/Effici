@@ -8,13 +8,13 @@
             <el-button type="primary" @click="search">查询</el-button>
         </div>
         <div>
-            <p class="saasAnalysisTitle"> {{ licenseRegisterProvinceData[0]['seriesName'] }}</p>
+            <p class="saasAnalysisTitle"> {{ licenseRegisterProvinceData['seriesName'] }}</p>
             <el-table
             :data="licenseRegisterProvinceTableData" 
             :header-cell-style="{fontSize:'14px',background: 'rgb(64 158 255 / 65%)',color:'#696969',}"
             border style="width: 100%" :cell-style="licenseTableCellStyle">
                 <el-table-column
-                v-for="(item, index) in licenseRegisterProvinceData[0]['seriesData']" :key="index" :prop="Object.keys(item)[0]" :label="Object.keys(item)[0]"
+                v-for="(item, index) in licenseRegisterProvinceData['seriesData']" :key="index" :prop="Object.keys(item)[0]" :label="Object.keys(item)[0]"
                 :width="columnWidth(Object.keys(item)[0])" align="center">
                 </el-table-column>  
             </el-table>
@@ -43,7 +43,6 @@
          * @param {*} licenseData 
          */
         formatRegisterTableData(licenseRegisterData) {
-          
           let formattedData = [];
           licenseRegisterData.forEach((item) => {
             const province = Object.keys(item)[0];
@@ -98,21 +97,20 @@
          * @description 对私有化license发放的省份统计的后端数据请求
          */
          async saasPrivatizationLicenseProvince(searchValue) {
-            try {
-                const response = await this.$http.get(
-                    '/api/CMC/workrecords/analysis_saas_privatization_license_register_province?beginData=' +
-                    searchValue['beginData'] +
-                    '&endData=' +
-                    searchValue['endData']
-                )
-                this.licenseRegisterProvinceData = response.data.data
-                this.licenseRegisterProvinceTableData = this.formatRegisterTableData(this.licenseRegisterProvinceData[0]['seriesData']);
-                console.log('update local licenseRegisterProvinceData data: ', this.licenseRegisterProvinceData)
-            } catch (error) {
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
-            }
+          this.$http.get(
+            '/api/CMC/workrecords/analysis_saas_privatization_license_register_province?beginData=' +
+            searchValue['beginData'] +
+            '&endData=' +
+            searchValue['endData']
+          ).then(response => {
+            this.licenseRegisterProvinceData = response.data
+            this.licenseRegisterProvinceTableData = this.formatRegisterTableData(this.licenseRegisterProvinceData['seriesData']);
+            console.log('update local licenseRegisterProvinceData data: ', this.licenseRegisterProvinceData)
+          }).catch((error) => {
+            console.log("失败" + error)
+            this.$message.error('错了哦，仔细看错误信息弹窗')
+            alert('失败' + error)
+          })
         },
       },
     }

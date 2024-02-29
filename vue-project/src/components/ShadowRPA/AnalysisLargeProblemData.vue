@@ -23,7 +23,7 @@
             <div class="saasLargeProblemTypeChart" id="saasLargeProblemTypeChart" :style="{ width: getPageWidth * 0.65+ 'px', height: '600px' }">
             </div>
             <div class="saasLargeProblemTopTable" style="width: 35%;">
-                <p>{{ saasLargeProblemTypeChartData[2]['seriesName'] }}: <span style="color: red;">{{ saasLargeProblemTypeChartData[2]['seriesData'] }}</span> 次</p>
+                <p>{{ saasLargeProblemTypeChartData[2]['seriesName'] }}: <span style="color: red;">{{ this.saasLargeProblemCount }}</span> 次</p>
                 <el-table
                 :data="saasLargeProblemTypeChartData[1]['seriesData']" 
                 :header-cell-style="{fontSize:'14px',background: 'rgb(64 158 255 / 65%)',color:'#696969',}"
@@ -68,7 +68,8 @@ export default {
             ],
             saasLargeProblemProvinceChartData: [],
             saasLargeProblemTypeChartData: [ {'seriesName': "", 'seriesData': []}, {'seriesName': "", 'seriesData': []}, {'seriesName': "", 'seriesData': 0} ],
-        }
+            saasLargeProblemCount:0,
+        } 
     },
     // 计算页面刚加载时候渲染的属性
     computed: {
@@ -144,17 +145,17 @@ export default {
                 var day = ('0' + this.dateRange[i].getDate()).slice(-2)
                 searchValue[i == 0 ? 'beginData' : 'endData'] = year + '-' + month + '-' + day;
             } 
+
             this.$http.get(
-                '/api/CMC/workrecords/analysis_saas_large_problem_province_list'
+                '/api/CMC/workrecords/get_saas_large_problem_province_list'
             ).then(response =>{
-                this.provinceList = response.data.data[0]["seriesData"]
+                this.provinceList = response.data["seriesData"]
                 if (this.provinceList.length !== 0){
                     this.provinceSelected = this.provinceList[0].region
                 }
             }).catch(error =>{
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
             })
         },
 
@@ -163,15 +164,14 @@ export default {
          * @description 对私有化重大故障问题分类关于省份分类的后端数据请求
          */
          async saasLargeProblemTypeProvince(searchValue) {
-            try {
-                const response = await this.$http.get(
-                '/api/CMC/workrecords/analysis_saas_large_problem_by_function_and_province?beginData=' +
+            this.$http.get(
+                '/api/CMC/workrecords/analysis_saas_large_problem_by_type_and_province?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData']+
                 '&provinceSelected=' +
                 searchValue['provinceSelected']
-                )
+            ).then(response =>{
                 this.saasLargeProblemTypeProvinceChartData = response.data.data
                 updateBarChartBasic(document, this.saasLargeProblemTypeProvinceChartData, '省份私有化重大故障类型统计', "category", false, true, 'saasLargeProblemTypeProvinceChart')
                 
@@ -198,12 +198,10 @@ export default {
                 })
 
                 console.log('update local saasLargeProblemTypeProvinceChart data: ', this.saasLargeProblemTypeProvinceChartData)
-
-            } catch (error) {
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
-            }
+            }).catch(error =>{
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
         },
 
         /**
@@ -211,22 +209,19 @@ export default {
          * @description 对重大故障的关于省份的受理数量的后端数据请求
          */
         async saasLargeProblemProvince(searchValue) {
-            try {
-                const response = await this.$http.get(
+            this.$http.get(
                 '/api/CMC/workrecords/analysis_saas_large_problem_by_province?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData']
-                )
+            ).then(response =>{
                 this.saasLargeProblemProvinceChartData = response.data.data
                 updateBarChartBasic(document, this.saasLargeProblemProvinceChartData, '省份私有化重大故障数量统计', "category", false, true, 'saasLargeProblemProvinceChart')
                 console.log('update local saasLargeProblemProvinceChart data: ', this.saasLargeProblemProvinceChartData)
-
-            } catch (error) {
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
-            }
+            }).catch(error =>{
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
         },
 
         /**
@@ -234,22 +229,20 @@ export default {
          * @description 对重大事故数量和出错功能的饼状图的后端数据请求
          */
         async searchSaaSLargeProblemByType(searchValue) {
-            try {
-                const response = await this.$http.get(
-                '/api/CMC/workrecords/analysis_saas_large_problem_by_function?beginData=' +
+            this.$http.get(
+                '/api/CMC/workrecords/analysis_saas_large_problem_by_type?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData']
-                )
+            ).then(response =>{
                 this.saasLargeProblemTypeChartData = response.data.data
+                this.saasLargeProblemCount = this.saasLargeProblemTypeChartData[2]["seriesData"][0]["value"]
                 updatePieChartBasic(document, this.saasLargeProblemTypeChartData, "私有化重大故障问题分类", "saasLargeProblemTypeChart")
                 console.log('update local saasLargeProblemTypeChart data: ', this.saasLargeProblemTypeChartData)
-
-            } catch (error) {
-                console.log(error)
-                this.$message.error('错了哦，仔细看错误信息弹窗')
-                alert('失败' + error)
-            }
+            }).catch(error =>{
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
         },
     },
 };

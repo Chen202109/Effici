@@ -306,7 +306,7 @@ export default {
       // 触发查询事件，根据日期条件进行查询
       var searchValue = {} // 存放筛选条件信息
       searchValue['resourcePool'] = this.resourcePoolSelected.toString()
-      searchValue['function_name'] = this.functionSelected.toString()
+      searchValue['functionName'] = this.functionSelected.toString()
       // 获取年、月、日，进行拼接
       for (let i = 0; i < this.dateRange.length; i++) {
         var year = this.dateRange[i].getFullYear()
@@ -357,8 +357,8 @@ export default {
           searchValue['endData'] +
           '&resourcePool=' +
           searchValue['resourcePool'] +
-          '&function_name=' +
-          searchValue['function_name']
+          '&functionName=' +
+          searchValue['functionName']
         ).then(response => {
         if (response.status === 200) {
           this.saasUpgradeLineChartData = response.data.data
@@ -386,8 +386,8 @@ export default {
           searchValue['endData'] +
           '&resourcePool=' +
           searchValue['resourcePool'] +
-          '&function_name=' +
-          searchValue['function_name']
+          '&functionName=' +
+          searchValue['functionName']
         ).then(response => {
         if (response.status === 200) {
           this.saasVersionByResoucePoolBarChartData = response.data.data

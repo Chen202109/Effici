@@ -43,6 +43,7 @@ class Db(object):
                     value = value
                     where_str += " AND " + "%s" % key + " " + "%f" % value
                 else:
+                    print(f"ddd: {value}")
                     value = value.replace("'", '"')
                     where_str += " AND " + "%s" % key + " " + "'%s'" % value
             if where_str == "":
