@@ -57,7 +57,7 @@
 
 <script>
 import { getMainPageWidth } from '@/utils/layoutUtil'
-import saasProblemTable from '@/components/ShadowRPA/AnalysisData_saasProblemTable.vue'
+import saasProblemTable from '@/components/ShadowRPA/AnalysisData/AnalysisData_saasProblemTable.vue'
 import html2pdf from 'html2pdf.js'
 
 
@@ -430,23 +430,21 @@ export default {
      * @param {*} searchValue 
      */
     async searchSaasProblemTypeInVersions(searchValue){
-      try {
-        const response = await this.$http.get(
-          '/api/CMC/workrecords/analysis_saas_problem_type_in_versions?beginData=' +
+      this.$http.get(
+        '/api/CMC/workrecords/analysis_report_saas_problem_type_in_versions?beginData=' +
           searchValue['beginData'] +
           '&endData=' +
           searchValue['endData']
-        )
+      ).then(response => {
         console.log(response.data.data)
         this.saasProblemTypeInVersionsDetail = [ [], [], [] ]
         for ( let i = 0; i < this.saasProblemTypeInVersionsDetail.length; i++) {
           this.saasProblemTypeInVersionsDetail[i] = response.data.data[i]['problemTypeData']
         }
-      } catch (error) {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
-      }
+      }).catch((error) => {
+        console.log(error.response.data.message)
+        this.$message.error(error.response.data.message)
+      })
     },
 
     /**
@@ -464,31 +462,25 @@ export default {
       } 
 
       // 使用axios发送请求 
-      try {
-        const response = await this.$http.get(
-          '/api/CMC/workrecords/analysisselect?beginData=' +
+      this.$http.get(
+        '/api/CMC/workrecords/analysis_report_work_record_report_error_function_count_old?beginData=' +
           searchValue['beginData'] +
           '&endData=' +
           searchValue['endData']
-        )
-        console.log('获得 response data 为', response.data.data)
+      ).then(response => {
+        console.log('获得 response data 为', response.data)
         this.analysisData = []
-        this.analysisData = response.data.data // 这里不能将整个data赋过去，会造成其他数据被覆盖
-        console.log('获得 this.analysisData 为', this.analysisData)
-
+        this.analysisData = response.data // 这里不能将整个data赋过去，会造成其他数据被覆盖
         this.updateSaasProblemTypeInVersions()
-
         //成功的消息提示
         this.$message({
           message: searchValue['beginData'] + ' 到 ' + searchValue['endData'] + ' 查询成功',
           type: 'success',
         })
-
-      } catch (error) {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
-      }
+      }).catch((error) => {
+        console.log(error.response.data.message)
+        this.$message.error(error.response.data.message)
+      })
 
       this.searchSaasProblemTypeInVersions(searchValue)
 

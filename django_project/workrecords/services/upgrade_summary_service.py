@@ -40,8 +40,6 @@ def get_service_upgrade_trend(begin_date, end_date, function_name, resource_pool
     # 如果某两个字典的日期是一样的，那就是有一天同时两次的升级记录，他们version肯定也一样，将他们合并成一条
     upgrade_time_record = [item for i, item in enumerate(upgrade_time_record) if 'x' not in item or item['x'] not in [x['x'] for x in upgrade_time_record[:i]]]
 
-    print(f"aaaaaaaaaaaaaa {upgrade_time_record}")
-
     if resource_pool == 'V3行业':
         sql = f' SELECT * FROM workrecords_2023 ' \
               f' where createtime>="{begin_date}" ' \

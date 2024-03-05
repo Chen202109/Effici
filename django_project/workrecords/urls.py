@@ -3,7 +3,7 @@ from django.urls import path
 from workrecords.controller import views
 from workrecords.controller import system_functions
 from workrecords.controller import submit_workrecords
-from workrecords.controller import workrecord_summary, upgrade_record_summary
+from workrecords.controller import workrecord_summary, upgrade_record_summary,ticket_folder_summary
 
 urlpatterns = [
 
@@ -11,7 +11,7 @@ urlpatterns = [
     path('get_data_dict_detail', system_functions.get_data_dict_detail),
     path('add_data_dict', system_functions.add_data_dict),
     path('add_data_dict_record', system_functions.add_data_dict_record),
-    path('work_record_init', system_functions.work_record_init),
+    path('get_required_data_dict_record_for_work_record', system_functions.get_required_data_dict_record_for_work_record),
 
     path('work_record', submit_workrecords.work_record),
     path('work_record_group_add', submit_workrecords.work_record_group_add),
@@ -39,17 +39,22 @@ urlpatterns = [
     path('analysis_saas_added_service_by_province',views.analysis_saas_added_service_by_province),
     path('analysis_saas_added_service_by_type',views.analysis_saas_added_service_by_type),
 
-    path('analysisselect',workrecord_summary.analysis_report_work_record_report_error_function_count_old),
-    path('analysis_saas_problem_type_in_versions', workrecord_summary.analysis_report_saas_problem_type_in_versions),
-    path('analysis_select_new', workrecord_summary.analysis_report_work_record_report_error_function_count_new),
-    path('analysis_saas_problem_type_in_versions_new', workrecord_summary.analysis_report_saas_problem_type_in_versions_new),
-    path('analysis_saas_problem_type_detail_in_versions_new', workrecord_summary.analysis_report_saas_problem_type_detail_in_versions_new),
-    path('analysis_saas_problem_type_in_function_version_view_new', workrecord_summary.analysis_report_saas_problem_type_in_function_version_view_new),
+    path('analysis_report_work_record_report_error_function_count_old',workrecord_summary.analysis_report_work_record_report_error_function_count_old),
+    path('analysis_report_saas_problem_type_in_versions', workrecord_summary.analysis_report_saas_problem_type_in_versions),
+    path('analysis_report_work_record_report_error_function_count_new', workrecord_summary.analysis_report_work_record_report_error_function_count_new),
+    path('analysis_report_problem_type_in_versions_new', workrecord_summary.analysis_report_saas_problem_type_in_versions_new),
+    path('analysis_report_problem_type_detail_in_versions_new', workrecord_summary.analysis_report_saas_problem_type_detail_in_versions_new),
+    path('analysis_report_problem_type_in_function_version_view_new', workrecord_summary.analysis_report_saas_problem_type_in_function_version_view_new),
     path('analysis_saas_problem_by_country', workrecord_summary.analysis_saas_problem_by_country),
     path('analysis_saas_problem_by_country_region', workrecord_summary.analysis_saas_problem_by_country_region),
     path('analysis_saas_function_by_province', workrecord_summary.analysis_saas_function_by_province),
     path('analysis_saas_problem_by_province_agency', workrecord_summary.analysis_saas_problem_by_province_agency),
     path('analysis_saas_problem_by_month', workrecord_summary.analysis_saas_problem_by_month),
-    path('analysis_version_upgrade_trend', workrecord_summary.analysis_version_upgrade_trend),
+    path('analysis_version_by_function', workrecord_summary.analysis_version_by_function),
+
+    path('analysis_ticket_folder_report_error_function_count', ticket_folder_summary.analysis_ticket_folder_report_error_function_count),
+    path('analysis_ticket_folder_report_problem_type_in_versions', ticket_folder_summary.analysis_ticket_folder_report_problem_type_in_versions),
+    path('analysis_ticket_folder_report_problem_type_in_function_version', ticket_folder_summary.analysis_ticket_folder_report_problem_type_in_function_version),
+    path('analysis_ticket_folder_report_problem_type_detail_in_versions', ticket_folder_summary.analysis_ticket_folder_report_problem_type_detail_in_versions),
 
 ]

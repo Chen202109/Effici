@@ -103,7 +103,7 @@ export default {
      */
     searchBasicInfo() {
       this.$http.get(
-        '/api/CMC/workrecords/work_record_init'
+        '/api/CMC/workrecords/get_required_data_dict_record_for_work_record'
       ).then(response => {
         if (response.status == 200) {
           this.productTypeOptions = response.data.productTypeOptions;
@@ -138,27 +138,22 @@ export default {
         '&pageSize=' +
         this.currentPageSize
       ).then((response) => {
-        if (response.status === 200) {
-          // 更新表格数据和total的amount
-          this.workRecordTableData = response.data.data;
-          this.workRecordTotalAmount = (response.data.amount === -1) ? this.workRecordTotalAmount : response.data.amount;
-          // 如果是搜索的情况而不是翻页的情况，将当前页面重置回1，然后消息提示查询成功
-          if (filter["requestTotal"]) {
-            this.currentPage = 1;
-            //成功的消息提示
-            this.$message({
-              message: filter['beginData'] + ' 到 ' + filter['endData'] + ' 查询成功',
-              type: 'success'
-            });
-          }
-        } else {
-          console.log(response.data.message);
-          this.$message.error(response.data.message);
+        // 更新表格数据和total的amount
+        this.workRecordTableData = response.data.data;
+        this.workRecordTotalAmount = (response.data.amount === -1) ? this.workRecordTotalAmount : response.data.amount;
+        // 如果是搜索的情况而不是翻页的情况，将当前页面重置回1，然后消息提示查询成功
+        if (filter["requestTotal"]) {
+          this.currentPage = 1;
+          //成功的消息提示
+          this.$message({
+            message: filter['beginData'] + ' 到 ' + filter['endData'] + ' 查询成功',
+            type: 'success'
+          });
         }
       }).catch((error) => {
-                console.log(error.response.data.message)
-                this.$message.error(error.response.data.message)
-            })
+          console.log(error.response.data.message)
+          this.$message.error(error.response.data.message)
+      })
     },
 
     /**
@@ -177,19 +172,14 @@ export default {
           '/api/CMC/workrecords/work_record',
           form
         ).then(response => {
-          if (response.status == 200) {
-            this.showRecordDetail = false
-            this.$message({
-              message: '添加成功',
-              type: 'success'
-            })
-            // 将total数量加一，并且进行一次查询更新展示的数据
-            this.workRecordTotalAmount += 1;
-            this.$refs.searchFilter.search(false);
-          } else {
-            this.$message.error(response.data.message);
-            console.log(response.data.message);
-          }
+          this.showRecordDetail = false
+          this.$message({
+            message: '添加成功',
+            type: 'success'
+          })
+          // 将total数量加一，并且进行一次查询更新展示的数据
+          this.workRecordTotalAmount += 1;
+          this.$refs.searchFilter.search(false);
         }).catch((error) => {
                 console.log(error.response.data.message)
                 this.$message.error(error.response.data.message)
@@ -200,15 +190,10 @@ export default {
           '/api/CMC/workrecords/work_record_update',
           form
         ).then(response => {
-          if (response.status === 200) {
-            this.showRecordDetail = false
-            this.$message.success(response.data.message)
-            this.workRecordTableData[this.currentRow] = form
-            this.currentRow = -1
-          } else {
-            console.log(response.data.message)
-            this.$message.error(response.data.message)
-          }
+          this.showRecordDetail = false
+          this.$message.success(response.data.message)
+          this.workRecordTableData[this.currentRow] = form
+          this.currentRow = -1
         }).catch((error) => {
                 console.log(error.response.data.message)
                 this.$message.error(error.response.data.message)
@@ -229,19 +214,14 @@ export default {
           '/api/CMC/workrecords/work_record_delete',
           recordInfoData
         ).then(response => {
-          if (response.status === 200) {
-            this.$message.success(response.data.message)
-            // 将total数量减一，并且进行一次查询更新展示的数据
-            this.workRecordTotalAmount -= 1;
-            this.$refs.searchFilter.search(false);
-          } else {
-            console.log(response.data.message)
-            this.$message.error(response.data.message)
-          }
+          this.$message.success(response.data.message)
+          // 将total数量减一，并且进行一次查询更新展示的数据
+          this.workRecordTotalAmount -= 1;
+          this.$refs.searchFilter.search(false);
         }).catch((error) => {
-                console.log(error.response.data.message)
-                this.$message.error(error.response.data.message)
-            })
+          console.log(error.response.data.message)
+          this.$message.error(error.response.data.message)
+        })
       } else {
         if (operation === "edit") this.currentRow = rowIndex;
         this.showRecordDetailForm(operation, recordInfoData)

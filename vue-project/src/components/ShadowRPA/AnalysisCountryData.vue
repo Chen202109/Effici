@@ -61,8 +61,8 @@
                         <!-- line-height 是为了让竖直居中，计算方法为外部div的height/(col的数量/2) * 2 -->
                         <el-col v-for="(row, rowIndex) in saasCountrySummaryData" :key="rowIndex"
                             style="width: 50%; text-align: center; line-height: 31px;">
-                            <el-row class="threeDText">{{ row.name }}</el-row>
-                            <el-row class="sevenDital">{{ row.value }}</el-row>
+                            <el-row class="threeDText">{{ row.x }}</el-row>
+                            <el-row class="sevenDital">{{ row.y }}</el-row>
                         </el-col>
                     </el-row>
                 </div>
@@ -161,7 +161,7 @@ export default {
          */
         defaultDatePickerValue() {
             var begin = new Date().getFullYear() + '-01-01'
-            var end = new Date().getFullYear() + "-" + new Date().getMonth() + 1 + "-" + new Date().getDate()
+            var end = new Date().getFullYear() + "-" + (new Date().getMonth() + 1) + "-" + new Date().getDate()
             console.log("begin and end picker", begin, end)
             this.dateRange = [begin, end]
         },
@@ -416,64 +416,58 @@ export default {
                 '&endData=' +
                 searchValue['endData']
             ).then(response => {
-                if (response.status === 200) {
-                    // 默认后端给的数据，第一个是map的数据
-                    // 拿到map的数据
-                    this.chinaMapProvinceSaaSProblemData = response.data.data
-                    // 把valueMax的值取出来
-                    let valueMax = this.chinaMapProvinceSaaSProblemData.pop()
-                    let saasProblemChinaMap = echarts.getInstanceByDom(document.getElementById("saasProblemChinaMap"))
-                    // 现在是添加属性，所以不用replace设成true，直接setOption就行
-                    saasProblemChinaMap && saasProblemChinaMap.setOption({
-                        visualMap: {//左下角的渐变颜色条
-                            min: 0,
-                            max: valueMax.valueMax,
-                            left: 'left',
-                            top: 'bottom',
-                            text: [valueMax.valueMax + "", 0 + ""],
-                            inRange: {
-                                color: ['#FCF7F6', '#FD2C05 ']
-                            },
-                            padding: [0, 0, 20, 15],
-                            show: true
+                // 默认后端给的数据，第一个是map的数据
+                // 拿到map的数据
+                this.chinaMapProvinceSaaSProblemData = response.data.data
+                // 把valueMax的值取出来
+                let valueMax = response.data.valueMax
+                let saasProblemChinaMap = echarts.getInstanceByDom(document.getElementById("saasProblemChinaMap"))
+                // 现在是添加属性，所以不用replace设成true，直接setOption就行
+                saasProblemChinaMap && saasProblemChinaMap.setOption({
+                    visualMap: {//左下角的渐变颜色条
+                        min: 0,
+                        max: valueMax,
+                        left: 'left',
+                        top: 'bottom',
+                        text: [valueMax + "", 0 + ""],
+                        inRange: {
+                            color: ['#FCF7F6', '#FD2C05 ']
                         },
-                        series: [
-                            {
-                                name: this.chinaMapProvinceSaaSProblemData[0]["seriesName"],
-                                type: 'map',
-                                geoIndex: 0,
-                                data: this.chinaMapProvinceSaaSProblemData[0]["seriesData"]
-                            }
-                        ]
-                    })
+                        padding: [0, 0, 20, 15],
+                        show: true
+                    },
+                    series: [
+                        {
+                            name: this.chinaMapProvinceSaaSProblemData[0]["seriesName"],
+                            type: 'map',
+                            geoIndex: 0,
+                            data: this.chinaMapProvinceSaaSProblemData[0]["seriesData"]
+                        }
+                    ]
+                })
 
+                /* 进行map选中的取消或者替换，如果搜索时候选中区域是全国，那么就应该取消选中区域，如果不是全国，那么需要进行选中区域的替换，替换成现在选中的这个区域
+                    * 有几种情况：{旧的全国，新的全国}， {旧的全国，新的省份},  {旧的省份，新的全国},  {旧的省份，新的省份}
+                    * 如果是 {旧的全国，新的全国}， 不能执行mapSelect或者mapUnSelect，跳过
+                    * 如果是 {旧的全国，新的省份}， 那么执行mapSelect，进行选中区域替换
+                    * 其中如果是 {旧的省份，新的全国},  {旧的省份，新的省份}，那么可以获取到oldProvinceSelected，然后根据新的是否是全国进行取消选中或者替换选中区域。
+                    */
+                // 尝试获取旧的地图上被选中的区域，如果发现获取不到，那么旧的选中区域就是全国
+                var oldProvinceSelected = "全国";
+                try {
+                    var oldProvinceSelected = Object.keys(saasProblemChinaMap.getOption().series[0].selectedMap)[0];
+                } catch (TypeError) {
 
-                    /* 进行map选中的取消或者替换，如果搜索时候选中区域是全国，那么就应该取消选中区域，如果不是全国，那么需要进行选中区域的替换，替换成现在选中的这个区域
-                     * 有几种情况：{旧的全国，新的全国}， {旧的全国，新的省份},  {旧的省份，新的全国},  {旧的省份，新的省份}
-                     * 如果是 {旧的全国，新的全国}， 不能执行mapSelect或者mapUnSelect，跳过
-                     * 如果是 {旧的全国，新的省份}， 那么执行mapSelect，进行选中区域替换
-                     * 其中如果是 {旧的省份，新的全国},  {旧的省份，新的省份}，那么可以获取到oldProvinceSelected，然后根据新的是否是全国进行取消选中或者替换选中区域。
-                     */
-                    // 尝试获取旧的地图上被选中的区域，如果发现获取不到，那么旧的选中区域就是全国
-                    var oldProvinceSelected = "全国";
-                    try {
-                        var oldProvinceSelected = Object.keys(saasProblemChinaMap.getOption().series[0].selectedMap)[0];
-                    } catch (TypeError) {
-
-                    }
-
-                    (oldProvinceSelected != "全国" || this.provinceSelected != "全国") && saasProblemChinaMap && saasProblemChinaMap.dispatchAction({
-                        type: (this.provinceSelected === "全国") ? 'mapUnSelect' : 'mapSelect', //根据看区域是不是全国来看是否是取消选中还是进行替换选中
-                        seriesIndex: 0, //指定地图的索引
-                        name: (this.provinceSelected === "全国") ? oldProvinceSelected : this.provinceSelected //需要取消选中的或者需要替换选中的区域名称
-                    })
-
-                    console.log('update local map: ', this.saasProblemChinaMap)
-                    console.log('update local map data: ', this.chinaMapProvinceSaaSProblemData)
-                } else {
-                    console.log(response.data.message)
-                    this.$message.error(response.data.message)
                 }
+
+                (oldProvinceSelected != "全国" || this.provinceSelected != "全国") && saasProblemChinaMap && saasProblemChinaMap.dispatchAction({
+                    type: (this.provinceSelected === "全国") ? 'mapUnSelect' : 'mapSelect', //根据看区域是不是全国来看是否是取消选中还是进行替换选中
+                    seriesIndex: 0, //指定地图的索引
+                    name: (this.provinceSelected === "全国") ? oldProvinceSelected : this.provinceSelected //需要取消选中的或者需要替换选中的区域名称
+                })
+
+                console.log('update local map: ', this.saasProblemChinaMap)
+                console.log('update local map data: ', this.chinaMapProvinceSaaSProblemData)
             }).catch((error) => {
                 console.log(error.response.data.message)
                 this.$message.error(error.response.data.message)
@@ -493,132 +487,132 @@ export default {
                 '&province=' +
                 searchValue['provinceSelected']
             ).then(response => {
-                if (response.status === 200) {
-                    // 这里是因为环绕在地图周围，所以size比较小，进行边距和轴标签的特殊设置
-                    let smallSizeBarChartOption = {
-                        legend: { data: [] },
-                        grid: {
-                            left: '3%',
-                            right: '3%',
-                            top: '23%',
-                            bottom: '7%',
-                        },
-                        xAxis: {
-                            axisLabel: {
-                                textStyle: {
-                                    fontSize: "11",
-                                },
+                // 这里是因为环绕在地图周围，所以size比较小，进行边距和轴标签的特殊设置
+                let smallSizeBarChartOption = {
+                    legend: { data: [] },
+                    grid: {
+                        left: '3%',
+                        right: '3%',
+                        top: '23%',
+                        bottom: '7%',
+                    },
+                    xAxis: {
+                        axisLabel: {
+                            textStyle: {
+                                fontSize: "11",
                             },
                         },
-                        yAxis: {
-                            axisLabel: {
-                                textStyle: {
-                                    fontSize: "11",
-                                },
+                    },
+                    yAxis: {
+                        axisLabel: {
+                            textStyle: {
+                                fontSize: "11",
                             },
                         },
-                    }
+                    },
+                }
 
-                    // size较小的横向柱状图的设置，将标签设在内部并且靠左对齐
-                    let smallSizeHorizontalBarChartOption = {
-                        legend: { data: [] },
-                        grid: {
-                            left: '3%',
-                            right: '3%',
-                            top: '20%',
-                            bottom: '10%',
+                // size较小的横向柱状图的设置，将标签设在内部并且靠左对齐
+                let smallSizeHorizontalBarChartOption = {
+                    legend: { data: [] },
+                    grid: {
+                        left: '3%',
+                        right: '3%',
+                        top: '20%',
+                        bottom: '10%',
+                    },
+                    series: {
+                        label: {
+                            show: true,
+                            formatter: '{b|{b}: {c}}次',
+                            // 横向柱状图，将标签设置在柱状内部，并且靠左对齐，padding是为了默认靠左对齐离y轴太近。
+                            position: 'insideLeft',
+                            align: 'left',
+                            padding: [0, -12, 0, 12],
                         },
-                        series: {
-                            label: {
-                                show: true,
-                                formatter: '{b|{b}: {c}}次',
-                                // 横向柱状图，将标签设置在柱状内部，并且靠左对齐，padding是为了默认靠左对齐离y轴太近。
-                                position: 'insideLeft',
-                                align: 'left',
-                                padding: [0, -12, 0, 12],
-                            },
-                        },
-                        yAxis: {
-                            // 将y轴标签去除，因为太长了，想展示在柱状内部
-                            axisLabel: { show: false },
-                        },
-                    }
+                    },
+                    yAxis: {
+                        // 将y轴标签去除，因为太长了，想展示在柱状内部
+                        axisLabel: { show: false },
+                    },
+                }
 
-                    // 拿到saasFunctionType柱状图的数据
-                    this.saasFunctionTypeBarChartData = response.data.data[0]
-                    updateBarChartBasic(document, this.saasFunctionTypeBarChartData, this.saasFunctionTypeBarChartData[0]["seriesName"], "category", false, true, 'saasFunctionTypeBarChart')
-                    let saasFunctionTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasFunctionTypeBarChart"))
-                    saasFunctionTypeBarChart && saasFunctionTypeBarChart.setOption(smallSizeBarChartOption)
+                // 拿到saasFunctionType柱状图的数据
+                this.saasFunctionTypeBarChartData = response.data.data[0]
+                updateBarChartBasic(document, this.saasFunctionTypeBarChartData, this.saasFunctionTypeBarChartData[0]["seriesName"], "category", false, true, 'saasFunctionTypeBarChart')
+                let saasFunctionTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasFunctionTypeBarChart"))
+                saasFunctionTypeBarChart && saasFunctionTypeBarChart.setOption(smallSizeBarChartOption)
 
-                    // 拿到saasProblemType柱状图的数据
-                    this.saasProblemTypeBarChartData = response.data.data[1]
-                    updateBarChartBasic(document, this.saasProblemTypeBarChartData, this.saasProblemTypeBarChartData[0]["seriesName"], "category", false, true, 'saasProblemTypeBarChart')
-                    let saasProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasProblemTypeBarChart"))
-                    saasProblemTypeBarChart && saasProblemTypeBarChart.setOption(smallSizeBarChartOption)
+                // 拿到saasProblemType柱状图的数据
+                this.saasProblemTypeBarChartData = response.data.data[1]
+                updateBarChartBasic(document, this.saasProblemTypeBarChartData, this.saasProblemTypeBarChartData[0]["seriesName"], "category", false, true, 'saasProblemTypeBarChart')
+                let saasProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasProblemTypeBarChart"))
+                saasProblemTypeBarChart && saasProblemTypeBarChart.setOption(smallSizeBarChartOption)
 
-                    // 拿到saasMonitorProblemType柱状图的数据
-                    this.saasMonitorProblemTypeBarChartData = response.data.data[2]
-                    updateBarChartBasic(document, this.saasMonitorProblemTypeBarChartData, this.saasMonitorProblemTypeBarChartData[0]["seriesName"], "category", false, false, 'saasMonitorProblemTypeBarChart')
-                    let saasMonitorProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasMonitorProblemTypeBarChart"))
-                    saasMonitorProblemTypeBarChart && saasMonitorProblemTypeBarChart.setOption(smallSizeHorizontalBarChartOption)
+                // 拿到saasMonitorProblemType柱状图的数据
+                this.saasMonitorProblemTypeBarChartData = response.data.data[2]
+                updateBarChartBasic(document, this.saasMonitorProblemTypeBarChartData, this.saasMonitorProblemTypeBarChartData[0]["seriesName"], "category", false, false, 'saasMonitorProblemTypeBarChart')
+                let saasMonitorProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasMonitorProblemTypeBarChart"))
+                saasMonitorProblemTypeBarChart && saasMonitorProblemTypeBarChart.setOption(smallSizeHorizontalBarChartOption)
 
-                    // 拿到saasSoftVersionAmount柱状图的数据
-                    this.saasSoftVersionAmountBarChartData = response.data.data[3]
-                    updateBarChartBasic(document, this.saasSoftVersionAmountBarChartData, this.saasSoftVersionAmountBarChartData[0]["seriesName"], "category", true, true, 'saasSoftVersionAmountBarChart')
-                    let saasSoftVersionAmountBarChart = echarts.getInstanceByDom(document.getElementById("saasSoftVersionAmountBarChart"))
-                    saasSoftVersionAmountBarChart && saasSoftVersionAmountBarChart.setOption(smallSizeBarChartOption)
-                    // 给tooltip设置出错功能top3的信息
-                    let functionTypeData = this.saasSoftVersionAmountBarChartData[0]["seriesData"].map((item) => item.functionType)
-                    saasSoftVersionAmountBarChart && saasSoftVersionAmountBarChart.setOption({
-                        tooltip: {
-                            trigger: 'axis',
-                            formatter: function (params) {
-                                const index = params[0].dataIndex; // 获取当前数据点的索引
-                                const xValue = params[0].name; // x 值
-                                const yValue = params[0].value; // y 值
-                                // 获取数据点对应的出错功能
-                                let func = ''
-                                functionTypeData[index].forEach((item) => { func += '<br/>' + item.function + ": " + item.amount })
-                                return `版本号: ${xValue}<br/>受理数量: ${yValue} ${func}`;
-                            }
+                // 拿到saasSoftVersionAmount柱状图的数据
+                this.saasSoftVersionAmountBarChartData = response.data.data[3]
+                updateBarChartBasic(document, this.saasSoftVersionAmountBarChartData, this.saasSoftVersionAmountBarChartData[0]["seriesName"], "category", true, true, 'saasSoftVersionAmountBarChart')
+                let saasSoftVersionAmountBarChart = echarts.getInstanceByDom(document.getElementById("saasSoftVersionAmountBarChart"))
+                saasSoftVersionAmountBarChart && saasSoftVersionAmountBarChart.setOption(smallSizeBarChartOption)
+                // 给tooltip设置出错功能top3的信息
+                let functionTypeData = this.saasSoftVersionAmountBarChartData[0]["seriesData"].map((item) => item.functionType)
+                saasSoftVersionAmountBarChart && saasSoftVersionAmountBarChart.setOption({
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: function (params) {
+                            const index = params[0].dataIndex; // 获取当前数据点的索引
+                            const xValue = params[0].name; // x 值
+                            const yValue = params[0].value; // y 值
+                            // 获取数据点对应的出错功能
+                            let func = ''
+                            functionTypeData[index].forEach((item) => { func += '<br/>' + item.function + ": " + item.amount })
+                            return `版本号: ${xValue}<br/>受理数量: ${yValue} ${func}`;
                         }
-                    })
+                    }
+                })
 
-                    // 拿到saasAgencyType饼图的数据function
-                    this.saasAgencyTypePieChartData = response.data.data[4]
-                    updatePieChartBasic(document, this.saasAgencyTypePieChartData, this.saasAgencyTypePieChartData[0]["seriesName"], 'saasAgencyTypePieChart')
-                    // 额外的饼图设置
-                    let saasAgencyTypePieChart = echarts.getInstanceByDom(document.getElementById("saasAgencyTypePieChart"))
-                    saasAgencyTypePieChart && saasAgencyTypePieChart.setOption({
-                        series: [{
-                            radius: ["20%", "37%"],
-                            labelLine: { length: 3, maxSurfaceAngle: 80 },
-                            // 给标签设置字体大小
-                            label: {
-                                rich: {
-                                    b: {
-                                        fontSize: 10,
-                                    },
-                                    per: {
-                                        fontSize: 10,
-                                    }
+                // 拿到saasAgencyType饼图的数据function
+                this.saasAgencyTypePieChartData = response.data.data[4]
+                // 将seriesData里面的x属性替换成name,y属性替换成value,因为pieChart的data默认的是name和value，传入x和y的话echarts会无法解析
+                this.saasAgencyTypePieChartData[0]["seriesData"] = this.saasAgencyTypePieChartData[0]["seriesData"].map(d => {
+                    return {...d, name: d.x, value: d.y};
+                });
+
+                updatePieChartBasic(document, this.saasAgencyTypePieChartData, this.saasAgencyTypePieChartData[0]["seriesName"], 'saasAgencyTypePieChart')
+                // 额外的饼图设置
+                let saasAgencyTypePieChart = echarts.getInstanceByDom(document.getElementById("saasAgencyTypePieChart"))
+                saasAgencyTypePieChart && saasAgencyTypePieChart.setOption({
+                    series: [{
+                        radius: ["20%", "37%"],
+                        labelLine: { length: 3, maxSurfaceAngle: 80 },
+                        // 给标签设置字体大小
+                        label: {
+                            rich: {
+                                b: {
+                                    fontSize: 10,
+                                },
+                                per: {
+                                    fontSize: 10,
                                 }
                             }
-                        }]
-                    })
+                        }
+                    }]
+                })
 
-                    // 拿到saasLargeProblemType柱状图的数据
-                    this.saasLargeProblemTypeBarChartData = response.data.data[5]
-                    updateBarChartBasic(document, this.saasLargeProblemTypeBarChartData, this.saasLargeProblemTypeBarChartData[0]["seriesName"], "category", false, false, 'saasLargeProblemTypeBarChart')
-                    let saasLargeProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasLargeProblemTypeBarChart"))
-                    saasLargeProblemTypeBarChart && saasLargeProblemTypeBarChart.setOption(smallSizeHorizontalBarChartOption)
+                // 拿到saasLargeProblemType柱状图的数据
+                this.saasLargeProblemTypeBarChartData = response.data.data[5]
+                updateBarChartBasic(document, this.saasLargeProblemTypeBarChartData, this.saasLargeProblemTypeBarChartData[0]["seriesName"], "category", false, false, 'saasLargeProblemTypeBarChart')
+                let saasLargeProblemTypeBarChart = echarts.getInstanceByDom(document.getElementById("saasLargeProblemTypeBarChart"))
+                saasLargeProblemTypeBarChart && saasLargeProblemTypeBarChart.setOption(smallSizeHorizontalBarChartOption)
 
-                    // 拿到saasCountrySummaryData表格的的数据
-                    this.saasCountrySummaryData = response.data.data[6][0]["seriesData"]
-                } else {
-                    console.log(response.data.message)
-                    this.$message.error(response.data.message)
-                }
+                // 拿到saasCountrySummaryData表格的的数据
+                this.saasCountrySummaryData = response.data.data[6][0]["seriesData"]
             }).catch((error) => {
                 console.log(error.response.data.message)
                 this.$message.error(error.response.data.message)
@@ -640,47 +634,42 @@ export default {
                 '&functionName=' +
                 searchValue['functionName']
             ).then(response => {
-                if (response.status === 200) {
-                    this.saasProvinceBarChartData = response.data.data
-                    // 将yMax的值取出去除，不让他进入updateBarChartBasic()中，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
-                    this.saasProvinceProblemAmountMax = this.saasProvinceBarChartData.pop().yMax
+                this.saasProvinceBarChartData = response.data.data
+                // 将yMax的值取出去除，不让他进入updateBarChartBasic()中，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
+                this.saasProvinceProblemAmountMax = response.data.yMax
 
-                    updateBarChartBasic(document, this.saasProvinceBarChartData, 'SaaS省份三线受理统计', "category", true, true, 'saasProvinceAndFunctionChart')
-                    console.log('update local province bar chart data: ', this.saasProvinceBarChartData)
-                    this.updateSaasProvinceAndFunctionSplitChart()
+                updateBarChartBasic(document, this.saasProvinceBarChartData, 'SaaS省份三线受理统计', "category", true, true, 'saasProvinceAndFunctionChart')
+                console.log('update local province bar chart data: ', this.saasProvinceBarChartData)
+                this.updateSaasProvinceAndFunctionSplitChart()
 
-                    // 给图添加一个graphic用于点击使用，进行子集的图的收缩和展开。
-                    // 在回调函数中this指向的是echart对象，而不是这个document
-                    var that = this
-                    let saasProvinceAndFunctionChart = echarts.getInstanceByDom(document.getElementById("saasProvinceAndFunctionChart"))
-                    saasProvinceAndFunctionChart && saasProvinceAndFunctionChart.setOption({
-                        graphic: {
-                            type: 'text',
-                            left: 'right',
-                            top: 'top',
-                            z: 100,
-                            style: {
-                                fill: '#409eff',
-                                text: "收缩/展开子集",
-                                fontSize: 16,
-                                lineHeight: 30,
-                                textAlign: 'center',
-                                padding: [10, 25, 0, 0],
-                            },
-                            onclick: function () {
-                                for (let i = 0; i < that.provinceSplitNum; i++) {
-                                    const ele = document.getElementById('saasProvinceAndFunctionChart' + (i + 1));
-                                    // 根据子集的state进行是否要添加hidden class设置display none
-                                    (that.provinceSplitState) ? ele.classList.add("hidden") : ele.classList.remove("hidden");
-                                }
-                                that.provinceSplitState = !that.provinceSplitState
+                // 给图添加一个graphic用于点击使用，进行子集的图的收缩和展开。
+                // 在回调函数中this指向的是echart对象，而不是这个document
+                var that = this
+                let saasProvinceAndFunctionChart = echarts.getInstanceByDom(document.getElementById("saasProvinceAndFunctionChart"))
+                saasProvinceAndFunctionChart && saasProvinceAndFunctionChart.setOption({
+                    graphic: {
+                        type: 'text',
+                        left: 'right',
+                        top: 'top',
+                        z: 100,
+                        style: {
+                            fill: '#409eff',
+                            text: "收缩/展开子集",
+                            fontSize: 16,
+                            lineHeight: 30,
+                            textAlign: 'center',
+                            padding: [10, 25, 0, 0],
+                        },
+                        onclick: function () {
+                            for (let i = 0; i < that.provinceSplitNum; i++) {
+                                const ele = document.getElementById('saasProvinceAndFunctionChart' + (i + 1));
+                                // 根据子集的state进行是否要添加hidden class设置display none
+                                (that.provinceSplitState) ? ele.classList.add("hidden") : ele.classList.remove("hidden");
                             }
+                            that.provinceSplitState = !that.provinceSplitState
                         }
-                    })
-                } else {
-                    console.log(response.data.message)
-                    this.$message.error(response.data.message)
-                }
+                    }
+                })
             }).catch((error) => {
                 console.log(error.response.data.message)
                 this.$message.error(error.response.data.message)
@@ -698,14 +687,9 @@ export default {
                 '&endData=' +
                 searchValue['endData']
             ).then(response => {
-                if (response.status === 200) {
-                    this.saasProvinceAndAgencyChartData = response.data.data
-                    this.updateSaaSProvinceAndAgencyBarChart(this.saasProvinceAndAgencyChartData, 'SaaS全国各省受理统计', "category", true, 'saasProvinceAndAgencyChart')
-                    console.log('update local province and angency bar chart data: ', this.saasProvinceAndAgencyChartData)
-                } else {
-                    console.log(response.data.message)
-                    this.$message.error(response.data.message)
-                }
+                this.saasProvinceAndAgencyChartData = response.data.data
+                this.updateSaaSProvinceAndAgencyBarChart(this.saasProvinceAndAgencyChartData, 'SaaS全国各省受理统计', "category", true, 'saasProvinceAndAgencyChart')
+                console.log('update local province and angency bar chart data: ', this.saasProvinceAndAgencyChartData)
             }).catch((error) => {
                 console.log(error.response.data.message)
                 this.$message.error(error.response.data.message)
@@ -723,31 +707,25 @@ export default {
                 '&endData=' +
                 searchValue['endData']
             ).then(response => {
-                console.log("1234")
-                if (response.status === 200) {
-                    this.saasProblemMonthChartData = response.data.data
-                    updateBarChartBasic(document, this.saasProblemMonthChartData, searchValue['beginData'].slice(0, 4) + '年SaaS月份受理统计', "category", false, true, 'saasProblemMonthChart')
-                    let saasProblemMonthChart = echarts.getInstanceByDom(document.getElementById("saasProblemMonthChart"))
-                    let functionTypeData = this.saasProblemMonthChartData[0]["seriesData"].map((item) => item.functionType)
-                    saasProblemMonthChart && saasProblemMonthChart.setOption({
-                        tooltip: {
-                            trigger: 'axis',
-                            formatter: function (params) {
-                                const index = params[0].dataIndex; // 获取当前数据点的索引
-                                const xValue = params[0].name; // x 值
-                                const yValue = params[0].value; // y 值
-                                // 获取数据点对应的出错功能
-                                let func = ''
-                                functionTypeData[index].forEach((item) => { func += '<br/>' + item.function + ": " + item.amount })
-                                return `月份: ${xValue}<br/>受理数量: ${yValue} ${func}`;
-                            }
+                this.saasProblemMonthChartData = response.data.data
+                updateBarChartBasic(document, this.saasProblemMonthChartData, searchValue['beginData'].slice(0, 4) + '年SaaS月份受理统计', "category", false, true, 'saasProblemMonthChart')
+                let saasProblemMonthChart = echarts.getInstanceByDom(document.getElementById("saasProblemMonthChart"))
+                let functionTypeData = this.saasProblemMonthChartData[0]["seriesData"].map((item) => item.functionType)
+                saasProblemMonthChart && saasProblemMonthChart.setOption({
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: function (params) {
+                            const index = params[0].dataIndex; // 获取当前数据点的索引
+                            const xValue = params[0].name; // x 值
+                            const yValue = params[0].value; // y 值
+                            // 获取数据点对应的出错功能
+                            let func = ''
+                            functionTypeData[index].forEach((item) => { func += '<br/>' + item.function + ": " + item.amount })
+                            return `月份: ${xValue}<br/>受理数量: ${yValue} ${func}`;
                         }
-                    })
-                    console.log('update local month bar chart data: ', this.saasProblemMonthChartData)
-                } else {
-                    console.log(response.data.message)
-                    this.$message.error(response.data.message)
-                }
+                    }
+                })
+                console.log('update local month bar chart data: ', this.saasProblemMonthChartData)
             }).catch((error) => {
                 console.log(error.response.data.message)
                 this.$message.error(error.response.data.message)
@@ -760,7 +738,7 @@ export default {
          */
         async searchSaaSVersionUpgradeTrend(searchValue) {
             this.$http.get(
-                '/api/CMC/workrecords/analysis_version_upgrade_trend?beginData=' +
+                '/api/CMC/workrecords/analysis_version_by_function?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData'] +
@@ -769,14 +747,9 @@ export default {
                 '&provinceSelected=' +
                 searchValue['provinceSelected']
             ).then(response => {
-                if (response.status === 200) {
-                    this.saasVersionBarChartData = response.data.data
-                    updateBarChartBasic(document, this.saasVersionBarChartData, this.provinceSelected + 'SaaS全版本受理趋势', "category", false, true, 'saasVersionTrendChart')
-                    console.log('update local version linechart data: ', this.saasVersionBarChartData)
-                } else {
-                    console.log(response.data.message)
-                    this.$message.error(response.data.message)
-                }
+                this.saasVersionBarChartData = response.data.data
+                updateBarChartBasic(document, this.saasVersionBarChartData, this.provinceSelected + 'SaaS全版本受理趋势', "category", false, true, 'saasVersionTrendChart')
+                console.log('update local version linechart data: ', this.saasVersionBarChartData)
             }).catch((error) => {
                 console.log(error.response.data.message)
                 this.$message.error(error.response.data.message)

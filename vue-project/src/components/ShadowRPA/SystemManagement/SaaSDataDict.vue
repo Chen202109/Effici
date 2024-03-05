@@ -69,7 +69,7 @@
                     <el-form-item label="字典项目层级" prop="level" ref="addDataDictDetailFormLevel">
                         <el-input v-model="addDataDictDetailForm.level" autocomplete="off"></el-input>
                     </el-form-item>
-                    <el-form-item label="字典父节点名称" prop="parentCode" ref="addDataDictDetailFormparentCode">
+                    <el-form-item label="字典父节点编码" prop="parentCode" ref="addDataDictDetailFormparentCode">
                         <el-input v-model="addDataDictDetailForm.parentCode" autocomplete="off"></el-input>
                     </el-form-item>
                     <el-form-item label="字典项目名称" prop="name" ref="addDataDictDetailFormName">
@@ -93,6 +93,7 @@ export default {
 
     data() {
         var validateLabel = (rule, value, callback) => {
+            // 想要实现的效果: 如果完整标签填写，则其他表单内容不需要填写，如果完整标签未填写，则需要填写想要加入的那个节点的层级，名称，父节点信息。
             if (this.addDataDictDetailForm.fullLabel == "" && (this.addDataDictDetailForm.level =="" && this.addDataDictDetailForm.name=="")) {
                 callback(new Error("请填写项目完整标签或填写节点的具体层级，名字等信息"))
             } else {

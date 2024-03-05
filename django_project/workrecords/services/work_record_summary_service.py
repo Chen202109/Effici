@@ -3,8 +3,9 @@ from mydata import mysql_base
 from workrecords.config import constant
 import pandas as pd
 
-from workrecords.services.data_dict_service import decode_data_item
+from workrecords.services.data_dict_service import encode_data_item, decode_data_item, get_error_function_dict_records
 from workrecords.services.work_record_service import get_work_record_single_column_summary
+from workrecords.utils.generate_table_utils import insert_version_into_list, generate_analysis_table_data
 
 
 def get_work_record_month_summary(begin_date, end_date):
@@ -107,9 +108,7 @@ def get_work_record_province_function_summary(begin_date, end_date, function_lis
         data[i]['seriesData'] = [next(filter(lambda x: x['x'] == region, data[i]['seriesData'])) for region in sorted_region_x]
 
     # 加上yMax的值，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
-    data.append({"yMax": y_max})
-
-    return data
+    return {"data": data, "yMax": y_max}
 
 
 def get_work_record_product_type_summary(begin_date, end_date, province="全国", db=None):
@@ -120,7 +119,7 @@ def get_work_record_product_type_summary(begin_date, end_date, province="全国"
         "createtime<=": end_date
     }
     if province != '全国': condition_dict["region="] = province
-    saas_agency_type_data = db.select(["agentype as name", "count(*) as value"], table_name, condition_dict, " group by agentype ")
+    saas_agency_type_data = db.select(["agentype as x", "count(*) as y"], table_name, condition_dict, " group by agentype ")
     return [{'seriesName': province + "受理行业种类", 'seriesData': saas_agency_type_data}]
 
 
@@ -133,15 +132,15 @@ def get_summary_item_amount(begin_date, end_date, province="全国", db=None):
     work_record_table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
 
     # 对合计的数据进行统计添加
-    sql = f'SELECT "受理问题合计" as name, count(*) as value from {work_record_table_name} WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} ' \
+    sql = f'SELECT "受理问题合计" as x, count(*) as y from {work_record_table_name} WHERE createtime >= "{begin_date}" AND createtime <= "{end_date}" {province_condition_sql} ' \
           f'UNION ALL ' \
-          f'SELECT "V4 license受理合计" as name, count(*) from license_2023 WHERE authorizeddate >= "{begin_date}" AND authorizeddate <= "{end_date}" {province_condition_sql} ' \
+          f'SELECT "V4 license受理合计" as x, count(*) from license_2023 WHERE authorizeddate >= "{begin_date}" AND authorizeddate <= "{end_date}" {province_condition_sql} ' \
           f'UNION ALL ' \
-          f'select "私有化重大故障合计" as name, count(*) from majorrecords WHERE createtime >= "{real_date_begin}" AND createtime <= "{real_date_end}" {province_condition_sql} ' \
+          f'select "私有化重大故障合计" as x, count(*) from majorrecords WHERE createtime >= "{real_date_begin}" AND createtime <= "{real_date_end}" {province_condition_sql} ' \
           f'UNION ALL ' \
-          f'select "生产监控问题合计" as name, count(*) from monitorrecords WHERE createtime >= "{real_date_begin}" AND createtime <= "{real_date_end}" {province_condition_sql} ' \
+          f'select "生产监控问题合计" as x, count(*) from monitorrecords WHERE createtime >= "{real_date_begin}" AND createtime <= "{real_date_end}" {province_condition_sql} ' \
           f'UNION ALL ' \
-          f'select "增值服务开通合计" as name, count(*) from orderprodct_2023 WHERE createtime >= "{real_date_begin}" AND createtime <= "{real_date_end}" {province_condition_sql} '
+          f'select "增值服务开通合计" as x, count(*) from orderprodct_2023 WHERE createtime >= "{real_date_begin}" AND createtime <= "{real_date_end}" {province_condition_sql} '
     saas_country_summary_table_data = db.select_offset(1, 2000, sql)
 
     # 上线单位数量统计, 因为是跨越时间的查询，查询这段时间内的单位新增
@@ -173,7 +172,7 @@ def get_summary_item_amount(begin_date, end_date, province="全国", db=None):
             begin_time_month = 1
             begin_time_year += 1
     # 对上线单位数量统计进行读取和插入到summary table中
-    saas_country_summary_table_data.insert(0, {"name": '上线单位合计', "value": agency_amount})
+    saas_country_summary_table_data.insert(0, {"x": '上线单位合计', "y": agency_amount})
 
     saas_country_summary_table = []
     saas_country_summary_table.append({'seriesName': province + "合计数据", 'seriesData': saas_country_summary_table_data})
@@ -274,9 +273,7 @@ def get_work_record_country_map_summary(saas_province_problem_data, saas_provinc
         agency_value = next((item['value'] for item in saas_province_agency_account_data if item['name'] == prov), 0)
         #  数组格式为[{"name":"省份名称","value":受理问题的数量}] ， 因为echarts地图他使用的数据格式是name和value，所以得对应上不能自定义值
         saas_country_data.append({'name': prov, 'value': value, 'agencyValue': agency_value})
-    data = []
-    data.append({'seriesName': "全国受理数量", 'seriesData': saas_country_data})
-    data.append({"valueMax": value_max})
+    data = { "data": [{'seriesName': "全国受理数量", 'seriesData': saas_country_data}], "valueMax":value_max}
     return data
 
 
@@ -307,14 +304,13 @@ def get_work_record_resource_pool_error_function_summary(begin_date, end_date, r
 
 
 def get_work_record_province_agency_summary():
-    print()
+    pass
 
 
-def get_work_record_error_function_count_old(beginData, endData):
+def get_work_record_error_function_count_old(beginData, endData,db=None):
 
     analysisData={
-        'tableData': [],
-        'licenseData': []
+        'tableData': []
     }
 
     db = mysql_base.Db()
@@ -391,38 +387,9 @@ def get_work_record_error_function_count_old(beginData, endData):
     analysisData['annularChart_data'] = annularChart_data  # 添加数组元素 【数据汇报】---> 饼状图形数据
     # ■■■ 结束 受理问题 相关的数据获取
 
-    # ■■■ 开始分页查询，获得对应时间范围内，【数据汇报】--->升级计划表格数据
-    # print('beginData类型',type(beginData)) 得到是str
-    # 由于realdate日期是2023-08-01 18:00:00 这种格式，所以对比时不等于2023-08-01 00:00:00，于是终止要+1天
-    realdate_begin = datetime.strptime(beginData, '%Y-%m-%d')
-    realdate_end = datetime.strptime(endData, '%Y-%m-%d') + timedelta(days=1)
+    return analysisData
 
-    sql = f'SELECT A.resourcepool, upgradetype, ' \
-          f'SUM(IF(LOCATE("bug", A.questiontype) > 0, A.数量, 0)) AS 缺陷, ' \
-          f'SUM(IF(LOCATE("需求", A.questiontype) > 0, A.数量, 0)) AS 需求, ' \
-          f'SUM(IF(LOCATE("优化", A.questiontype) > 0, A.数量, 0)) AS 优化, ' \
-          f'SUM(A.升级次数) as 升级次数 ' \
-          f'FROM ' \
-          f'(SELECT resourcepool, upgradetype,COUNT(*) AS 升级次数, "" AS questiontype, 0 AS 数量 ' \
-          f' FROM upgradeplan_2023 ' \
-          f' WHERE realdate >= "{realdate_begin}" AND realdate <= "{realdate_end}" ' \
-          f' GROUP BY resourcepool,upgradetype ' \
-          f' UNION ALL ' \
-          f' SELECT B.resourcepool,upgradetype, 0 AS 升级次数, B.questiontype, B.数量 ' \
-          f' FROM ' \
-          f' (SELECT resourcepool, upgradetype,questiontype, COUNT(*) AS 数量 ' \
-          f' FROM upgradeplan_2023 ' \
-          f' WHERE realdate >= "{realdate_begin}" AND realdate <= "{realdate_end}" ' \
-          f' GROUP BY resourcepool,upgradetype, questiontype ' \
-          f' ) B ' \
-          f') A ' \
-          f'GROUP BY A.resourcepool,upgradetype'
-    upgradeData = db.select_offset(1, 1000, sql)
-    analysisData['upgradeData'] = upgradeData  # 添加数组元素 【数据汇报】--->升级计划的内容
-    # ■■■ 结束 升级计划 相关的数据获取
-
-
-def get_work_record_error_type_to_error_function_count_old(begin_date, end_date):
+def get_work_record_error_type_to_error_function_count_old(begin_date, end_date,db=None):
 
     data = []
 
@@ -469,9 +436,175 @@ def get_work_record_error_type_to_error_function_count_old(begin_date, end_date)
 
         data.append({'problemType': problem_type, 'problemTypeData': saas_problem_type_and_function_data_in_version})
 
+    return data
 
-def get_work_record_report_error_function_count_new():
-    pass
+def get_work_record_report_error_function_count_new(begin_date, end_date, db=None):
+    db = get_db(db)
+
+    # 获取行业侧的出错功能的名称
+    function_list = get_error_function_dict_records(["name"],1, db)
+
+    condition_dict = {
+        # error_type_factor 005代表的是问题因素的那个数据字典
+        "dictCode=": constant.data_dict_code_map["error_type_factor"],
+        "level=": 1
+    }
+    error_factor_list = db.select(["name"], "work_record_data_dict", condition_dict, "")
+
+    # 开始查询生成出错功能和版本对比的表格数据
+    sql = f'select softversion, errorfunction, count(*) as amount ' \
+          f'FROM workrecords_2024 ' \
+          f'WHERE createtime>="{begin_date}" AND createtime<="{end_date}" ' \
+          f'AND (promark="V4标准产品" OR promark="V3标准产品" or promark="增值产品") ' \
+          f'GROUP BY softversion, errorfunction'
+    error_function_result = db.select_offset(1, 1000, sql)
+
+    # 开始查询问题因素和版本的数据
+    sql = f'select softversion, ' \
+          f'count(case when errortypefactor between 10100 and 10200 then 1 else NULL end ) as 产品bug, ' \
+          f'count(case when errortypefactor between 10200 and 10300 then 1 else NULL end ) as 异常数据处理, ' \
+          f'count(case when errortypefactor between 10300 and 10400 then 1 else NULL end ) as 实施配置, ' \
+          f'count(case when errortypefactor between 10400 and 10500 then 1 else NULL end ) as 需求, ' \
+          f'count(case when errortypefactor between 10500 and 10600 then 1 else NULL end ) as 其他 ' \
+          f'FROM workrecords_2024 ' \
+          f'WHERE createtime>="{begin_date}" AND createtime<="{end_date}" ' \
+          f'AND (promark="V4标准产品" OR promark="V3标准产品" or promark="增值产品") ' \
+          f'GROUP BY softversion'
+    error_factor_result = db.select_offset(1, 1000, sql)
+
+    return generate_analysis_table_data(function_list, error_factor_list, error_function_result, error_factor_result)
+
+def get_work_record_report_problem_type_in_versions_new(begin_date, end_date, party_selected, db=None):
+    db = mysql_base.Db()
+    condition_dict = {
+        "createtime>=": begin_date,
+        "createtime<=": end_date,
+        "(promark=": "增值产品",
+        "1=1 OR promark=": "V3标准产品",
+        "2=2 OR promark=": "V4标准产品",
+        "1=1 ) AND 1=":1
+    }
+    if party_selected != "全部":
+        party_encoded = encode_data_item(party_selected, constant.data_dict_code_map["error_attribution"])
+        # 10^3 是因为party的二级现在是3位数，所以是10^3
+        condition_dict["belong>="] = party_encoded * 1000
+        condition_dict["belong<"] = (party_encoded + 1) * 1000
+    result = db.select(["errortypefactor", "softversion", "count(*) as amount"], "workrecords_2024", condition_dict,
+                       "GROUP BY errortypefactor, softversion")
+    version_list = sorted(set(item["softversion"].replace(".", "_") for item in result))
+
+    # 要处理成这样的类型给前端渲染 [{"问题因素": "产品bug", "V4_3_2_1":3},{"问题因素": "实施配置", }]
+    error_factor_col1_table = []
+    error_factor_col2_table = []
+    data = [{"problem": "问题因素", "problemData": error_factor_col1_table}, {"problem": "问题因素(细)", "problemData": error_factor_col2_table}]
+
+    for item in result:
+        error_factor = decode_data_item(item["errortypefactor"], constant.data_dict_code_map["error_type_factor"]).split("-")
+        error_factor_col1 = error_factor[0]
+        error_factor_col2 = error_factor[1]
+        version = item["softversion"].replace(".", "_")
+        amount = item["amount"]
+
+        # 去找是否有登记过这个因素
+        error_factor_col1_label = "问题因素" if party_selected == "全部" else f"{party_selected}-问题因素"
+        error_factor_col2_label = "问题因素(细)" if party_selected == "全部" else f"{party_selected}-问题因素(细)"
+        insert_version_into_list(error_factor_col1_table, error_factor_col1_label, error_factor_col1, version_list, version, amount, "合计")
+        insert_version_into_list(error_factor_col2_table, error_factor_col2_label, error_factor_col2, version_list, version, amount, "合计")
+
+    return data
+
+def get_work_record_report_problem_type_in_function_version_view_new(begin_date, end_date, party_selected, db=None):
+    db = get_db(db)
+
+    data = []
+
+    # 获取行业侧的出错功能的名称
+    error_function_list = get_error_function_dict_records(["name"], 1, db)
+
+    condition_dict = {
+        # error_type_factor 005代表的是问题因素的那个数据字典
+        "dictCode=": constant.data_dict_code_map["error_type_factor"],
+        "level=": 1
+    }
+    error_factor_list = db.select(["code, name"], "work_record_data_dict", condition_dict, "")
+
+    for error_factor_col1 in error_factor_list:
+        # 将版本号里的"."转换成"_"，因为前端el-table的表头里如果字符串是带点的话会消失
+        sql = f'SELECT replace(softversion,".","_") as softversion'
+        for function in error_function_list:
+            sql += f', SUM(IF(`errorfunction`="{function["name"]}",amount,0)) AS {function["name"]} '
+        sql += ' FROM '
+        sql += ' (SELECT softversion , errorfunction, errortypefactor, count(*) as amount '
+        sql += ' FROM workrecords_2024 '
+        sql += f' WHERE createtime>="{begin_date}" AND createtime<="{end_date}" '
+        sql += f' AND (promark="V3标准产品" or promark = "V4标准产品" or promark = "增值产品") '
+        sql += f' AND errortypefactor >= {error_factor_col1["code"] * 100} AND errortypefactor <= {(error_factor_col1["code"] + 1) * 100}'
+        sql += ' GROUP BY softversion, errorfunction, errortypefactor ) A '
+        sql += ' GROUP BY softversion '
+        result = db.select_offset(1, 2000, sql)
+
+        # 查询出来的结果像是[{'softversion': 'V4_3_1_3', '开票功能': Decimal('0'), '收缴业务': Decimal('0'), ...}, {...}]
+        # 进行行列翻转
+        saas_problem_type_and_function_data_in_version = []
+        for function in error_function_list:
+            new_item = {error_factor_col1["name"]: function["name"]}
+            total = 0
+            for item in result:
+                new_item[item["softversion"]] = int(item[function["name"]])
+                total += int(item[function["name"]])
+            new_item["合计"] = total
+            saas_problem_type_and_function_data_in_version.append(new_item)
+
+        data.append({"problem": error_factor_col1["name"], "problemData": saas_problem_type_and_function_data_in_version})
+
+    return data
+
+def get_work_record_report_problem_type_detail_in_versions_new(begin_date, end_date, party_selected, db=None):
+    db = get_db(db)
+    data = []
+
+    condition_dict = {
+        "createtime>=": begin_date,
+        "createtime<=": end_date,
+        "(promark=": "增值产品",
+        "1=1 OR promark=": "V3标准产品",
+        "2=2 OR promark=": "V4标准产品",
+        "1=1 ) AND 1=": 1
+    }
+    if party_selected != "全部":
+        party_encoded = encode_data_item(party_selected, constant.data_dict_code_map["error_attribution"])
+        # 10^3 是因为party的二级现在是3位数，所以是10^3
+        condition_dict["belong>="] = party_encoded * 1000
+        condition_dict["belong<"] = (party_encoded + 1) * 1000
+    result = db.select(["errortypefactor", "softversion", "errortype", "count(*) as amount"], "workrecords_2024", condition_dict,
+                       "GROUP BY errortypefactor, softversion, errortype")
+    version_list = sorted(set(item["softversion"].replace(".", "_") for item in result))
+
+    # 转化成前端可以直接渲染上el-table的形式,格式像这样
+    # [{'异常数据处理': '报表功能', 'V3': 1, 'V4_3_1_2': 0, 'V4_3_1_3': 0, 'V4_3_2_0': 2, 'V4_3_2_1': 0}, {...}]
+    error_factor_col1_list = {}
+    for item in result:
+        # 获取errorfactor大类的decode，如产品bug，实施配置等， errorfactor的码去掉后面两位的小类的编码所以除以100
+        error_factor_col1_decoded = decode_data_item(int(item["errortypefactor"] / 100), constant.data_dict_code_map["error_type_factor"])
+        error_type_decoded = decode_data_item(item["errortype"], constant.data_dict_code_map["error_type"])
+        # 因为前端的el-table的表头如果字符串带'.'会失效，转换成"_"传给前端
+        version = item["softversion"].replace(".", "_")
+        amount = item["amount"]
+
+        # 如果data里面还没有这一项errorfactor大类，添加这一个项目的字典，并且记录下这个在data中的index
+        if error_factor_col1_list.get(error_factor_col1_decoded) is None:
+            error_factor_col1_list[error_factor_col1_decoded] = len(data)
+            data.append({
+                "problem": error_factor_col1_decoded,
+                "problemData": []
+            })
+
+        # 从data中找到这一项errorfactor大类对应的问题分类的列表
+        problem_data = data[error_factor_col1_list[error_factor_col1_decoded]]["problemData"]
+        problem_data_func_label = error_factor_col1_decoded if party_selected == "全部" else f"{party_selected}-{error_factor_col1_decoded}"
+        insert_version_into_list(problem_data, problem_data_func_label, error_type_decoded, version_list, version, amount, "合计")
+
+    return data
 
 
 

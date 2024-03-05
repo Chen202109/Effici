@@ -326,109 +326,95 @@ export default {
 
     },
 
+    /**
+     * 请求获取筛选信息范围内的出错问题与版本信息
+     * @param {*} searchValue 包含日期筛选信息的对象 
+     */
     async searchProblemTableData(searchValue) {
       this.$http.get(
-        '/api/CMC/workrecords/analysis_select_new?beginData=' +
+        '/api/CMC/workrecords/analysis_report_work_record_report_error_function_count_new?beginData=' +
         searchValue['beginData'] +
         '&endData=' +
         searchValue['endData'] 
       ).then(response => {
-        if (response.data.status === 200) {
-          this.tableData = response.data.data
-          console.log('response data: ', response.data.data)
-          console.log('update local tableData data: ', response.data.data)
-          this.updateSaasProblemBarChart()
-          this.updateSaasProblemPieChart()
-        }else{
-          console.log(response.message)
-          this.$message.error(response.message)
-        }
+        this.tableData = response.data.data
+        console.log('response data: ', response.data.data)
+        this.updateSaasProblemBarChart()
+        this.updateSaasProblemPieChart()
       }).catch((error) => {
-        console.log("失败" + error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
+        console.log(error.response.data.message)
+        this.$message.error(error.response.data.message)
       })
     },
 
+    /**
+     * 请求获取筛选时间范围内的问题因素与版本信息
+     * @param {*} searchValue 
+     */
     async searchSaasProblemTypeInVersions(searchValue) {
       this.$http.get(
-        '/api/CMC/workrecords/analysis_saas_problem_type_in_versions_new?beginData=' +
+        '/api/CMC/workrecords/analysis_report_problem_type_in_versions_new?beginData=' +
         searchValue['beginData'] +
         '&endData=' +
         searchValue['endData'] +
         '&partySelected=' +
         searchValue['partySelected']
       ).then(response => {
-        if (response.data.status === 200) {
-          // 清空原来的数据
-          this.saasProblemTypeInVersions = []
-          for ( let i = 0; i < response.data.data.length; i++) {
-            this.saasProblemTypeInVersions.push(response.data.data[i]['problemData'])
-          }
-          console.log('response data: ', response.data.data)
-          console.log('update local saasProblemTypeInVersions data: ', this.saasProblemTypeInVersions)
-        }else{
-          console.log(response.message)
-          this.$message.error(response.message)
+        // 清空原来的数据
+        this.saasProblemTypeInVersions = []
+        for ( let i = 0; i < response.data.data.length; i++) {
+          this.saasProblemTypeInVersions.push(response.data.data[i]['problemData'])
         }
+        console.log('response data: ', response.data.data)
+        console.log('update local saasProblemTypeInVersions data: ', this.saasProblemTypeInVersions)
       }).catch((error) => {
-        console.log("失败" + error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
+        console.log(error.response.data.message)
+        this.$message.error(error.response.data.message)
       })
     },
 
     async searchSaasProblemTypeDetailInVersions(searchValue) {
       this.$http.get(
-        '/api/CMC/workrecords/analysis_saas_problem_type_detail_in_versions_new?beginData=' +
+        '/api/CMC/workrecords/analysis_report_problem_type_detail_in_versions_new?beginData=' +
         searchValue['beginData'] +
         '&endData=' +
         searchValue['endData'] +
         '&partySelected=' +
         searchValue['partySelected']
       ).then(response => {
-        if (response.data.status == 200) {
           // 清空原来的数据
           this.saasProblemTypeInVersionsDetail = []
           for ( let i = 0; i < response.data.data.length; i++) {
             this.saasProblemTypeInVersionsDetail.push(response.data.data[i]['problemData'])
           }
-        }else{
-          console.log(response.message)
-          this.$message.error(response.message)
-        }
       }).catch((error) => {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
+        console.log(error.response.data.message)
+        this.$message.error(error.response.data.message)
       })
     },
 
     async searchSaasProblemTypeFunctionInVersionsDetail(searchValue) {
       this.$http.get(
-        '/api/CMC/workrecords/analysis_saas_problem_type_in_function_version_view_new?beginData=' +
+        '/api/CMC/workrecords/analysis_report_problem_type_in_function_version_view_new?beginData=' +
         searchValue['beginData'] +
         '&endData=' +
         searchValue['endData'] +
         '&partySelected=' +
         searchValue['partySelected']
       ).then(response => {
-        if (response.data.status == 200) {
-          this.saasProblemTypeFunctionInVersions = []
-          for ( let i = 0; i < response.data.data.length; i++) {            
-            this.saasProblemTypeFunctionInVersions.push(response.data.data[i]['problemData'])
-          }
-        }else{
-          console.log(response.message)
-          this.$message.error(response.message)
+        this.saasProblemTypeFunctionInVersions = []
+        for ( let i = 0; i < response.data.data.length; i++) {            
+          this.saasProblemTypeFunctionInVersions.push(response.data.data[i]['problemData'])
         }
       }).catch((error) => {
-        console.log(error)
-        this.$message.error('错了哦，仔细看错误信息弹窗')
-        alert('失败' + error)
+        console.log(error.response.data.message)
+        this.$message.error(error.response.data.message)
       })
     },
 
+    /**
+     * 更新saas问题归属柱状图的数据
+     */
     updateSaasProblemBarChart(){
       var saasProblemBarChartNewData = [{"seriesName":"SaaS各版本受理汇总", "seriesData":[]}]
       var totalAmount = this.tableData[this.tableData.length-1]["受理合计"]
@@ -462,6 +448,9 @@ export default {
       })
     },
 
+    /**
+     * 更新saas问题因素与出错功能饼图的数据
+     */
     updateSaasProblemPieChart() {
       // 嵌套环形图的数据放入
       let summaryRow = this.tableData.length - 1

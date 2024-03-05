@@ -30,8 +30,7 @@
               <el-menu-item index="/AnalysisAddedServiceData">V4增值服务开通统计</el-menu-item>
               <el-menu-item index="/AnalysisPrivatizationLicense">v4 license受理数据统计</el-menu-item>
 
-              <el-menu-item index="/SaaSTicketFolderUpgrade">电子票夹升级汇报</el-menu-item>
-              <el-menu-item index="/SaaSTicketFolderAnalysisData">电子票夹受理明细</el-menu-item>
+              <el-menu-item index="/SaaSTicketFolderAnalysisData">电子票夹受理数据分析</el-menu-item>
             </el-menu-item-group>
           </el-submenu>
         </el-menu>

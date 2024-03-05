@@ -12,7 +12,7 @@ import ShadowRPA from '@/components/ShadowRPA/ShadowRPA.vue'
 import SaaSDataDict from '@/components//ShadowRPA/SystemManagement/SaaSDataDict.vue'
 
 import AssistSubmit from "@/components/ShadowRPA/AssistSubmit/AssistSubmit.vue"
-import AnalysisData from "@/components/ShadowRPA/AnalysisData.vue"
+import AnalysisData from "@/components/ShadowRPA/AnalysisData/AnalysisData.vue"
 import AnalysisDataNew from "@/components/ShadowRPA/AnalysisData/AnalysisDataNew.vue"
 import AnalysisUpgradeTrend from "@/components/ShadowRPA/AnalysisUpgradeTrend.vue"
 import AnalysisCountryData from "@/components/ShadowRPA/AnalysisCountryData.vue"
@@ -21,7 +21,6 @@ import AnalysisAddedServiceData from "@/components/ShadowRPA/AnalysisAddedServic
 import AnalysisPrivatizationLicense from "@/components/ShadowRPA/AnalysisPrivatizationLicense.vue"
 import AnalysisLargeProblemData from "@/components/ShadowRPA/AnalysisLargeProblemData.vue"
 
-import SaaSTicketFolderUpgrade from "@/components/ShadowRPA/TicketFolder/AnalysisUpgrade.vue"
 import SaaSTicketFolderAnalysisData from "@/components/ShadowRPA/TicketFolder/AnalysisData/AnalysisData.vue"
 
 Vue.use(Router)
@@ -57,8 +56,7 @@ export default new Router({
             { path: '/AnalysisPrivatizationLicense', component: AnalysisPrivatizationLicense, meta: {keepAlive: true, comp: AnalysisPrivatizationLicense, name: 'AnalysisPrivatizationLicense', title:"v4 license受理数据统计"}},
             { path: '/saasDataDict', component: SaaSDataDict, meta: {keepAlive: true, comp: SaaSDataDict, name: 'SaaSDataDict', title:"数据字典"}},
 
-            { path: '/SaaSTicketFolderUpgrade', component: SaaSTicketFolderUpgrade, meta: {keepAlive: true, comp: SaaSTicketFolderUpgrade, name: 'SaaSTicketFolderUpgrade', title:"电子票夹升级汇报"}},
-            { path: '/SaaSTicketFolderAnalysisData', component: SaaSTicketFolderAnalysisData, meta: {keepAlive: true, comp: SaaSTicketFolderAnalysisData, name: 'SaaSTicketFolderAnalysisData', title:"电子票夹受理明细"}}
+            { path: '/SaaSTicketFolderAnalysisData', component: SaaSTicketFolderAnalysisData, meta: {keepAlive: true, comp: SaaSTicketFolderAnalysisData, name: 'SaaSTicketFolderAnalysisData', title:"电子票夹受理数据分析"}}
           ]
         },
         { path: '/CMC/ew', name: '新页面', component: New, },

@@ -61,11 +61,19 @@ export default {
         },
 
         columnWidth(label) {
+            let widthDict = {
+                2: 57,
+                3: 70,
+                4: 78,
+                5: 85,
+                6: 110,
+                10: 130,
+            }
             let width
             if (label === "license重置") {
                 width = 100
             } else {
-                width = 78
+                width = widthDict[label.length]
             }
             return width
         },
