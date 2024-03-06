@@ -23,16 +23,10 @@
 
 <script>
 import LeftMenu from "@/components/ShadowRPA/LeftMenu.vue"
-import AssistSubmit from "@/components/ShadowRPA/AssistSubmit/AssistSubmit.vue"
-import AnalysisUpgradeTrend from "@/components/ShadowRPA/AnalysisUpgradeTrend.vue"
-import AnalysisCountryData from "@/components/ShadowRPA/AnalysisCountryData.vue"
-import AnalysisMonitorProblem from "@/components/ShadowRPA/AnalysisMonitorProblem.vue"
-import AnalysisPrivatizationLicense from "@/components/ShadowRPA/AnalysisPrivatizationLicense.vue"
-import AnalysisLargeProblemData from "@/components/ShadowRPA/AnalysisLargeProblemData.vue"
+import AssistSubmit from "@/views/saasCenter/Industry/WorkRecord/AssistSubmit.vue"
 
 export default {
-  components: { LeftMenu, AssistSubmit, AnalysisUpgradeTrend, 
-    AnalysisCountryData, AnalysisMonitorProblem, AnalysisPrivatizationLicense, AnalysisLargeProblemData},
+  components: { LeftMenu, AssistSubmit},
 
   data() {
     return {

@@ -42,7 +42,7 @@
  
 <script>
 // 引入去除空格工具
-import { validUsername } from '../utils/validate'
+import { validUsername } from '@/utils/validate'
  
 export default {
   name: 'Login',

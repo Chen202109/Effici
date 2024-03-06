@@ -1,27 +1,29 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Login from '@/views/login'
-import New from '@/views/new'
+import Login from '@/views/Login/login'
+
+import Dashboard from '@/views/temp/dashboard'
+import Article from '@/views/temp/article'
+import Jira from '@/views/temp/jira'
+import New from '@/views/temp/new'
+
 import Container from '@/container/Container'
 import Main from '@/container/Main'
-import Dashboard from '@/views/dashboard'
-import Article from '@/views/article'
-import Jira from '@/views/jira'
-import ShadowRPA from '@/components/ShadowRPA/ShadowRPA.vue'
+import ShadowRPA from '@/container/ShadowRPA.vue'
 
-import SaaSDataDict from '@/components//ShadowRPA/SystemManagement/SaaSDataDict.vue'
+import SaaSDataDict from '@/views/saasCenter/SystemManagement/SaaSDataDict.vue'
 
-import AssistSubmit from "@/components/ShadowRPA/AssistSubmit/AssistSubmit.vue"
-import AnalysisData from "@/components/ShadowRPA/AnalysisData/AnalysisData.vue"
-import AnalysisDataNew from "@/components/ShadowRPA/AnalysisData/AnalysisDataNew.vue"
-import AnalysisUpgradeTrend from "@/components/ShadowRPA/AnalysisUpgradeTrend.vue"
-import AnalysisCountryData from "@/components/ShadowRPA/AnalysisCountryData.vue"
-import AnalysisMonitorProblem from "@/components/ShadowRPA/AnalysisMonitorProblem.vue"
-import AnalysisAddedServiceData from "@/components/ShadowRPA/AnalysisAddedServiceData.vue"
-import AnalysisPrivatizationLicense from "@/components/ShadowRPA/AnalysisPrivatizationLicense.vue"
-import AnalysisLargeProblemData from "@/components/ShadowRPA/AnalysisLargeProblemData.vue"
+import AssistSubmit from "@/views/saasCenter/Industry/WorkRecord/AssistSubmit.vue"
+import AnalysisData from "@/views/saasCenter/Industry/WorkRecordReport/AnalysisData.vue"
+import AnalysisDataNew from "@/views/saasCenter/Industry/WorkRecordReport/AnalysisDataNew.vue"
+import AnalysisUpgradeTrend from "@/views/saasCenter/Upgrade/AnalysisUpgradeTrend.vue"
+import AnalysisCountryData from "@/views/saasCenter/Industry/WorkRecordSummary/AnalysisCountryData.vue"
+import AnalysisMonitorProblem from "@/views/saasCenter/Industry/Monitor/AnalysisMonitorProblem.vue"
+import AnalysisAddedServiceData from "@/views/saasCenter/Industry/OrderedService/AnalysisAddedServiceData.vue"
+import AnalysisPrivatizationLicense from "@/views/saasCenter/Industry/License/AnalysisPrivatizationLicense.vue"
+import AnalysisLargeProblemData from "@/views/saasCenter/Industry/PrivatizationLargeProblem/AnalysisLargeProblemData.vue"
 
-import SaaSTicketFolderAnalysisData from "@/components/ShadowRPA/TicketFolder/AnalysisData/AnalysisData.vue"
+import SaaSTicketFolderAnalysisData from "@/views/saasCenter/TicketFolder/AnalysisData.vue"
 
 Vue.use(Router)
 

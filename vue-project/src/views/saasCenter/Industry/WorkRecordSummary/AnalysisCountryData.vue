@@ -762,7 +762,7 @@ export default {
 <style scoped>
 @font-face {
     font-family: "seven_digit_i";
-    src: url("../../assets/fonts/digital-7_mono_i.ttf");
+    src: url("~@/assets/fonts/digital-7_mono_i.ttf");
 }
 
 .saasChinaMapShow {
