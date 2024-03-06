@@ -39,7 +39,7 @@
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
         :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%">
         <el-table-column v-for="(value, key) in saasProblemTypeInVersions[0]" :key="key" :prop="key"
-          :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
+          :label="key.replace(/\_/g, '.')" :width="myColumnWidth(key, 'saasProblemTypeInVersions')" align="center">
         </el-table-column>
       </el-table>
 
@@ -47,7 +47,7 @@
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
         :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
         <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
-          :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
+          :label="key.replace(/\_/g, '.')" :width="myColumnWidth(key, 'saasProblemTypeInVersions')" align="center">
         </el-table-column>
       </el-table>
     </div>
@@ -56,7 +56,7 @@
 </template>
 
 <script>
-import { getMainPageWidth } from '@/utils/layoutUtil'
+import { getMainPageWidth, columnWidth } from '@/utils/layoutUtil'
 import saasProblemTable from '@/components/ShadowRPA/AnalysisData/AnalysisData_saasProblemTable.vue'
 import html2pdf from 'html2pdf.js'
 
@@ -312,26 +312,24 @@ export default {
     },
 
     /**
-     * 计算el-table列的宽度
+     * 计算el-table列的宽度, 在本页面有特殊情况，因为统计问题因素与问题分类对比的时候，问题分类文字过长，需要调整列宽。
+     * @param key 列名
+     * @param tableName 表格名
      */
-    columnWidth(key, tableName) {
-      // 因为当标题是版本号比如V4.3.2.0的时候，表头会显示不完全，所以在生成表格column的时候将版本之中的.给给成了_,如果这时候要计算想要的宽度，就把它给改回来
-      key= key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
-      let widthDict = {
-        2: 57,
-        3: 70,
-        4: 75,
-        5: 85,
-        6: 110,
-        10: 130,
+     myColumnWidth(key, tableName) {
+      let width = 100
+      switch(tableName) {
+        case "saasProblemTypeInVersions":
+          if (["产品bug" , "实施配置" , "异常数据处理", "问题分类",].some(str => key.includes(str))){
+            width = 110
+          } else {
+            width = columnWidth(key)
+          }
+          break
+        default:
+          width = columnWidth(key)
       }
-      let width
-      if (tableName === 'saasProblemTypeInVersions' && (["问题分类" , "产品bug" , "实施配置" , "异常数据处理"].includes(key))) {
-        width = 110 
-      } else if (key.length in widthDict){
-        width = widthDict[key.length]
-      }
-      return width
+      return width === undefined ? 100 : width
     },
 
     /**

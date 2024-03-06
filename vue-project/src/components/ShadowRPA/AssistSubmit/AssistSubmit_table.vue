@@ -8,17 +8,6 @@
       highlight-current-row: true
     >
       <el-table-column label="操作" align="center" fixed="right">
-        <!-- <el-col>
-          <el-row style="margin: 5px 0;">
-            <el-button size="mini" @click="handleDetail(scope.$index, scope.row)">详情</el-button>
-          </el-row>
-          <el-row style="margin: 5px 0;">
-            <el-button size="mini" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
-          </el-row>
-          <el-row style="margin: 5px 0;">
-            <el-button size="mini" @click="handleDelete(scope.$index, scope.row)" type="danger">删除</el-button>
-          </el-row>
-        </el-col> -->
 
         <template slot-scope="scope">
           <el-row>
@@ -38,12 +27,13 @@
       <el-table-column type="index" label="序号" width="50px" align="center"></el-table-column>
 
       <el-table-column v-for="(item, index) in tableTitle" :key="index" :prop="item.prop" :label="item.label"
-                :width="columnWidth(item.label, 'saasWorkRecordDetailTable')" align="center"> </el-table-column>
+                :width="myColumnWidth(item.label, 'saasWorkRecordDetailTable')" align="center"> </el-table-column>
     </el-table>
   </div>
 </template>
 
 <script>
+import { columnWidth } from '@/utils/layoutUtil'
 export default {
   name: "ReportTable",
   props: {
@@ -77,15 +67,8 @@ export default {
     /**
      * 计算el-table列的宽度
      */
-    columnWidth(key, tableName) {
-      let widthDict = {
-        2: 57,
-        3: 70,
-        4: 78,
-        5: 85,
-        6: 110,
-        10: 130,
-      }
+    myColumnWidth(key, tableName) {
+
       let width
       if (tableName === 'saasWorkRecordDetailTable') {
         switch (key) {
@@ -108,13 +91,13 @@ export default {
             width = 100
             break
           default:
-            width = widthDict[key.length]
+            width = columnWidth(key)
             break
         }
-      } else if (key.length in widthDict){
-        width = widthDict[key.length]
+      } else{
+        width = columnWidth(key)
       }
-      return width
+      return width === undefined ? 100 : width
     },
 
     handleSingleRecordOperation(operation, recordInfoData, rowIndex) {

@@ -16,7 +16,7 @@
     <div style="margin: 15px 0">
       <template>
         <!-- 周末要发的受理信息数据-->
-        <saasProblemTable :saasProblemTableData="this.tableData"></saasProblemTable>
+        <saasProblemTable :problemTableData="this.tableData"></saasProblemTable>
       </template>
     </div>
 
@@ -43,7 +43,7 @@
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
         :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
         <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
-          :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
+          :label="key.replace(/\_/g, '.')" :width="myColumnWidth(key, 'saasProblemTypeInVersionTable')" align="center">
         </el-table-column>
       </el-table>
 
@@ -51,7 +51,7 @@
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
         :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
         <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
-          :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
+          :label="key.replace(/\_/g, '.')" :width="myColumnWidth(key, 'saasProblemTypeInVersionTable')" align="center">
         </el-table-column>
       </el-table>
 
@@ -59,7 +59,7 @@
         :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
         :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
         <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
-          :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
+          :label="key.replace(/\_/g, '.')" :width="myColumnWidth(key, 'saasProblemTypeInVersionTable')" align="center">
         </el-table-column>
       </el-table>
     </div>
@@ -68,7 +68,7 @@
 </template>
 
 <script>
-import { getMainPageWidth } from '@/utils/layoutUtil'
+import { getMainPageWidth, columnWidth } from '@/utils/layoutUtil'
 import { updateBarChartBasic} from '@/utils/echartBasic'
 import saasProblemTable from '@/components/ShadowRPA/AnalysisData/AnalysisDataProblemTable.vue'
 // 引入基本模板
@@ -133,30 +133,24 @@ export default {
     },
 
     /**
-     * 计算el-table列的宽度
+     * 计算el-table列的宽度, 在本页面有特殊情况，因为统计问题因素与问题分类对比的时候，问题分类文字过长，需要调整列宽。
+     * @param key 列名
+     * @param tableName 表格名
      */
-     columnWidth(key, tableName) {
-      // 因为当标题是版本号比如V4.3.2.0的时候，表头会显示不完全，所以在生成表格column的时候将版本之中的.给给成了_,如果这时候要计算想要的宽度，就把它给改回来
-      key= key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
-      let widthDict = {
-        2: 57,
-        3: 70,
-        4: 75,
-        5: 85,
-        6: 110,
-        10: 130,
-      }
-      let width
-      if (tableName === 'saasProblemTypeInVersions') {
-        if (["产品bug" , "实施配置" , "异常数据处理", "需求", "其他"].some(str => key.includes(str))){
-          width = 200
-        } else if (key.search("问题因素") !== -1){
-          width = 150
-        } else {
-          width = widthDict[key.length]
-        }
-      } else {
-        width = widthDict[key.length]
+     myColumnWidth(key, tableName) {
+      let width = 100
+      switch(tableName) {
+        case "saasProblemTypeInVersionTable":
+          if (["产品bug" , "实施配置" , "异常数据处理", "需求", "其他"].some(str => key.includes(str))){
+            width = 200
+          } else if (key.search("问题因素") !== -1){
+            width = 150
+          } else {
+            width = columnWidth(key)
+          }
+          break
+        default:
+          width = columnWidth(key)
       }
       return width === undefined ? 100 : width
     },

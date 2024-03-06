@@ -15,7 +15,7 @@
         <div style="margin: 15px 0">
             <template>
                 <!-- 周末要发的受理信息数据-->
-                <saasProblemTable :saasProblemTableData="this.tableData"></saasProblemTable>
+                <ticketFolderProblemTable :problemTableData="this.tableData"></ticketFolderProblemTable>
             </template>
         </div>
 
@@ -30,32 +30,32 @@
         <div style="height: 30px;"></div>
 
         <div>
-            <span class="saasAnalysisTitle"> 票夹各版本处理汇总</span>
+            <span class="ticketFolderAnalysisTitle"> 票夹各版本处理汇总</span>
         </div>
 
         <div style="margin: 15px 20px 15px 0;">
-            <!-- v-for里key多添加一个值是因为有时候会和其他v-for冲突在一起，这里的是有可能v-for这里寻找key去update的时候会update到下面的saasProblemTypeInVersionsDetail -->
-            <el-table v-for="(item, index) in saasProblemTypeInVersions" :key="index+saasProblemTypeInVersions" :data="item"
+            <!-- v-for里key多添加一个值是因为有时候会和其他v-for冲突在一起，这里的是有可能v-for这里寻找key去update的时候会update到下面的ticketFolderProblemTypeInVersionsDetail -->
+            <el-table v-for="(item, index) in ticketFolderProblemTypeInVersions" :key="index+ticketFolderProblemTypeInVersions" :data="item"
                 :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
-                :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
+                :row-style="{ height: '25px' }" :cell-style="ticketFolderProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
                 <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
-                :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
+                :label="key.replace(/\_/g, '.')" :width="myColumnWidth(key, 'ticketFolderProblemTypeInVersions')" align="center">
                 </el-table-column>
             </el-table>
             
-            <el-table v-for="(item, index) in saasProblemTypeInVersionsDetail" :key="index+saasProblemTypeInVersionsDetail" :data="item"
+            <el-table v-for="(item, index) in ticketFolderProblemTypeInVersionsDetail" :key="index+ticketFolderProblemTypeInVersionsDetail" :data="item"
                 :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
-                :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
+                :row-style="{ height: '25px' }" :cell-style="ticketFolderProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
                 <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
-                :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
+                :label="key.replace(/\_/g, '.')" :width="myColumnWidth(key, 'ticketFolderProblemTypeInVersions')" align="center">
                 </el-table-column>
             </el-table>
 
-            <el-table v-for="(item, index) in saasProblemTypeFunctionInVersions" :key="index+saasProblemTypeFunctionInVersions" :data="item"
+            <el-table v-for="(item, index) in ticketFolderProblemTypeFunctionInVersions" :key="index+ticketFolderProblemTypeFunctionInVersions" :data="item"
                 :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
-                :row-style="{ height: '25px' }" :cell-style="saasProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
+                :row-style="{ height: '25px' }" :cell-style="ticketFolderProblemTypeInVersionTableCellStyle" border style="width: 100%; margin: 15px 20px 15px 0;">
                 <el-table-column v-for="(value, key) in item[0]" :key="key" :prop="key"
-                :label="key.replace(/\_/g, '.')" :width="columnWidth(key, 'saasProblemTypeInVersions')" align="center">
+                :label="key.replace(/\_/g, '.')" :width="myColumnWidth(key, 'ticketFolderProblemTypeInVersions')" align="center">
                 </el-table-column>
             </el-table>
         </div>
@@ -64,16 +64,16 @@
 </template>
 
 <script>
-import { getMainPageWidth } from '@/utils/layoutUtil'
+import { getMainPageWidth, columnWidth } from '@/utils/layoutUtil'
 import { updateBarChartBasic} from '@/utils/echartBasic'
-import saasProblemTable from '@/components/ShadowRPA/AnalysisData/AnalysisDataProblemTable.vue'
+import ticketFolderProblemTable from '@/components/ShadowRPA/AnalysisData/AnalysisDataProblemTable.vue'
 let echarts = require('echarts/lib/echarts')
 
 export default{
 
     name: 'AnalysisData',
     components: {
-        saasProblemTable
+        ticketFolderProblemTable
     },
 
     // 计算页面刚加载时候渲染的属性
@@ -92,13 +92,13 @@ export default{
 
             tableData:[],
             // 票夹各版本处理汇总的表格数据
-            saasProblemTypeInVersions: [],
-            saasProblemTypeInVersionsDetail : [],
+            ticketFolderProblemTypeInVersions: [],
+            ticketFolderProblemTypeInVersionsDetail : [],
         }
     },
 
     methods: {
-        saasProblemTypeInVersionTableCellStyle(row) {
+        ticketFolderProblemTypeInVersionTableCellStyle(row) {
             let style = ''
             if (row.column.label === "合计") {
                 style = 'background: rgb(253 238 32 / 20%); color: red; '
@@ -108,30 +108,24 @@ export default{
         },
 
         /**
-         * 计算el-table列的宽度
+         * 计算el-table列的宽度, 在本页面有特殊情况，因为统计问题因素与问题分类对比的时候，问题分类文字过长，需要调整列宽。
+         * @param key 列名
+         * @param tableName 表格名
          */
-        columnWidth(key, tableName) {
-            // 因为当标题是版本号比如V4.3.2.0的时候，表头会显示不完全，所以在生成表格column的时候将版本之中的.给给成了_,如果这时候要计算想要的宽度，就把它给改回来
-            key= key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
-            let widthDict = {
-                2: 57,
-                3: 70,
-                4: 75,
-                5: 85,
-                6: 110,
-                10: 130,
-            }
-            let width
-            if (tableName === 'saasProblemTypeInVersions') {
-                if (["产品bug" , "实施配置" , "异常数据处理", "需求", "其他"].some(str => key.includes(str))){
-                    width = 200
-                } else if (key.search("问题因素") !== -1){
-                    width = 150
-                } else {
-                    width = widthDict[key.length]
-                }
-            } else {
-                width = widthDict[key.length]
+        myColumnWidth(key, tableName) {
+            let width = 100
+            switch(tableName) {
+                case "ticketFolderProblemTypeInVersions":
+                    if (["产品bug" , "实施配置" , "异常数据处理", "需求", "其他"].some(str => key.includes(str))){
+                        width = 200
+                    } else if (key.search("问题因素") !== -1){
+                        width = 150
+                    } else {
+                        width = columnWidth(key)
+                    }
+                    break
+                default:
+                    width = columnWidth(key)
             }
             return width === undefined ? 100 : width
         },
@@ -147,7 +141,7 @@ export default{
                 color: ['#3398DB'], // 设置柱形图颜色
                 //设置 title 的 字体大小 和颜色
                 title: {
-                    text: 'SaaS各版本受理汇总',
+                    text: '电子票夹各版本受理汇总',
                     left: 'left',
                     top: '1%',
                     textStyle: {
@@ -186,7 +180,7 @@ export default{
             
             ticketFolderPieChart.setOption({
                 title: {
-                    text: 'SaaS受理问题分类',
+                    text: '电子票夹受理问题分类',
                     left: 'left',
                     top: '1%',
                     textStyle: {
@@ -255,7 +249,7 @@ export default{
                     // 给标签线设置格式
                     labelLayout: function (params) {
                         // 通过标签魔性labelRect的x，查看是在这张图左边还是右边 （不能使用params.label.x直接看label的文字的坐标，不知道为什么直接整个回调所有设置失效）
-                        const isLeft = params.labelRect.x < saasProblemPieChartNew.getWidth() / 2;
+                        const isLeft = params.labelRect.x < ticketFolderPieChart.getWidth() / 2;
                         const points = params.labelLinePoints;
                         // 更新水平方向的标签线的末尾坐标，看是左边的标签还是右边的标签，如果是右边的标签的话就取到标签的x值也就是标签最靠左的点然后加上标签宽度
                         points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
@@ -287,9 +281,9 @@ export default{
                 searchValue[i == 0 ? 'beginData' : 'endData'] = year + '-' + month + '-' + day;
             }
             this.searchProblemTableData(searchValue)
-            this.searchSaasProblemTypeInVersions(searchValue)
-            this.searchSaasProblemTypeDetailInVersions(searchValue)
-            this.searchSaasProblemTypeFunctionInVersionsDetail(searchValue)
+            this.searchTicketFolderProblemTypeInVersions(searchValue)
+            this.searchTicketFolderProblemTypeDetailInVersions(searchValue)
+            this.searchTicketFolderProblemTypeFunctionInVersionsDetail(searchValue)
         },
 
         /**
@@ -305,8 +299,8 @@ export default{
             ).then(response => {
                 this.tableData = response.data.data
                 console.log('response data: ', response.data.data)
-                this.updateSaasProblemBarChart()
-                this.updateSaasProblemPieChart()
+                this.updateTicketFolderProblemBarChart()
+                this.updateTicketFolderProblemPieChart()
             }).catch((error) => {
                 console.log(error)
                 console.log(error.response.data.message)
@@ -318,7 +312,7 @@ export default{
          * 请求获取筛选时间范围内的问题因素与版本信息
          * @param {*} searchValue 
          */
-        async searchSaasProblemTypeInVersions(searchValue) {
+        async searchTicketFolderProblemTypeInVersions(searchValue) {
             this.$http.get(
                 '/api/CMC/workrecords/analysis_ticket_folder_report_problem_type_in_versions?beginData=' +
                 searchValue['beginData'] +
@@ -326,12 +320,12 @@ export default{
                 searchValue['endData']
             ).then(response => {
                 // 清空原来的数据
-                this.saasProblemTypeInVersions = []
+                this.ticketFolderProblemTypeInVersions = []
                 for ( let i = 0; i < response.data.data.length; i++) {
-                    this.saasProblemTypeInVersions.push(response.data.data[i]['problemData'])
+                    this.ticketFolderProblemTypeInVersions.push(response.data.data[i]['problemData'])
                 }
                 console.log('response data: ', response.data.data)
-                console.log('update local saasProblemTypeInVersions data: ', this.saasProblemTypeInVersions)
+                console.log('update local ticketFolderProblemTypeInVersions data: ', this.ticketFolderProblemTypeInVersions)
             }).catch((error) => {
                 console.log(error)
                 console.log(error.response.data.message)
@@ -343,7 +337,7 @@ export default{
          * 搜索电子票夹的问题因素关于问题分类的错误统计
          * @param {*} searchValue 
          */
-        async searchSaasProblemTypeDetailInVersions(searchValue) {
+        async searchTicketFolderProblemTypeDetailInVersions(searchValue) {
             this.$http.get(
                 '/api/CMC/workrecords/analysis_ticket_folder_report_problem_type_detail_in_versions?beginData=' +
                 searchValue['beginData'] +
@@ -351,9 +345,9 @@ export default{
                 searchValue['endData']
             ).then(response => {
                 // 清空原来的数据
-                this.saasProblemTypeInVersionsDetail = []
+                this.ticketFolderProblemTypeInVersionsDetail = []
                 for ( let i = 0; i < response.data.data.length; i++) {
-                    this.saasProblemTypeInVersionsDetail.push(response.data.data[i]['problemData'])
+                    this.ticketFolderProblemTypeInVersionsDetail.push(response.data.data[i]['problemData'])
                 }
             }).catch((error) => {
                 console.log(error)
@@ -366,16 +360,16 @@ export default{
          * 请求获取电子票夹的问题因素关于出错功能的错误统计
          * @param {*} searchValue 
          */
-        async searchSaasProblemTypeFunctionInVersionsDetail(searchValue) {
+        async searchTicketFolderProblemTypeFunctionInVersionsDetail(searchValue) {
             this.$http.get(
                 '/api/CMC/workrecords/analysis_ticket_folder_report_problem_type_in_function_version?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
                 searchValue['endData'] 
             ).then(response => {
-                this.saasProblemTypeFunctionInVersions = []
+                this.ticketFolderProblemTypeFunctionInVersions = []
                 for ( let i = 0; i < response.data.data.length; i++) {            
-                    this.saasProblemTypeFunctionInVersions.push(response.data.data[i]['problemData'])
+                    this.ticketFolderProblemTypeFunctionInVersions.push(response.data.data[i]['problemData'])
                 }
             }).catch((error) => {
                 console.log(error.response.data.message)
@@ -383,14 +377,14 @@ export default{
             })
         },
 
-        updateSaasProblemBarChart(){
-            var barChartNewData = [{"seriesName":"SaaS各版本受理汇总", "seriesData":[]}]
+        updateTicketFolderProblemBarChart(){
+            var barChartNewData = [{"seriesName":"电子票夹各版本受理汇总", "seriesData":[]}]
             var totalAmount = this.tableData[this.tableData.length-1]["受理合计"]
             for(var i = 0; i < this.tableData.length-1; i++){
                 barChartNewData[0]["seriesData"].push({'x':this.tableData[i]["程序版本"], "y": this.tableData[i]["受理合计"], "percent":((this.tableData[i]["受理合计"] / totalAmount) * 100).toFixed(2)})
             }
             console.log('barChartNewData: ', barChartNewData)
-            updateBarChartBasic(document, barChartNewData, 'SaaS各版本受理汇总', "category", false, true, 'ticketFolderProblemBarChart')
+            updateBarChartBasic(document, barChartNewData, '电子票夹各版本受理汇总', "category", false, true, 'ticketFolderProblemBarChart')
             let ticketFolderProblemBarChart = echarts.getInstanceByDom(document.getElementById("ticketFolderProblemBarChart"))
             ticketFolderProblemBarChart && ticketFolderProblemBarChart.setOption({
                 series: {
@@ -417,7 +411,7 @@ export default{
             })
         },
 
-        updateSaasProblemPieChart() {
+        updateTicketFolderProblemPieChart() {
             // 嵌套环形图的数据放入
             let summaryRow = this.tableData.length - 1
             let summaryData = []
@@ -448,7 +442,7 @@ export default{
   margin: 15px 0; 
   display: block
 }
-.saasAnalysisTitle {
+.ticketFolderAnalysisTitle {
   color: #3398DB;
   font-size: 18;
   margin: 5px 10px 5px 0;
