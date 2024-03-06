@@ -37,28 +37,43 @@
     </div>
 
     <div style="margin: 5px 20px 5px 0;">
-      <div class="dailyUpgradeTable">
+      <div class="saasDailyUpgradeTable">
         <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4日常升级次数统计</p>
         <el-table :data="this.saasUpgradeProblemTypeTableData[0]['seriesData']"
           :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
           :row-style="{ height: '35px' }" :cell-style="upgradeTableCellStyle" border style="width: 100%">
           <el-table-column v-for="(value, key) in this.saasUpgradeProblemTypeTableData[0]['seriesData'][0]" :key="key"
-            :prop="key" :label="key" :width="columnWidth(key)" align="center">
+            :prop="key" :label="key" :width="myColumnWidth(key)" align="center">
           </el-table-column>
         </el-table>
       </div>
-      <div class="addedUpgradeTable">
-        <p class="saasAnalysisTitle" style="margin: 10px 0;"> {{ this.saasUpgradeProblemTypeTableData[1]["seriesName"] }}
-        </p>
+      <div class="saasAddedUpgradeTable">
+        <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4增值升级次数统计</p>
         <el-table :data="this.saasUpgradeProblemTypeTableData[1]['seriesData']"
           :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
           :row-style="{ height: '35px' }" :cell-style="upgradeTableCellStyle" border style="width: 100%">
           <el-table-column v-for="(value, key) in this.saasUpgradeProblemTypeTableData[1]['seriesData'][0]" :key="key"
-            :prop="key" :label="key" :width="columnWidth(key)" align="center">
+            :prop="key" :label="key" :width="myColumnWidth(key)" align="center">
           </el-table-column>
         </el-table>
       </div>
     </div>
+
+    <div style="height: 20px;"></div>
+
+    <div style="margin: 5px 20px 5px 0;">
+      <div class="ticketFolderDailyUpgradeTable">
+        <p class="saasAnalysisTitle" style="margin: 10px 0;"> {{this.ticketFolderUpgradeProblemTypeTableData[0]["seriesName"]}}</p>
+        <el-table :data="this.ticketFolderUpgradeProblemTypeTableData[0]['seriesData']"
+          :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
+          :row-style="{ height: '35px' }" :cell-style="upgradeTableCellStyle" border style="width: 100%">
+          <el-table-column v-for="(value, key) in this.ticketFolderUpgradeProblemTypeTableData[0]['seriesData'][0]" :key="key"
+            :prop="key" :label="key" :width="myColumnWidth(key)" align="center">
+          </el-table-column>
+        </el-table>
+      </div>
+    </div>
+
 
     <div style="height: 20px;"></div>
 
@@ -73,7 +88,7 @@
 
 
 <script>
-import { getMainPageWidth } from '@/utils/layoutUtil'
+import { getMainPageWidth, columnWidth } from '@/utils/layoutUtil'
 import { updateBarChartBasic } from '@/utils/echartBasic'
 
 // 引入基本模板
@@ -103,6 +118,8 @@ export default {
 
       // 公有云saas_v4日常和增值升级统计，第一个元素是日常的表格的数据，第二个元素是增值表格的数据
       saasUpgradeProblemTypeTableData: [{ 'seriesName': "", 'seriesData': [] }, { 'seriesName': "", 'seriesData': [] }],
+      // 票夹的日常和增值升级统计，第一个元素是日常的表格的数据，第二个元素是增值表格的数据
+      ticketFolderUpgradeProblemTypeTableData: [{ 'seriesName': "", 'seriesData': [] }, { 'seriesName': "", 'seriesData': [] }],
       // 这个页面各类图的数据
       saasUpgradeLineChartData: [],
       saasVersionByResoucePoolBarChartData: [],
@@ -138,21 +155,8 @@ export default {
     /**
      * 计算el-table列的宽度
      */
-    columnWidth(key, tableName) {
-      key = key.replace(/_/g, '').replace(/[^\w\u4e00-\u9fa50-9]/g, "")
-      let widthDict = {
-        2: 57,
-        3: 70,
-        4: 75,
-        5: 85,
-        6: 110,
-        10: 130,
-      }
-      let width
-      if (key.length in widthDict) {
-        width = widthDict[key.length]
-      }
-      return width
+    myColumnWidth(key, tableName) {
+      return columnWidth(key)
     },
 
     upgradeTableCellStyle(row) {
@@ -318,7 +322,7 @@ export default {
       this.searchSaasUpgradeProblemTypeTable(searchValue)
       this.searchSaaSServiceUpgradeTrend(searchValue)
       this.searchSaaSVersionUpgradeTrendByResoucePool(searchValue)
-
+      this.searchTicketFolderUpgradeProblemTypeTable(searchValue)
     },
 
     /**
@@ -332,13 +336,8 @@ export default {
         '&endData=' +
         searchValue['endData']
       ).then(response => {
-        if (response.status === 200) {
-          this.saasUpgradeProblemTypeTableData = response.data.data
-          console.log('update local saasUpgradeProblemTypeTableData data: ', response.data.data)
-        } else {
-          console.log(response.data.message)
-          this.$message.error(response.data.message)
-        }
+        this.saasUpgradeProblemTypeTableData = response.data.data
+        console.log('update local saasUpgradeProblemTypeTableData data: ', response.data.data)
       }).catch((error) => {
         console.log(error.response.data.message)
         this.$message.error(error.response.data.message)
@@ -351,7 +350,7 @@ export default {
      */
     async searchSaaSServiceUpgradeTrend(searchValue) {
       this.$http.get(
-          '/api/CMC/workrecords/analysis_service_upgrade_trend?beginData=' +
+          '/api/CMC/workrecords/analysis_saas_service_upgrade_trend?beginData=' +
           searchValue['beginData'] +
           '&endData=' +
           searchValue['endData'] +
@@ -360,18 +359,13 @@ export default {
           '&functionName=' +
           searchValue['functionName']
         ).then(response => {
-        if (response.status === 200) {
           this.saasUpgradeLineChartData = response.data.data
           this.updateSaaSUpgradeTrendLineChart()
           console.log('update local linechart data: ', this.saasUpgradeLineChartData)
-        } else {
-          console.log(response.data.message)
-          this.$message.error(response.data.message)
-        }
-      }).catch((error) => {
-        console.log(error.response.data.message)
-        this.$message.error(error.response.data.message)
-      })
+        }).catch((error) => {
+          console.log(error.response.data.message)
+          this.$message.error(error.response.data.message)
+        })
     },
 
     /**
@@ -380,7 +374,7 @@ export default {
      */
     async searchSaaSVersionUpgradeTrendByResoucePool(searchValue) {
       this.$http.get(
-          '/api/CMC/workrecords/analysis_version_problem_by_resource_pool?beginData=' +
+          '/api/CMC/workrecords/analysis_saas_version_problem_by_resource_pool?beginData=' +
           searchValue['beginData'] +
           '&endData=' +
           searchValue['endData'] +
@@ -389,14 +383,29 @@ export default {
           '&functionName=' +
           searchValue['functionName']
         ).then(response => {
-        if (response.status === 200) {
           this.saasVersionByResoucePoolBarChartData = response.data.data
           updateBarChartBasic(document, this.saasVersionByResoucePoolBarChartData, searchValue['resourcePool'] + 'SaaS版本受理及升级统计', "category", false, true, 'saasVersionTrendByResourcePoolChart')
           console.log('update local month bar chart data: ', this.saasVersionByResoucePoolBarChartData)
-        } else {
-          console.log(response.data.message)
-          this.$message.error(response.data.message)
-        }
+        }).catch((error) => {
+          console.log(error)
+          console.log(error.response.data.message)
+          this.$message.error(error.response.data.message)
+        })
+    },
+
+    /**
+     * @param {searchValue} searchValue 搜索参数的字典
+     * @description 查询更新升级和所属问题分类的数据信息的后端数据请求
+     */
+     async searchTicketFolderUpgradeProblemTypeTable(searchValue) {
+      this.$http.get(
+        '/api/CMC/workrecords/analysis_ticket_folder_upgrade_problem_type?beginData=' +
+        searchValue['beginData'] +
+        '&endData=' +
+        searchValue['endData']
+      ).then(response => {
+        this.ticketFolderUpgradeProblemTypeTableData = response.data.data
+        console.log('update local ticketFolderUpgradeProblemTypeTableData data: ', response.data.data)
       }).catch((error) => {
         console.log(error.response.data.message)
         this.$message.error(error.response.data.message)
@@ -414,13 +423,13 @@ export default {
   margin: 5px 10px 5px 0;
 }
 
-.dailyUpgradeTable {
+.saasDailyUpgradeTable, .ticketFolderDailyUpgradeTable {
   width: 50%;
   display: inline-block;
   margin: 0 10px 0 0;
 }
 
-.addedUpgradeTable {
+.saasAddedUpgradeTable, .ticketFolderAddedUpgradeTable {
   width: 48%;
   display: inline-block;
   margin: 0 0 0 10px;

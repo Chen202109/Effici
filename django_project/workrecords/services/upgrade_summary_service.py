@@ -3,7 +3,7 @@ from mydata import mysql_base
 
 from workrecords.config import constant
 
-def get_service_upgrade_trend(begin_date, end_date, function_name, resource_pool):
+def get_saas_service_upgrade_trend(begin_date, end_date, function_name, resource_pool):
     """
     去查找指定的资源池的指定功能对应的几个service的升级和bug趋势
     """
@@ -77,7 +77,7 @@ def get_service_upgrade_trend(begin_date, end_date, function_name, resource_pool
     return upgrade_time_record
 
 
-def get_upgrade_resource_pool_summary(begin_date, end_date, resource_pool, version_list, db=None):
+def get_saas_upgrade_resource_pool_summary(begin_date, end_date, resource_pool, version_list, db=None):
 
     data = []
     db = get_db(db)
@@ -102,7 +102,13 @@ def get_upgrade_resource_pool_summary(begin_date, end_date, resource_pool, versi
     return data
 
 
-def get_upgrade_error_type_summary(begin_date, end_date, db=None):
+def get_upgrade_error_type_summary(begin_date, end_date, system_name, db=None):
+    resourcepool_sql = ""
+    if system_name == "saas_v4":
+        resourcepool_sql = 'AND resourcepool!="V3行业" AND resourcepool!="电子票夹" '
+    elif system_name == "电子票夹":
+        resourcepool_sql = ' AND resourcepool="电子票夹" '
+
     data = []
     db = get_db(db)
 
@@ -116,13 +122,14 @@ def get_upgrade_error_type_summary(begin_date, end_date, db=None):
           ' SUM(case when questiontype like "%优化%" then 1 else 0 end) AS 优化 ' \
           ' FROM upgradeplan_2023 ' \
           f' WHERE realdate >= "{realdate_begin}" AND realdate <= "{realdate_end}" ' \
+          f'{resourcepool_sql} ' \
           ' GROUP BY upgradetype, resourcepool'
     saas_upgrade_problem_type_data = db.select_offset(1, 1000, sql)
 
     # 查出来格式是这样的：{'upgradetype': '增值', 'resourcepool': '01资源池', '缺陷': Decimal('31'), '需求': Decimal('13'), '优化': Decimal('2')}
     # 要进行转换成这样: {"saas_v4产品": "缺陷", '01资源池': '31', '02资源池': 'xx', '03资源池': 'xx', '04资源池': 'xx', '运营支撑平台': 'xx' }
-    saas_daily_upgrade_problem_type_data = [{"saas_v4标准产品": "缺陷"}, {"saas_v4标准产品": "需求"}, {"saas_v4标准产品": "优化"}]
-    saas_added_upgrade_problem_type_data = [{"saas_v4增值产品": "缺陷"}, {"saas_v4增值产品": "需求"}, {"saas_v4增值产品": "优化"}]
+    saas_daily_upgrade_problem_type_data = [{f"{system_name}标准产品": "缺陷"}, {f"{system_name}标准产品": "需求"}, {f"{system_name}标准产品": "优化"}]
+    saas_added_upgrade_problem_type_data = [{f"{system_name}增值产品": "缺陷"}, {f"{system_name}增值产品": "需求"}, {f"{system_name}增值产品": "优化"}]
     for item in saas_upgrade_problem_type_data:
         if item['upgradetype'] == '日常':
             saas_daily_upgrade_problem_type_data[0][item["resourcepool"]] = item['缺陷']
@@ -133,8 +140,8 @@ def get_upgrade_error_type_summary(begin_date, end_date, db=None):
             saas_added_upgrade_problem_type_data[1][item["resourcepool"]] = item['需求']
             saas_added_upgrade_problem_type_data[2][item["resourcepool"]] = item['优化']
 
-    data.append({'seriesName': "公有云saas_v4日常升级次数统计", 'seriesData': saas_daily_upgrade_problem_type_data})
-    data.append({'seriesName': "公有云saas_v4增值升级次数统计", 'seriesData': saas_added_upgrade_problem_type_data})
+    data.append({'seriesName': f"{system_name}日常升级次数统计", 'seriesData': saas_daily_upgrade_problem_type_data})
+    data.append({'seriesName': f"{system_name}增值升级次数统计", 'seriesData': saas_added_upgrade_problem_type_data})
 
     return data
 

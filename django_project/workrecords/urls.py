@@ -19,8 +19,9 @@ urlpatterns = [
     path('work_record_delete', submit_workrecords.work_record_delete),
 
     path('analysis_saas_upgrade_problem_type',upgrade_record_summary.analysis_saas_upgrade_problem_type),
-    path('analysis_service_upgrade_trend',upgrade_record_summary.analysis_service_upgrade_trend),
-    path('analysis_version_problem_by_resource_pool',upgrade_record_summary.analysis_version_problem_by_resource_pool),
+    path('analysis_saas_service_upgrade_trend',upgrade_record_summary.analysis_saas_service_upgrade_trend),
+    path('analysis_saas_version_problem_by_resource_pool',upgrade_record_summary.analysis_saas_version_problem_by_resource_pool),
+    path('analysis_ticket_folder_upgrade_problem_type',upgrade_record_summary.analysis_ticket_folder_upgrade_problem_type),
 
     path('analysis_saas_privatization_license_register_province',views.analysis_saas_privatization_license_register_province),
 

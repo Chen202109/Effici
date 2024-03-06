@@ -17,7 +17,7 @@ def analysis_saas_upgrade_problem_type(request):
         end_date = request.GET.get('endData', default='2023-12-31')
 
         try:
-            data = upgrade_summary_service.get_upgrade_error_type_summary(begin_date, end_date)
+            data = upgrade_summary_service.get_upgrade_error_type_summary(begin_date, end_date, "saas_v4")
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': e.msg})
         return JsonResponse(status=200, data={'data': data}, json_dumps_params={'ensure_ascii': False})
@@ -25,7 +25,7 @@ def analysis_saas_upgrade_problem_type(request):
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
 
-def analysis_service_upgrade_trend(request):
+def analysis_saas_service_upgrade_trend(request):
     if request.method == 'GET':
         begin_date = request.GET.get('beginData', default='2023-01-01')
         end_date = request.GET.get('endData', default='2023-12-31')
@@ -38,7 +38,7 @@ def analysis_service_upgrade_trend(request):
 
         try:
             data = [{'service': f"{resource_pool}-{function_name}",
-                     'data': upgrade_summary_service.get_service_upgrade_trend(begin_date, end_date, function_name, resource_pool)} for function_name
+                     'data': upgrade_summary_service.get_saas_service_upgrade_trend(begin_date, end_date, function_name, resource_pool)} for function_name
                     in function_names for resource_pool in resource_pools]
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': e.msg})
@@ -48,7 +48,7 @@ def analysis_service_upgrade_trend(request):
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
 
-def analysis_version_problem_by_resource_pool(request):
+def analysis_saas_version_problem_by_resource_pool(request):
     """
     分析版本信息和bug的趋势对比。
     """
@@ -74,10 +74,27 @@ def analysis_version_problem_by_resource_pool(request):
                 data.extend(
                     get_work_record_resource_pool_error_function_summary(begin_date, end_date, resource_pool, function_names, saas_version_data))
                 # 根据资源池查询筛选时间内这个资源池的日常升级和增值升级次数
-                data.extend(upgrade_summary_service.get_upgrade_resource_pool_summary(begin_date, end_date, resource_pool, saas_version_data))
+                data.extend(upgrade_summary_service.get_saas_upgrade_resource_pool_summary(begin_date, end_date, resource_pool, saas_version_data))
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': e.msg})
 
         return JsonResponse(status=200, data={'data': data}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
+
+def analysis_ticket_folder_upgrade_problem_type(request):
+    """
+    分析票夹的升级数据和所属升级分类的对比
+    """
+
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData', default='2023-01-01')
+        end_date = request.GET.get('endData', default='2023-12-31')
+        try:
+            data = upgrade_summary_service.get_upgrade_error_type_summary(begin_date, end_date, "电子票夹")
+        except EfficiServiceException as e:
+            return JsonResponse(status=e.status, data={'message': e.msg})
+        return JsonResponse(status=200, data={'data': data}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
+
