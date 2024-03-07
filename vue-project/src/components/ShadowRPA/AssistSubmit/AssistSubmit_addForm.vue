@@ -212,6 +212,7 @@ export default {
       operation: "",
 
       form: {
+        fid : '',
         isSolved: '',
         registerDate: '',
         solveDate: '',

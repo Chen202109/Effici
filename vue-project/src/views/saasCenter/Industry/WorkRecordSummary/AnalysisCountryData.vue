@@ -78,6 +78,7 @@
             <div v-for="i in provinceSplitNum" :class="'saasProvinceAndFunctionChart' + i"
                 :id="'saasProvinceAndFunctionChart' + i"></div>
         </div>
+        
         <div class="saasProvinceAndAgencyChart" id="saasProvinceAndAgencyChart"
             :style="{ width: getPageWidth + 'px', height: '400px' }"></div>
         <div class="saasProblemMonthChart" id="saasProblemMonthChart"

@@ -57,5 +57,7 @@ urlpatterns = [
     path('analysis_ticket_folder_report_problem_type_in_versions', ticket_folder_summary.analysis_ticket_folder_report_problem_type_in_versions),
     path('analysis_ticket_folder_report_problem_type_in_function_version', ticket_folder_summary.analysis_ticket_folder_report_problem_type_in_function_version),
     path('analysis_ticket_folder_report_problem_type_detail_in_versions', ticket_folder_summary.analysis_ticket_folder_report_problem_type_detail_in_versions),
+    path('analysis_ticket_folder_function_by_province',
+         ticket_folder_summary.analysis_ticket_folder_function_by_province),
 
 ]

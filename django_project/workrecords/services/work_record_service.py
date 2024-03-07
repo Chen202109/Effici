@@ -11,9 +11,9 @@ def get_work_record_detail(search_filter, curr_page, curr_page_size):
     db = mysql_base.Db()
     table_name = "workrecords_2024" if search_filter["beginData"] >= "2024-01-01" else "workrecords_2023"
     condition_dict = translate_search_filter(search_filter)
-
-    results = db.select(cat_all_work_record_table_cols_alias(), table_name, condition_dict,
-                        f" ORDER BY createtime limit {str((curr_page - 1) * curr_page_size)}, {curr_page_size}")
+    fields = cat_all_work_record_table_cols_alias()
+    fields.append("fid")
+    results = db.select(fields, table_name, condition_dict,f" ORDER BY createtime limit {str((curr_page - 1) * curr_page_size)}, {curr_page_size}")
 
     # 如果是新版本的工单记录模板，因为问题分类,问题归属是编码，所以进行转码
     if search_filter["beginData"] >= "2024-01-01":
@@ -75,7 +75,7 @@ def update_work_record(work_record_id, work_record_data):
 
     # 进行别名的转换，转换成数据库里字段名
     for key, value in constant.work_record_col_alias_map.items():
-        if value == "registerDate": continue
+        if value == "registerDate" or value=="fid": continue
         temp_value = work_record_data.get(value)
         fieldDict[key] = "" if temp_value is None else temp_value
 

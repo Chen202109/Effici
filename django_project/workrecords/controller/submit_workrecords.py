@@ -138,8 +138,8 @@ def work_record_update(request):
         if work_record_detail_form["registerDate"] <= "2023-12-31" and work_record_detail_form["solveDate"] >= "2024-01-01":
             return JsonResponse(status=400, data={'message': "因为是两个模板，请求时间不得跨越2023与2024年。"})
 
-        # 查询fid，暂且先通过登记日期和单位名称来
-        fid = encryption_utils.md5_encryption(str(work_record_detail_form.get("registerDate")) + "-" + str(work_record_detail_form.get("agencyName")))
+        # 查询fid，暂且未加解密
+        fid = work_record_detail_form["fid"]
 
         try:
             work_record_service.update_work_record(fid, work_record_detail_form)
@@ -154,7 +154,8 @@ def work_record_delete(request):
     if request.method == 'POST':
         work_record_detail_form = json.loads(request.body)
 
-        fid = encryption_utils.md5_encryption(str(work_record_detail_form.get("registerDate")) + "-" + str(work_record_detail_form.get("agencyName")))
+        # 查询fid，暂且未加解密
+        fid = work_record_detail_form["fid"]
         try:
             work_record_service.delete_work_record(fid, work_record_detail_form)
         except EfficiServiceException as e:

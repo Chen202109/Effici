@@ -23,7 +23,8 @@ import AnalysisAddedServiceData from "@/views/saasCenter/Industry/OrderedService
 import AnalysisPrivatizationLicense from "@/views/saasCenter/Industry/License/AnalysisPrivatizationLicense.vue"
 import AnalysisLargeProblemData from "@/views/saasCenter/Industry/PrivatizationLargeProblem/AnalysisLargeProblemData.vue"
 
-import SaaSTicketFolderAnalysisData from "@/views/saasCenter/TicketFolder/AnalysisData.vue"
+import TicketFolderAnalysisData from "@/views/saasCenter/TicketFolder/WorkRecordReport/AnalysisData.vue"
+import TicketFolderAnalysisCountryData from "@/views/saasCenter/TicketFolder/WorkRecordSummary/AnalysisCountryData.vue"
 
 Vue.use(Router)
 
@@ -58,7 +59,8 @@ export default new Router({
             { path: '/AnalysisPrivatizationLicense', component: AnalysisPrivatizationLicense, meta: {keepAlive: true, comp: AnalysisPrivatizationLicense, name: 'AnalysisPrivatizationLicense', title:"v4 license受理数据统计"}},
             { path: '/saasDataDict', component: SaaSDataDict, meta: {keepAlive: true, comp: SaaSDataDict, name: 'SaaSDataDict', title:"数据字典"}},
 
-            { path: '/SaaSTicketFolderAnalysisData', component: SaaSTicketFolderAnalysisData, meta: {keepAlive: true, comp: SaaSTicketFolderAnalysisData, name: 'SaaSTicketFolderAnalysisData', title:"电子票夹受理数据分析"}}
+            { path: '/TicketFolderAnalysisData', component: TicketFolderAnalysisData, meta: {keepAlive: true, comp: TicketFolderAnalysisData, name: 'TicketFolderAnalysisData', title:"电子票夹受理数据分析"}},
+            { path: '/TicketFolderAnalysisCountryData', component: TicketFolderAnalysisCountryData, meta: {keepAlive: true, comp: TicketFolderAnalysisCountryData, name: 'TicketFolderAnalysisCountryData', title:"电子票夹省份数据统计"}}
           ]
         },
         { path: '/CMC/ew', name: '新页面', component: New, },

@@ -151,6 +151,51 @@ def get_ticket_folder_report_problem_type_detail_in_versions(begin_date, end_dat
 
     return data
 
+def get_ticket_folder_province_function_summary(begin_date, end_date, function_list):
+    data = []
+    db = mysql_base.Db()
+    table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
+    condition_dict = {
+        "createtime>=": begin_date,
+        "createtime<=": end_date,
+        "promark=":"电子票夹"
+    }
+    region_list = db.select(["DISTINCT region as x"], table_name, condition_dict, "")
+
+    # 对每个功能进行查找
+    for function_item in function_list:
+        condition_dict["errorfunction="] = function_item
+        saas_function_data = db.select(["region as x", "count(*) as y"], table_name, condition_dict, " group by x")
+        saas_province_data = [{'x': entry['x'], 'y': next((value['y'] for value in saas_function_data if value['x'] == entry['x']), 0)} for entry in
+                              region_list]
+        data.append({'seriesName': function_item, 'seriesData': saas_province_data})
+
+    # 对省份按受理数量进行排序
+    sorted_region = []
+    y_max = 0
+    xAxis = region_list
+
+    # 统计省份对应的几个功能加起来的受理数量
+    for item in xAxis:
+        y_sum = 0
+        for function_data in data:
+            y = next(filter(lambda x: x['x'] == item['x'], function_data['seriesData']))['y']
+            y_sum += y
+            y_max = y if y > y_max else y_max
+        sorted_region.append({'x': item['x'], 'y': y_sum})
+
+    # 排序并取出省份的list
+    sorted_region.sort(key=lambda x: x['y'], reverse=True)
+    sorted_region_x = [item['x'] for item in sorted_region]
+
+    # 根据排序好的省份，重新将数据根据顺序装填如每一个function的seriesData中
+    for i in range(len(function_list)):
+        data[i]['seriesData'] = [next(filter(lambda x: x['x'] == region, data[i]['seriesData'])) for region in sorted_region_x]
+
+    # 加上yMax的值，该值用来对省份子集的y轴大小做一个统一，否则y轴会根据里面的数据自适应缩放大小
+    return {"data": data, "yMax": y_max}
+
+
 
 def get_db(db):
     if db is None:

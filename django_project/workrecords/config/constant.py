@@ -1,6 +1,6 @@
 # sql
 work_record_col_alias_map = {
-    # "fid":"code",
+    # "fid":"fid",
     "belong" : "problemAttribution",
     "recordcode" : "workRecordCode",
     "recordtitle" : "workRecordTitle",
