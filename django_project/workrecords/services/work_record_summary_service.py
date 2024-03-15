@@ -8,17 +8,27 @@ from workrecords.services.work_record_service import get_work_record_single_colu
 from workrecords.utils.generate_table_utils import insert_version_into_list, generate_analysis_table_data
 
 
-def get_work_record_month_summary(begin_date, end_date):
+def get_work_record_month_summary(begin_date, end_date, system_label=None):
     """
     查询传入的时间范围内每个月的受理数量，并且归纳那个月出错功能的前五
     :param begin_date 查询起始时间
     :param end_date 查询截止时间
+    :param system_label 标识是哪个系统的工单受理问题，None代表都查询，1代表行业，2代表票夹
     """
+    promark_condition_sql = ''
+    if system_label == "1":
+        promark_condition_sql = 'AND ( promark="V3标准产品" OR promark="V4标准产品" OR promark="增值产品")'
+    elif system_label=="2":
+        promark_condition_sql=  'AND promark="电子票夹"'
+
+    print(f"received sql: {promark_condition_sql}")
+
     db = mysql_base.Db()
     table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
     sql = f' SELECT MONTH(createtime) AS Month, errorfunction, COUNT(*) AS ProblemAmount ' \
           f' FROM {table_name} ' \
           f' WHERE MONTH(createtime) between {datetime.strptime(begin_date, "%Y-%m-%d").month} AND {datetime.strptime(end_date, "%Y-%m-%d").month} ' \
+          f' {promark_condition_sql} '\
           f' GROUP BY MONTH(createtime), errorfunction'
     saas_month_data = db.select_offset(1, 2000, sql)
 
@@ -67,7 +77,14 @@ def get_work_record_version_function_summary(begin_date, end_date, province, fun
     return data
 
 
-def get_work_record_province_function_summary(begin_date, end_date, function_list):
+def get_work_record_province_function_summary(begin_date, end_date, function_list, system_label=None):
+    """
+    查询传入的时间范围内每个省份的受理量，并且统计每个省份的受理的所指定的出错功能。
+    :param begin_date 查询起始时间
+    :param end_date 查询截止时间
+    :param function_list 所指定的出错功能，是列表形式，以,分割
+    :param system_label 标识是哪个系统的工单受理问题，None代表都查询，1代表行业，2代表票夹
+    """
     data = []
     db = mysql_base.Db()
     table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
@@ -75,6 +92,10 @@ def get_work_record_province_function_summary(begin_date, end_date, function_lis
         "createtime>=": begin_date,
         "createtime<=": end_date
     }
+    if system_label == "1":
+        condition_dict["(promark='增值产品' OR promark='V3标准产品' OR promark='V4标准产品') AND 1="] = 1
+    elif system_label == "2":
+        condition_dict["promark="] = "电子票夹"
     region_list = db.select(["DISTINCT region as x"], table_name, condition_dict, "")
 
     # 对每个功能进行查找
@@ -313,7 +334,7 @@ def get_work_record_error_function_count_old(beginData, endData,db=None):
         'tableData': []
     }
 
-    db = mysql_base.Db()
+    db = get_db(db)
 
     # ■■■ 开始分页查询，获得对应时间范围内，【数据汇报】--->受理问题的表格数据
     # total是每个版本的受理数量合计，其他用了 列传行 的办法
@@ -393,7 +414,7 @@ def get_work_record_error_type_to_error_function_count_old(begin_date, end_date,
 
     data = []
 
-    db = mysql_base.Db()
+    db = get_db(db)
     problem_type_list = ["产品bug", "实施配置", "异常数据处理"]
 
     for problem_type in problem_type_list:
@@ -438,11 +459,24 @@ def get_work_record_error_type_to_error_function_count_old(begin_date, end_date,
 
     return data
 
-def get_work_record_report_error_function_count_new(begin_date, end_date, db=None):
+def get_work_record_report_error_function_count_new(begin_date, end_date, system_label=None, db=None):
+    """
+    查询2024年工单模板筛选时间范围内的工单关于问题分类的次数统计
+    :param begin_date 查询起始时间
+    :param end_date 查询截止时间
+    :param system_label 标识是哪个系统的工单受理问题，None代表都查询，1代表行业，2代表票夹
+    :param db 数据库连接
+    """
+    promark_condition_sql = ''
+    if system_label == "1":
+        promark_condition_sql = 'AND ( promark="V3标准产品" OR promark="V4标准产品" OR promark="增值产品")'
+    elif system_label=="2":
+        promark_condition_sql=  'AND promark="电子票夹"'
+
     db = get_db(db)
 
     # 获取行业侧的出错功能的名称
-    function_list = get_error_function_dict_records(["name"],1, db)
+    function_list = get_error_function_dict_records(["name"], system_label, db)
 
     condition_dict = {
         # error_type_factor 005代表的是问题因素的那个数据字典
@@ -455,7 +489,7 @@ def get_work_record_report_error_function_count_new(begin_date, end_date, db=Non
     sql = f'select softversion, errorfunction, count(*) as amount ' \
           f'FROM workrecords_2024 ' \
           f'WHERE createtime>="{begin_date}" AND createtime<="{end_date}" ' \
-          f'AND (promark="V4标准产品" OR promark="V3标准产品" or promark="增值产品") ' \
+          f'{promark_condition_sql} ' \
           f'GROUP BY softversion, errorfunction'
     error_function_result = db.select_offset(1, 1000, sql)
 
@@ -468,22 +502,22 @@ def get_work_record_report_error_function_count_new(begin_date, end_date, db=Non
           f'count(case when errortypefactor between 10500 and 10600 then 1 else NULL end ) as 其他 ' \
           f'FROM workrecords_2024 ' \
           f'WHERE createtime>="{begin_date}" AND createtime<="{end_date}" ' \
-          f'AND (promark="V4标准产品" OR promark="V3标准产品" or promark="增值产品") ' \
+          f'{promark_condition_sql} ' \
           f'GROUP BY softversion'
     error_factor_result = db.select_offset(1, 1000, sql)
 
     return generate_analysis_table_data(function_list, error_factor_list, error_function_result, error_factor_result)
 
-def get_work_record_report_problem_type_in_versions_new(begin_date, end_date, party_selected, db=None):
-    db = mysql_base.Db()
+def get_work_record_report_problem_type_in_versions_new(begin_date, end_date, party_selected, system_label=None, db=None):
+    db = get_db(db)
     condition_dict = {
         "createtime>=": begin_date,
         "createtime<=": end_date,
-        "(promark=": "增值产品",
-        "1=1 OR promark=": "V3标准产品",
-        "2=2 OR promark=": "V4标准产品",
-        "1=1 ) AND 1=":1
     }
+    if system_label == "1":
+        condition_dict["(promark='增值产品' OR promark='V3标准产品' OR promark='V4标准产品') AND 1="] = 1
+    elif system_label == "2":
+        condition_dict["promark="] = "电子票夹"
     if party_selected != "全部":
         party_encoded = encode_data_item(party_selected, constant.data_dict_code_map["error_attribution"])
         # 10^3 是因为party的二级现在是3位数，所以是10^3
@@ -508,69 +542,27 @@ def get_work_record_report_problem_type_in_versions_new(begin_date, end_date, pa
         # 去找是否有登记过这个因素
         error_factor_col1_label = "问题因素" if party_selected == "全部" else f"{party_selected}-问题因素"
         error_factor_col2_label = "问题因素(细)" if party_selected == "全部" else f"{party_selected}-问题因素(细)"
-        insert_version_into_list(error_factor_col1_table, error_factor_col1_label, error_factor_col1, version_list, version, amount, "合计")
-        insert_version_into_list(error_factor_col2_table, error_factor_col2_label, error_factor_col2, version_list, version, amount, "合计")
+
+        insert_version_into_list(error_factor_col1_table, error_factor_col1_label, error_factor_col1, version_list, version, amount, "合计数量")
+        insert_version_into_list(error_factor_col2_table, error_factor_col2_label, error_factor_col2, version_list, version, amount)
 
     return data
 
-def get_work_record_report_problem_type_in_function_version_view_new(begin_date, end_date, party_selected, db=None):
-    db = get_db(db)
+def get_work_record_report_problem_type_detail_in_versions_new(begin_date, end_date, party_selected="全部", system_label=None, db=None):
+    """
 
-    data = []
-
-    # 获取行业侧的出错功能的名称
-    error_function_list = get_error_function_dict_records(["name"], 1, db)
-
-    condition_dict = {
-        # error_type_factor 005代表的是问题因素的那个数据字典
-        "dictCode=": constant.data_dict_code_map["error_type_factor"],
-        "level=": 1
-    }
-    error_factor_list = db.select(["code, name"], "work_record_data_dict", condition_dict, "")
-
-    for error_factor_col1 in error_factor_list:
-        # 将版本号里的"."转换成"_"，因为前端el-table的表头里如果字符串是带点的话会消失
-        sql = f'SELECT replace(softversion,".","_") as softversion'
-        for function in error_function_list:
-            sql += f', SUM(IF(`errorfunction`="{function["name"]}",amount,0)) AS {function["name"]} '
-        sql += ' FROM '
-        sql += ' (SELECT softversion , errorfunction, errortypefactor, count(*) as amount '
-        sql += ' FROM workrecords_2024 '
-        sql += f' WHERE createtime>="{begin_date}" AND createtime<="{end_date}" '
-        sql += f' AND (promark="V3标准产品" or promark = "V4标准产品" or promark = "增值产品") '
-        sql += f' AND errortypefactor >= {error_factor_col1["code"] * 100} AND errortypefactor <= {(error_factor_col1["code"] + 1) * 100}'
-        sql += ' GROUP BY softversion, errorfunction, errortypefactor ) A '
-        sql += ' GROUP BY softversion '
-        result = db.select_offset(1, 2000, sql)
-
-        # 查询出来的结果像是[{'softversion': 'V4_3_1_3', '开票功能': Decimal('0'), '收缴业务': Decimal('0'), ...}, {...}]
-        # 进行行列翻转
-        saas_problem_type_and_function_data_in_version = []
-        for function in error_function_list:
-            new_item = {error_factor_col1["name"]: function["name"]}
-            total = 0
-            for item in result:
-                new_item[item["softversion"]] = int(item[function["name"]])
-                total += int(item[function["name"]])
-            new_item["合计"] = total
-            saas_problem_type_and_function_data_in_version.append(new_item)
-
-        data.append({"problem": error_factor_col1["name"], "problemData": saas_problem_type_and_function_data_in_version})
-
-    return data
-
-def get_work_record_report_problem_type_detail_in_versions_new(begin_date, end_date, party_selected, db=None):
+    """
     db = get_db(db)
     data = []
 
     condition_dict = {
         "createtime>=": begin_date,
         "createtime<=": end_date,
-        "(promark=": "增值产品",
-        "1=1 OR promark=": "V3标准产品",
-        "2=2 OR promark=": "V4标准产品",
-        "1=1 ) AND 1=": 1
     }
+    if system_label == "1":
+        condition_dict["(promark='增值产品' OR promark='V3标准产品' OR promark='V4标准产品') AND 1="] = 1
+    elif system_label == "2":
+        condition_dict["promark="] = "电子票夹"
     if party_selected != "全部":
         party_encoded = encode_data_item(party_selected, constant.data_dict_code_map["error_attribution"])
         # 10^3 是因为party的二级现在是3位数，所以是10^3
@@ -605,6 +597,59 @@ def get_work_record_report_problem_type_detail_in_versions_new(begin_date, end_d
         insert_version_into_list(problem_data, problem_data_func_label, error_type_decoded, version_list, version, amount, "合计")
 
     return data
+
+def get_work_record_report_problem_type_in_function_version_view_new(begin_date, end_date, party_selected, system_label, db=None):
+    promark_condition_sql = ''
+    if system_label == "1":
+        promark_condition_sql = 'AND ( promark="V3标准产品" OR promark="V4标准产品" OR promark="增值产品")'
+    elif system_label=="2":
+        promark_condition_sql=  'AND promark="电子票夹"'
+
+    db = get_db(db)
+
+    data = []
+
+    # 获取行业侧的出错功能的名称
+    error_function_list = get_error_function_dict_records(["name"], system_label, db)
+
+    condition_dict = {
+        # error_type_factor 005代表的是问题因素的那个数据字典
+        "dictCode=": constant.data_dict_code_map["error_type_factor"],
+        "level=": 1
+    }
+    error_factor_list = db.select(["code, name"], "work_record_data_dict", condition_dict, "")
+
+    for error_factor_col1 in error_factor_list:
+        # 将版本号里的"."转换成"_"，因为前端el-table的表头里如果字符串是带点的话会消失
+        sql = f'SELECT replace(softversion,".","_") as softversion'
+        for function in error_function_list:
+            sql += f', SUM(IF(`errorfunction`="{function["name"]}",amount,0)) AS {function["name"]} '
+        sql += ' FROM '
+        sql += ' (SELECT softversion , errorfunction, errortypefactor, count(*) as amount '
+        sql += ' FROM workrecords_2024 '
+        sql += f' WHERE createtime>="{begin_date}" AND createtime<="{end_date}" '
+        sql += f' {promark_condition_sql} '
+        sql += f' AND errortypefactor >= {error_factor_col1["code"] * 100} AND errortypefactor <= {(error_factor_col1["code"] + 1) * 100}'
+        sql += ' GROUP BY softversion, errorfunction, errortypefactor ) A '
+        sql += ' GROUP BY softversion '
+        result = db.select_offset(1, 2000, sql)
+
+        # 查询出来的结果像是[{'softversion': 'V4_3_1_3', '开票功能': Decimal('0'), '收缴业务': Decimal('0'), ...}, {...}]
+        # 进行行列翻转
+        saas_problem_type_and_function_data_in_version = []
+        for function in error_function_list:
+            new_item = {error_factor_col1["name"]: function["name"]}
+            total = 0
+            for item in result:
+                new_item[item["softversion"]] = int(item[function["name"]])
+                total += int(item[function["name"]])
+            new_item["合计"] = total
+            saas_problem_type_and_function_data_in_version.append(new_item)
+
+        data.append({"problem": error_factor_col1["name"], "problemData": saas_problem_type_and_function_data_in_version})
+
+    return data
+
 
 
 

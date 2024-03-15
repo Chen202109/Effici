@@ -19,7 +19,6 @@ require("echarts/lib/component/title");
  * xAxis的type为传入的参数，有date，value，category等等，yAxis的type默认为value,因为y轴一般是数值。
  */
 export function updateBarChartBasic(currDocument, barChartData, barChartTitle, xAxisType, xAxisLabelNewLine, isVertical, chartElementId) {
-
     let option = {
         title: {
             top: '1%',
@@ -86,15 +85,15 @@ export function updatePieChartBasic(currDocument, chartData, chartTitle, chartEl
         {
             name: chartData[0].seriesName,
             type: 'pie',
-            radius: '55%',
+            radius: '55%', //大小
             data: chartData[0].seriesData,
-            top: '7%',
-            labelLine: {
+            top: '7%', //位置
+            labelLine: { //标识线
                 length: 15,
                 maxSurfaceAngle: 80
             },
             label: {
-                alignTo: 'edge',
+                alignTo: 'edge', //以线的形式延长，否则只会指导标识那边，不会延长到标识的最左侧或者最右侧
                 formatter: '{b|{b}：}{c}次 {per|{d}%}  ',
                 minMargin: 5,
                 lineHeight: 15,

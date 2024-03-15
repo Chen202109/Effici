@@ -58,12 +58,6 @@
 <script>
 import { getMainPageWidth, columnWidth } from '@/utils/layoutUtil'
 import saasProblemTable from '@/components/ShadowRPA/AnalysisData/AnalysisData_saasProblemTable.vue'
-import html2pdf from 'html2pdf.js'
-
-
-// // 导出功能
-// const fs = require('fs')
-// const PDFDocument = require('pdfkit')
 
 // 引入基本模板
 let echarts = require('echarts/lib/echarts')
@@ -314,7 +308,7 @@ export default {
     /**
      * 计算el-table列的宽度, 在本页面有特殊情况，因为统计问题因素与问题分类对比的时候，问题分类文字过长，需要调整列宽。
      * @param key 列名
-     * @param tableName 表格名
+     * @param tableName 表格名, 需要特殊指定column宽度的表格
      */
      myColumnWidth(key, tableName) {
       let width = 100
@@ -333,7 +327,7 @@ export default {
     },
 
     /**
-     * 在查询之后更新版本的数据信息
+     * 在查询之后更新问题分类的版本的数据信息
      */
     updateSaasProblemTypeInVersions(){
       // 清空原来数据，根据每一次搜索的数据重新生成
@@ -424,28 +418,6 @@ export default {
     },
 
     /**
-     * 查询指定时间内的工单记录的问题类别与出错功能的对比数据
-     * @param {*} searchValue 
-     */
-    async searchSaasProblemTypeInVersions(searchValue){
-      this.$http.get(
-        '/api/CMC/workrecords/analysis_report_saas_problem_type_in_versions?beginData=' +
-          searchValue['beginData'] +
-          '&endData=' +
-          searchValue['endData']
-      ).then(response => {
-        console.log(response.data.data)
-        this.saasProblemTypeInVersionsDetail = [ [], [], [] ]
-        for ( let i = 0; i < this.saasProblemTypeInVersionsDetail.length; i++) {
-          this.saasProblemTypeInVersionsDetail[i] = response.data.data[i]['problemTypeData']
-        }
-      }).catch((error) => {
-        console.log(error.response.data.message)
-        this.$message.error(error.response.data.message)
-      })
-    },
-
-    /**
      * 进行 查询 事件,因为axios是异步的请求，所以会先处理数据，空闲了才处理异步数据
      */
     async search() {
@@ -487,36 +459,28 @@ export default {
       this.updateSaasProblemPieChart()
     },
 
-    exportAnalysePage(){
-      const content = document.getElementById('news')
-      html2pdf(
-        content,
-        {
-          margin: 10,
-          filename: 'saas数据汇报.pdf',
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 5 },
-          jsPDf: { unit: 'pt', format: 'a4', orientation: 'portrait' },
+    /**
+     * 查询指定时间内的工单记录的问题类别与出错功能的对比数据
+     * @param {*} searchValue 
+     */
+     async searchSaasProblemTypeInVersions(searchValue){
+      this.$http.get(
+        '/api/CMC/workrecords/analysis_report_saas_problem_type_in_versions?beginData=' +
+          searchValue['beginData'] +
+          '&endData=' +
+          searchValue['endData']
+      ).then(response => {
+        console.log(response.data.data)
+        this.saasProblemTypeInVersionsDetail = [ [], [], [] ]
+        for ( let i = 0; i < this.saasProblemTypeInVersionsDetail.length; i++) {
+          this.saasProblemTypeInVersionsDetail[i] = response.data.data[i]['problemTypeData']
         }
-      );
+      }).catch((error) => {
+        console.log(error.response.data.message)
+        this.$message.error(error.response.data.message)
+      })
     },
 
-    exportAnalysePage_1(){
-      const content = document.getElementById('news')
-      content.style.transform = 'scale(0.5)'
-      const option = {
-        margin: 10,
-        scale: 0.45,
-        image: { type: 'jpeg', quality: 0.98 },
-        jsPDf: { unit: 'pt', format: 'a4', orientation: 'portrait' },
-      }
-      html2pdf(content, option).then((pdf)=> {
-        pdf.save("saas数据汇报.pdf")
-      })
-      .catch((error) => {
-        console.log("error generating pdf: ", error);
-      });
-    },
   },
 }
 </script>

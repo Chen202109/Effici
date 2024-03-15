@@ -260,7 +260,7 @@ export default {
               alignTo: 'edge',
               formatter: '{b|{b}：}{c}次 {per|{d}%}  ',
               minMargin: 5,
-              edgeDistance: 10,
+              edgeDistance: 55,
               lineHeight: 15,
               rich: {
                 b: {
@@ -299,7 +299,7 @@ export default {
 
    /**
     * 进行 查询 事件,因为axios是异步的请求，所以会先处理数据，空闲了才处理异步数据
-    * @param {*} searchFlag 如果为1，则代表全局搜索，会将这个页面所有需要搜索的东西都搜索了。
+    * @param {*} searchFlag 如果为1，则代表全局搜索，会将这个页面所有需要搜索的东西都搜索了。否则的话不搜索每个版本出错功能的表格数据。
     */
     async search(searchFlag) {
       // 触发查询事件，根据日期条件进行查询
@@ -312,6 +312,7 @@ export default {
         var day = ('0' + this.dateRange[i].getDate()).slice(-2)
         searchValue[i == 0 ? 'beginData' : 'endData'] = year + '-' + month + '-' + day;
       }
+      searchValue["systemLabel"] = 1
 
       if (searchFlag === 1) this.searchProblemTableData(searchValue)
       this.searchSaasProblemTypeInVersions(searchValue)
@@ -329,7 +330,9 @@ export default {
         '/api/CMC/workrecords/analysis_report_work_record_report_error_function_count_new?beginData=' +
         searchValue['beginData'] +
         '&endData=' +
-        searchValue['endData'] 
+        searchValue['endData'] +
+        '&systemLabel=' +
+        searchValue['systemLabel'] 
       ).then(response => {
         this.tableData = response.data.data
         console.log('response data: ', response.data.data)
@@ -347,12 +350,14 @@ export default {
      */
     async searchSaasProblemTypeInVersions(searchValue) {
       this.$http.get(
-        '/api/CMC/workrecords/analysis_report_problem_type_in_versions_new?beginData=' +
+        '/api/CMC/workrecords/analysis_report_work_record_problem_type_in_versions_new?beginData=' +
         searchValue['beginData'] +
         '&endData=' +
         searchValue['endData'] +
         '&partySelected=' +
-        searchValue['partySelected']
+        searchValue['partySelected'] +
+        '&systemLabel=' +
+        searchValue['systemLabel'] 
       ).then(response => {
         // 清空原来的数据
         this.saasProblemTypeInVersions = []
@@ -367,14 +372,19 @@ export default {
       })
     },
 
+    /**
+     * 请求获取筛选时间范围内的问题分类与版本信息
+     */
     async searchSaasProblemTypeDetailInVersions(searchValue) {
       this.$http.get(
-        '/api/CMC/workrecords/analysis_report_problem_type_detail_in_versions_new?beginData=' +
+        '/api/CMC/workrecords/analysis_report_work_record_problem_type_detail_in_versions_new?beginData=' +
         searchValue['beginData'] +
         '&endData=' +
         searchValue['endData'] +
         '&partySelected=' +
-        searchValue['partySelected']
+        searchValue['partySelected'] +
+        '&systemLabel=' +
+        searchValue['systemLabel'] 
       ).then(response => {
           // 清空原来的数据
           this.saasProblemTypeInVersionsDetail = []
@@ -387,14 +397,19 @@ export default {
       })
     },
 
+    /**
+     * 请求获取筛选时间范围内的问题因素(略)与出错功能的比对数据
+     */
     async searchSaasProblemTypeFunctionInVersionsDetail(searchValue) {
       this.$http.get(
-        '/api/CMC/workrecords/analysis_report_problem_type_in_function_version_view_new?beginData=' +
+        '/api/CMC/workrecords/analysis_report_work_record_problem_type_in_function_version_view_new?beginData=' +
         searchValue['beginData'] +
         '&endData=' +
         searchValue['endData'] +
         '&partySelected=' +
-        searchValue['partySelected']
+        searchValue['partySelected'] +
+        '&systemLabel=' +
+        searchValue['systemLabel'] 
       ).then(response => {
         this.saasProblemTypeFunctionInVersions = []
         for ( let i = 0; i < response.data.data.length; i++) {            

@@ -102,11 +102,15 @@ def get_saas_upgrade_resource_pool_summary(begin_date, end_date, resource_pool, 
     return data
 
 
-def get_upgrade_error_type_summary(begin_date, end_date, system_name, db=None):
+def get_upgrade_error_type_summary(begin_date, end_date, system_label=None, db=None):
+    print(f"dddddd {system_label}, ddddddddd type: {type(system_label)}")
     resourcepool_sql = ""
-    if system_name == "saas_v4":
-        resourcepool_sql = 'AND resourcepool!="V3行业" AND resourcepool!="电子票夹" '
-    elif system_name == "电子票夹":
+    system_name = ""
+    if system_label == "1":
+        system_name = "saas_v3/v4"
+        resourcepool_sql = 'AND resourcepool!="电子票夹" '
+    elif system_label == "2":
+        system_name="电子票夹"
         resourcepool_sql = ' AND resourcepool="电子票夹" '
 
     data = []

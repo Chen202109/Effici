@@ -23,7 +23,7 @@
 
 <script>
 import LeftMenu from "@/components/ShadowRPA/LeftMenu.vue"
-import AssistSubmit from "@/views/saasCenter/Industry/WorkRecord/AssistSubmit.vue"
+import AssistSubmit from "@/views/saasCenter/WorkRecord/WorkRecord/AssistSubmit.vue"
 
 export default {
   components: { LeftMenu, AssistSubmit},

@@ -175,7 +175,7 @@ class Db(object):
         try:
             self.configure.ping(reconnect=True)
             print(f"Insert sql is: {sql}")
-            result = self.begin.execute(sql)
+            self.begin.execute(sql)
             self.configure.commit()
         except pymysql.err.ProgrammingError as error:
             self.configure.rollback()
@@ -390,15 +390,15 @@ class Db(object):
                 continue
             elif type(where_value) == int:
                 where_value = where_value
-                where_str += " " + "%s" % where_key + " " + "%d" % where_value
+                where_str += " AND " + "%s" % where_key + " " + "%d" % where_value
             elif type(where_value) == float:
                 where_value = where_value
-                where_str += " " + "%s" % where_key + " " + "%f" % where_value
+                where_str += " AND " + "%s" % where_key + " " + "%f" % where_value
             else:
                 where_value = where_value.replace("'", '"')
-                where_str += " " + "%s" % where_key + " " + "'%s'" % where_value
+                where_str += " AND " + "%s" % where_key + " " + "'%s'" % where_value
 
-        sql = 'DELETE FROM ' + table + ' WHERE ' + ' 1 = 1 AND' + where_str
+        sql = 'DELETE FROM ' + table + ' WHERE ' + ' 1 = 1 ' + where_str
 
         try:
             self.configure.ping(reconnect=True)

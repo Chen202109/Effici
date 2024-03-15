@@ -23,7 +23,7 @@ def analysis_saas_problem_by_country(request):
             saas_province_problem_data = work_record_summary_service.get_work_record_province_summary(begin_date, end_date, region_alias="name",
                                                                                                       value_alias="value")
             # 对上线单位数量统计进行读取, 因为是地图，所以把key给改成name和value, 而不是柱状图的x和y
-            saas_province_agency_account_data = pd.read_csv(constant.AGENCY_ACCOUNT_FILE_ROOT + "agency_account_by_year_2023.csv", sep=',').rename(
+            saas_province_agency_account_data = pd.read_csv(constant.AGENCY_ACCOUNT_FILE_ROOT + "agency_account_total.csv", sep=',').rename(
                 columns={'省份': 'name', '数量': 'value'}).to_dict(orient="records")
             # 生成关于全国省份的数据
             data = work_record_summary_service.get_work_record_country_map_summary(saas_province_problem_data, saas_province_agency_account_data)
@@ -99,16 +99,17 @@ def analysis_saas_function_by_province(request):
     分析省份受理的功能的问题数量的对比。
     """
     if request.method == 'GET':
-        begin_date = request.GET.get('beginData', default='2023-01-01')
-        end_date = request.GET.get('endData', default='2023-12-31')
+        begin_date = request.GET.get('beginData')
+        end_date = request.GET.get('endData')
         function_name = request.GET.get('functionName').split(',')
+        system_label = request.GET.get('systemLabel')
 
         # 因为2023年和2024年是两个模板所以不能跨越这两个时间段查询，只能2023年查2023以前的，2024查2024以后的
         if begin_date <= "2023-12-31" and end_date >= "2024-01-01":
             return JsonResponse(status=400, data={'message': "因为是两个模板，请求时间不得跨越2023与2024年。"})
 
         try:
-            data = work_record_summary_service.get_work_record_province_function_summary(begin_date, end_date, function_name)
+            data = work_record_summary_service.get_work_record_province_function_summary(begin_date, end_date, function_name, system_label)
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': str(e)}, json_dumps_params={'ensure_ascii': False})
 
@@ -145,11 +146,11 @@ def analysis_saas_problem_by_province_agency(request):
             data.append({'seriesName': "私有化重大故障数量", 'seriesData': saas_province_large_problem_data_inorder})
 
             # 对上线单位数量统计进行读取
-            saas_province_agency_account_data = pd.read_csv(constant.AGENCY_ACCOUNT_FILE_ROOT + "agency_account_by_year_2023.csv", sep=',').rename(
+            saas_province_agency_account_data = pd.read_csv(constant.AGENCY_ACCOUNT_FILE_ROOT + "agency_account_total.csv", sep=',').rename(
                 columns={'省份': 'x', '数量': 'y'}).to_dict(orient="records")
             # 生成一个顺序与saas_province_problem_data一致的数组，目的是为了两条series数据里面相同位置的字典对应的x值一致，那样抽取的y的值才一致。
             # 新数组的x值通过saas_province_problem_data获取，y的值通过dataFrame读取的上线单位的数量进行填入。
-            # 如果是这一行报错StopIteration，基本上就是登记的时候省份没有登记对，比如内蒙古写成内蒙，需要去数据库进行调整让省份和constant.AGENCY_ACCOUNT_FILE_ROOT+"agency_account_by_year_2023.csv"的省份名称一致
+            # 如果是这一行报错StopIteration，基本上就是登记的时候省份没有登记对，比如内蒙古写成内蒙，需要去数据库进行调整让省份和constant.AGENCY_ACCOUNT_FILE_ROOT+"agency_account_total.csv"的省份名称一致
             saas_province_agency_account_data = [
                 {**prov, 'y': next(filter(lambda ag: ag['x'] == prov['x'], saas_province_agency_account_data), {"y": 0})['y']} for prov in
                 saas_province_problem_data]
@@ -193,11 +194,13 @@ def analysis_saas_problem_by_month(request):
     if request.method == 'GET':
         begin_date = request.GET.get('beginData')
         end_date = request.GET.get('endData')
+        system_label = request.GET.get('systemLabel')
+
         # 因为2023年和2024年是两个模板所以不能跨越这两个时间段查询，只能2023年查2023以前的，2024查2024以后的
         if begin_date <= "2023-12-31" and end_date >= "2024-01-01":
             return JsonResponse(status=400, data={'message': "因为是两个模板，请求时间不得跨越2023与2024年。"})
         try:
-            series_data = work_record_summary_service.get_work_record_month_summary(begin_date, end_date)
+            series_data = work_record_summary_service.get_work_record_month_summary(begin_date, end_date, system_label)
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': str(e)}, json_dumps_params={'ensure_ascii': False})
         data.append({'seriesName': "问题受理数量", 'seriesData': series_data})
@@ -244,28 +247,49 @@ def analysis_report_work_record_report_error_function_count_new(request):
     if request.method == 'GET':
         begin_date = request.GET.get('beginData')
         end_date = request.GET.get('endData')
+        system_label = request.GET.get('systemLabel')
+
         try:
-            saas_problem_table_data = work_record_summary_service.get_work_record_report_error_function_count_new(begin_date,end_date)
+            saas_problem_table_data = work_record_summary_service.get_work_record_report_error_function_count_new(begin_date,end_date, system_label)
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': str(e)}, json_dumps_params={'ensure_ascii': False})
         return JsonResponse(status=200, data={'data': saas_problem_table_data}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
-def analysis_report_saas_problem_type_in_versions_new(request):
+def analysis_report_work_record_problem_type_in_versions_new(request):
     if request.method == 'GET':
         begin_date = request.GET.get('beginData')
         end_date = request.GET.get('endData')
         party_selected = request.GET.get('partySelected',default="全部")
+        system_label = request.GET.get('systemLabel', default=None)
         try:
-            data = work_record_summary_service.get_work_record_report_problem_type_in_versions_new(begin_date, end_date, party_selected)
+            data = work_record_summary_service.get_work_record_report_problem_type_in_versions_new(begin_date, end_date, party_selected, system_label)
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': str(e)}, json_dumps_params={'ensure_ascii': False})
         return JsonResponse(status=200, data={'data': data}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse(status=200, data={'message': "请求方法错误, 需要GET请求。"})
 
-def analysis_report_saas_problem_type_in_function_version_view_new(request):
+def analysis_report_work_record_problem_type_detail_in_versions_new(request):
+    """
+    数据汇报界面的， 新版本的，问题分类和各版本和功能的详细对比
+    """
+    if request.method == 'GET':
+        begin_date = request.GET.get('beginData')
+        end_date = request.GET.get('endData')
+        party_selected = request.GET.get('partySelected', default="全部")
+        system_label = request.GET.get('systemLabel', default=None)
+
+        try:
+            data = work_record_summary_service.get_work_record_report_problem_type_detail_in_versions_new(begin_date, end_date, party_selected, system_label)
+        except EfficiServiceException as e:
+            return JsonResponse(status=e.status, data={'message': str(e)}, json_dumps_params={'ensure_ascii': False})
+        return JsonResponse(status=200, data={'data': data}, json_dumps_params={'ensure_ascii': False})
+    else:
+        return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
+
+def analysis_report_work_record_problem_type_in_function_version_view_new(request):
     """
         数据汇报界面的， 新版本的，问题分类和各版本和功能的详细对比
     """
@@ -273,26 +297,12 @@ def analysis_report_saas_problem_type_in_function_version_view_new(request):
         begin_date = request.GET.get('beginData')
         end_date = request.GET.get('endData')
         party_selected = request.GET.get('partySelected')
+        system_label = request.GET.get('systemLabel', default=None)
         try:
-            data = work_record_summary_service.get_work_record_report_problem_type_in_function_version_view_new(begin_date, end_date, party_selected)
+            data = work_record_summary_service.get_work_record_report_problem_type_in_function_version_view_new(begin_date, end_date, party_selected, system_label)
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': str(e)}, json_dumps_params={'ensure_ascii': False})
         return JsonResponse(status=200, data={'data': data}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
-def analysis_report_saas_problem_type_detail_in_versions_new(request):
-    """
-    数据汇报界面的， 新版本的，问题分类和各版本和功能的详细对比
-    """
-    if request.method == 'GET':
-        begin_date = request.GET.get('beginData')
-        end_date = request.GET.get('endData')
-        party_selected = request.GET.get('partySelected')
-        try:
-            data = work_record_summary_service.get_work_record_report_problem_type_detail_in_versions_new(begin_date, end_date, party_selected)
-        except EfficiServiceException as e:
-            return JsonResponse(status=e.status, data={'message': str(e)}, json_dumps_params={'ensure_ascii': False})
-        return JsonResponse(status=200, data={'data': data}, json_dumps_params={'ensure_ascii': False})
-    else:
-        return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})

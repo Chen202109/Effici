@@ -125,7 +125,8 @@ export default {
 
             console.log("submitFiles", this.fileList)
             var param = new FormData();
-            this.fileList.forEach((val, index) => { param.append("file"+index, val.raw); });
+            // f.raw代表的是文件的数据，这里是将文件的数据放进param中用于post上传
+            this.fileList.forEach((f, index) => { param.append("file"+index, f.raw); });
             // 用于回调函数中指向this
             var that = this
             this.$http.post(

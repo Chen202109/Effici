@@ -38,7 +38,7 @@
 
     <div style="margin: 5px 20px 5px 0;">
       <div class="saasDailyUpgradeTable">
-        <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4日常升级次数统计</p>
+        <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v3/v4日常升级次数统计</p>
         <el-table :data="this.saasUpgradeProblemTypeTableData[0]['seriesData']"
           :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
           :row-style="{ height: '35px' }" :cell-style="upgradeTableCellStyle" border style="width: 100%">
@@ -48,7 +48,7 @@
         </el-table>
       </div>
       <div class="saasAddedUpgradeTable">
-        <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v4增值升级次数统计</p>
+        <p class="saasAnalysisTitle" style="margin: 10px 0;"> 公有云saas_v3/v4增值升级次数统计</p>
         <el-table :data="this.saasUpgradeProblemTypeTableData[1]['seriesData']"
           :header-cell-style="{ fontSize: '14px', background: 'rgb(64 158 255 / 65%)', color: '#696969', }"
           :row-style="{ height: '35px' }" :cell-style="upgradeTableCellStyle" border style="width: 100%">
@@ -118,8 +118,11 @@ export default {
 
       // 公有云saas_v4日常和增值升级统计，第一个元素是日常的表格的数据，第二个元素是增值表格的数据
       saasUpgradeProblemTypeTableData: [{ 'seriesName': "", 'seriesData': [] }, { 'seriesName': "", 'seriesData': [] }],
+
       // 票夹的日常和增值升级统计，第一个元素是日常的表格的数据，第二个元素是增值表格的数据
       ticketFolderUpgradeProblemTypeTableData: [{ 'seriesName': "", 'seriesData': [] }, { 'seriesName': "", 'seriesData': [] }],
+
+
       // 这个页面各类图的数据
       saasUpgradeLineChartData: [],
       saasVersionByResoucePoolBarChartData: [],
@@ -295,9 +298,7 @@ export default {
       };
 
       let saasUpgradeTrendChart = echarts.getInstanceByDom(document.getElementById('saasUpgradeTrendChart'))
-      if (saasUpgradeTrendChart) {
-        saasUpgradeTrendChart.setOption(option, true)
-      }
+      saasUpgradeTrendChart && saasUpgradeTrendChart.setOption(option, true)
 
       console.log("updated updateSaaSUpgradeTrendLineChart : ", saasUpgradeTrendChart)
 
@@ -318,6 +319,8 @@ export default {
         var day = ('0' + this.dateRange[i].getDate()).slice(-2)
         searchValue[(i == 0) ? "beginData" : "endData"] = year + "-" + month + "-" + day;
       } //结束for，完成日期的拼接
+      // 告诉后端是搜索行业侧的还是票夹侧的
+      searchValue['systemLabel'] = [1,2]
 
       this.searchSaasUpgradeProblemTypeTable(searchValue)
       this.searchSaaSServiceUpgradeTrend(searchValue)
@@ -334,11 +337,14 @@ export default {
         '/api/CMC/workrecords/analysis_saas_upgrade_problem_type?beginData=' +
         searchValue['beginData'] +
         '&endData=' +
-        searchValue['endData']
+        searchValue['endData'] +
+        '&systemLabel=' +
+        searchValue['systemLabel'][0]
       ).then(response => {
         this.saasUpgradeProblemTypeTableData = response.data.data
         console.log('update local saasUpgradeProblemTypeTableData data: ', response.data.data)
       }).catch((error) => {
+        console.log(error)
         console.log(error.response.data.message)
         this.$message.error(error.response.data.message)
       })
@@ -399,10 +405,12 @@ export default {
      */
      async searchTicketFolderUpgradeProblemTypeTable(searchValue) {
       this.$http.get(
-        '/api/CMC/workrecords/analysis_ticket_folder_upgrade_problem_type?beginData=' +
+        '/api/CMC/workrecords/analysis_saas_upgrade_problem_type?beginData=' +
         searchValue['beginData'] +
         '&endData=' +
-        searchValue['endData']
+        searchValue['endData'] +
+        '&systemLabel=' +
+        searchValue['systemLabel'][1]
       ).then(response => {
         this.ticketFolderUpgradeProblemTypeTableData = response.data.data
         console.log('update local ticketFolderUpgradeProblemTypeTableData data: ', response.data.data)

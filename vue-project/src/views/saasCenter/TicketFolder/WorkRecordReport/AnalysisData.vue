@@ -280,6 +280,8 @@ export default{
                 var day = ('0' + this.dateRange[i].getDate()).slice(-2)
                 searchValue[i == 0 ? 'beginData' : 'endData'] = year + '-' + month + '-' + day;
             }
+            searchValue["systemLabel"] = 2
+
             this.searchProblemTableData(searchValue)
             this.searchTicketFolderProblemTypeInVersions(searchValue)
             this.searchTicketFolderProblemTypeDetailInVersions(searchValue)
@@ -292,10 +294,12 @@ export default{
          */
         async searchProblemTableData(searchValue) {
             this.$http.get(
-                '/api/CMC/workrecords/analysis_ticket_folder_report_error_function_count?beginData=' +
+                '/api/CMC/workrecords/analysis_report_work_record_report_error_function_count_new?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
-                searchValue['endData'] 
+                searchValue['endData'] +
+                '&systemLabel=' +
+                searchValue['systemLabel'] 
             ).then(response => {
                 this.tableData = response.data.data
                 console.log('response data: ', response.data.data)
@@ -314,10 +318,12 @@ export default{
          */
         async searchTicketFolderProblemTypeInVersions(searchValue) {
             this.$http.get(
-                '/api/CMC/workrecords/analysis_ticket_folder_report_problem_type_in_versions?beginData=' +
+                '/api/CMC/workrecords/analysis_report_work_record_problem_type_in_versions_new?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
-                searchValue['endData']
+                searchValue['endData'] +
+                '&systemLabel=' +
+                searchValue['systemLabel'] 
             ).then(response => {
                 // 清空原来的数据
                 this.ticketFolderProblemTypeInVersions = []
@@ -339,10 +345,12 @@ export default{
          */
         async searchTicketFolderProblemTypeDetailInVersions(searchValue) {
             this.$http.get(
-                '/api/CMC/workrecords/analysis_ticket_folder_report_problem_type_detail_in_versions?beginData=' +
+                '/api/CMC/workrecords/analysis_report_work_record_problem_type_detail_in_versions_new?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
-                searchValue['endData']
+                searchValue['endData'] +
+                '&systemLabel=' +
+                searchValue['systemLabel'] 
             ).then(response => {
                 // 清空原来的数据
                 this.ticketFolderProblemTypeInVersionsDetail = []
@@ -362,10 +370,12 @@ export default{
          */
         async searchTicketFolderProblemTypeFunctionInVersionsDetail(searchValue) {
             this.$http.get(
-                '/api/CMC/workrecords/analysis_ticket_folder_report_problem_type_in_function_version?beginData=' +
+                '/api/CMC/workrecords/analysis_report_work_record_problem_type_in_function_version_view_new?beginData=' +
                 searchValue['beginData'] +
                 '&endData=' +
-                searchValue['endData'] 
+                searchValue['endData'] +
+                '&systemLabel=' +
+                searchValue['systemLabel'] 
             ).then(response => {
                 this.ticketFolderProblemTypeFunctionInVersions = []
                 for ( let i = 0; i < response.data.data.length; i++) {            

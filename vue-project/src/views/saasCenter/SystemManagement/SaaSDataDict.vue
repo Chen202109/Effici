@@ -92,6 +92,7 @@ export default {
     name: "SaaSDataDict",
 
     data() {
+        // 校验字典项目添加form的validator
         var validateLabel = (rule, value, callback) => {
             // 想要实现的效果: 如果完整标签填写，则其他表单内容不需要填写，如果完整标签未填写，则需要填写想要加入的那个节点的层级，名称，父节点信息。
             if (this.addDataDictDetailForm.fullLabel == "" && (this.addDataDictDetailForm.level =="" && this.addDataDictDetailForm.name=="")) {
@@ -116,17 +117,21 @@ export default {
             }
         }
 
-
         return {
+            // 数据字典的标题的搜索filter
             filterText: '',
+            // 数据字典在el-tree中的标识list
             dataDictList: [],
+            // 当前所选中的数据字典
             currentDataDictCode:'',
+            // 当前所选中的数据字典的数据
             currentDataDictDetail: [],
             defaultProps: {
                 children: 'children',
                 label: 'label'
             },
 
+            // 新增数据字典相关data
             addDataDictDialogTitle: '新增数据字典',
             showAddDataDictDialog: false,
             addDataDictForm: {
@@ -138,6 +143,7 @@ export default {
                 ],
             },
 
+            // 新增数据字典条目相关data
             addDataDictDetailDialogTitle: '新增数据字典条目',
             showAddDataDictDetailDialog: false,
             addDataDictDetailForm: {
@@ -240,14 +246,23 @@ export default {
             })
         },
 
+        /**
+         * 打开添加数据字典的对话框
+         */
         showAddDataDictDialogModal(){
             this.showAddDataDictDialog = true;  
         },
 
+        /**
+         * 打开添加数据字典条目的对话框
+         */
         showAddDataDictDetailDialogModal(){
             this.showAddDataDictDetailDialog = true;  
         },
 
+        /**
+         * 关闭添加数据字典条目的对话框
+         */
         closeAddDataDictDetailDialogModal(){
             this.showAddDataDictDetailDialog = false;
         },
@@ -262,15 +277,10 @@ export default {
                         '/api/CMC/workrecords/add_data_dict',
                         this.addDataDictForm
                     ).then(response => {
-                        if (response.status === 200) {
-                            this.dataDictList.push(response.data.dataDict)
-                            console.log("currently, data dict list is ", this.dataDictList)
-                            this.$message.success("添加成功")
-                            this.showAddDataDictDialog = false
-                        } else {
-                            console.log(response.data.message)
-                            this.$message.error(response.data.message)
-                        }
+                        this.dataDictList.push(response.data.dataDict)
+                        console.log("currently, data dict list is ", this.dataDictList)
+                        this.$message.success("添加成功")
+                        this.showAddDataDictDialog = false
                     }).catch((error) => {
                         console.log(error.response.data.message)
                         this.$message.error(error.response.data.message)
@@ -281,6 +291,9 @@ export default {
             });
         },
 
+        /**
+         * 添加数据字典条目的表单提交事件, 向后端发送请求添加数据字典条目。
+         */
         addDataDictDetail(){
             this.$refs["addDataDictDetailForm"].validate((valid) => {
                 if (valid) {
@@ -290,14 +303,8 @@ export default {
                         '/api/CMC/workrecords/add_data_dict_record',
                         form
                     ).then(response => {
-                        if (response.status === 200) {
-                            
-                            this.$message.success("添加成功")
-                            this.showAddDataDictDetailDialog = false
-                        } else {
-                            console.log(response.data.message)
-                            this.$message.error(response.data.message)
-                        }
+                        this.$message.success("添加成功")
+                        this.showAddDataDictDetailDialog = false
                     }).catch((error) => {
                         console.log(error.response.data.message)
                         this.$message.error(error.response.data.message)

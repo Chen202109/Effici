@@ -3,7 +3,7 @@ from django.urls import path
 from workrecords.controller import views
 from workrecords.controller import system_functions
 from workrecords.controller import submit_workrecords
-from workrecords.controller import workrecord_summary, upgrade_record_summary,ticket_folder_summary
+from workrecords.controller import workrecord_summary, upgrade_record_summary
 
 urlpatterns = [
 
@@ -21,7 +21,6 @@ urlpatterns = [
     path('analysis_saas_upgrade_problem_type',upgrade_record_summary.analysis_saas_upgrade_problem_type),
     path('analysis_saas_service_upgrade_trend',upgrade_record_summary.analysis_saas_service_upgrade_trend),
     path('analysis_saas_version_problem_by_resource_pool',upgrade_record_summary.analysis_saas_version_problem_by_resource_pool),
-    path('analysis_ticket_folder_upgrade_problem_type',upgrade_record_summary.analysis_ticket_folder_upgrade_problem_type),
 
     path('analysis_saas_privatization_license_register_province',views.analysis_saas_privatization_license_register_province),
 
@@ -43,21 +42,13 @@ urlpatterns = [
     path('analysis_report_work_record_report_error_function_count_old',workrecord_summary.analysis_report_work_record_report_error_function_count_old),
     path('analysis_report_saas_problem_type_in_versions', workrecord_summary.analysis_report_saas_problem_type_in_versions),
     path('analysis_report_work_record_report_error_function_count_new', workrecord_summary.analysis_report_work_record_report_error_function_count_new),
-    path('analysis_report_problem_type_in_versions_new', workrecord_summary.analysis_report_saas_problem_type_in_versions_new),
-    path('analysis_report_problem_type_detail_in_versions_new', workrecord_summary.analysis_report_saas_problem_type_detail_in_versions_new),
-    path('analysis_report_problem_type_in_function_version_view_new', workrecord_summary.analysis_report_saas_problem_type_in_function_version_view_new),
+    path('analysis_report_work_record_problem_type_in_versions_new', workrecord_summary.analysis_report_work_record_problem_type_in_versions_new),
+    path('analysis_report_work_record_problem_type_detail_in_versions_new', workrecord_summary.analysis_report_work_record_problem_type_detail_in_versions_new),
+    path('analysis_report_work_record_problem_type_in_function_version_view_new', workrecord_summary.analysis_report_work_record_problem_type_in_function_version_view_new),
     path('analysis_saas_problem_by_country', workrecord_summary.analysis_saas_problem_by_country),
     path('analysis_saas_problem_by_country_region', workrecord_summary.analysis_saas_problem_by_country_region),
     path('analysis_saas_function_by_province', workrecord_summary.analysis_saas_function_by_province),
     path('analysis_saas_problem_by_province_agency', workrecord_summary.analysis_saas_problem_by_province_agency),
     path('analysis_saas_problem_by_month', workrecord_summary.analysis_saas_problem_by_month),
     path('analysis_version_by_function', workrecord_summary.analysis_version_by_function),
-
-    path('analysis_ticket_folder_report_error_function_count', ticket_folder_summary.analysis_ticket_folder_report_error_function_count),
-    path('analysis_ticket_folder_report_problem_type_in_versions', ticket_folder_summary.analysis_ticket_folder_report_problem_type_in_versions),
-    path('analysis_ticket_folder_report_problem_type_in_function_version', ticket_folder_summary.analysis_ticket_folder_report_problem_type_in_function_version),
-    path('analysis_ticket_folder_report_problem_type_detail_in_versions', ticket_folder_summary.analysis_ticket_folder_report_problem_type_detail_in_versions),
-    path('analysis_ticket_folder_function_by_province',
-         ticket_folder_summary.analysis_ticket_folder_function_by_province),
-
 ]

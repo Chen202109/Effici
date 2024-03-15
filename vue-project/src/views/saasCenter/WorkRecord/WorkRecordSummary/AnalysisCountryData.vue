@@ -258,7 +258,9 @@ export default {
          * 当查询之后，数据更新，更新省份受理与单位数量对比的省份数据柱状图和单位数量的折线数据更新
          */
         updateSaaSProvinceAndAgencyBarChart(barChartData, barChartTitle, xAxisType, xAxisLabelNewLine, chartElementId) {
-            let xAxisData = this.saasProvinceAndAgencyChartData[0].seriesData.map(item => item.x)
+            // 先获取x轴的数据
+            let xAxisData = barChartData[0].seriesData.map(item => item.x)
+            // 三个series的color
             let colors = ["#5470C6", "#FAC858", "#EE6666"];
             let option = {
                 color: colors,
@@ -291,6 +293,7 @@ export default {
                         data: xAxisData
                     }
                 ],
+                // 因为需要两个y轴，一个用作柱形图的，一个用作单位上线折线图的，所以y轴配置两项
                 yAxis: [
                     {
                         type: 'value',
@@ -321,6 +324,8 @@ export default {
                     {
                         name: barChartData[0].seriesName,
                         type: 'bar',
+                        // 因为有多个y轴，通过yAxisIndex来指定使用哪个y轴
+                        yAxisIndex: 0,
                         // 这里可以直接map把y的值取出来，因为这里就一组series，y为0的x过滤就不会存在，xAxis还是原来的不会有x的值被去除，使用这里并不需要让y再去对应xAxis的进行过滤
                         data: barChartData[0].seriesData.map(item => item.y),
                     },
@@ -344,7 +349,6 @@ export default {
             option.xAxis[0].data = xAxisData
 
             let chart = echarts.getInstanceByDom(document.getElementById(chartElementId))
-            // 现在是添加属性，所以不用replace设成true，直接setOption就行
             chart && chart.setOption(option, true)
 
             console.log("updated saasProvinceAndAgencyChart echart: ", chart)
@@ -712,6 +716,7 @@ export default {
                 updateBarChartBasic(document, this.saasProblemMonthChartData, searchValue['beginData'].slice(0, 4) + '年SaaS月份受理统计', "category", false, true, 'saasProblemMonthChart')
                 let saasProblemMonthChart = echarts.getInstanceByDom(document.getElementById("saasProblemMonthChart"))
                 let functionTypeData = this.saasProblemMonthChartData[0]["seriesData"].map((item) => item.functionType)
+                // 设置鼠标悬浮时候展示该月份的出错功能受理数量。
                 saasProblemMonthChart && saasProblemMonthChart.setOption({
                     tooltip: {
                         trigger: 'axis',
@@ -763,6 +768,7 @@ export default {
 <style scoped>
 @font-face {
     font-family: "seven_digit_i";
+    /* 注意，css的编译中，'@'符号会被变成转义符号，所以不会指向src的目录。所以需要添加'~'符号进行转义。 */
     src: url("~@/assets/fonts/digital-7_mono_i.ttf");
 }
 

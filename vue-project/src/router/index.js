@@ -13,11 +13,11 @@ import ShadowRPA from '@/container/ShadowRPA.vue'
 
 import SaaSDataDict from '@/views/saasCenter/SystemManagement/SaaSDataDict.vue'
 
-import AssistSubmit from "@/views/saasCenter/Industry/WorkRecord/AssistSubmit.vue"
+import AssistSubmit from "@/views/saasCenter/WorkRecord/WorkRecord/AssistSubmit.vue"
 import AnalysisData from "@/views/saasCenter/Industry/WorkRecordReport/AnalysisData.vue"
 import AnalysisDataNew from "@/views/saasCenter/Industry/WorkRecordReport/AnalysisDataNew.vue"
 import AnalysisUpgradeTrend from "@/views/saasCenter/Upgrade/AnalysisUpgradeTrend.vue"
-import AnalysisCountryData from "@/views/saasCenter/Industry/WorkRecordSummary/AnalysisCountryData.vue"
+import AnalysisCountryData from "@/views/saasCenter/WorkRecord/WorkRecordSummary/AnalysisCountryData.vue"
 import AnalysisMonitorProblem from "@/views/saasCenter/Industry/Monitor/AnalysisMonitorProblem.vue"
 import AnalysisAddedServiceData from "@/views/saasCenter/Industry/OrderedService/AnalysisAddedServiceData.vue"
 import AnalysisPrivatizationLicense from "@/views/saasCenter/Industry/License/AnalysisPrivatizationLicense.vue"

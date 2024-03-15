@@ -1,6 +1,6 @@
 import copy
 
-def insert_version_into_list(list, label_key, label_value, version_list, version, amount, summary_row_label):
+def insert_version_into_list(list, label_key, label_value, version_list, version, amount, summary_row_label="合计"):
     """
     当需要数据结构为 [ {错误标签: 错误1, 版本号1: 错误数量, 版本号2: 错误数量, ... , 合计: 合计错误数量}, {...}, {...} ]
     想往里面插入一个错误的版本号的错误数量信息。
@@ -10,7 +10,7 @@ def insert_version_into_list(list, label_key, label_value, version_list, version
     :param version_list: 版本号的列表
     :param version: 需要插入的那个错误的版本号
     :param amount: 需要插入的那个错误的版本号的错误数量
-    :param summary_row_label: 合计栏的标签，一般为"合计"
+    :param summary_row_label: 合计栏的标签，默认为"合计"
     """
     error_item_index = None
     for index, item in enumerate(list):

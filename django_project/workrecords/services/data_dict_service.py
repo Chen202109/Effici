@@ -11,6 +11,8 @@ table_name = "work_record_data_dict"
 def add_data_dict(dict_name, db=None):
     """
     添加一个新的数据字典。如果指定dictCode并且合法的话,按照指定的dictCode来，否则自增。
+    :param dict_name 新数据字典名称
+    :param db 数据库连接
     """
     db = get_db(db)
 
@@ -39,6 +41,11 @@ def add_data_dict(dict_name, db=None):
     return {"dictCode" : dict_code, "name": dict_name}
 
 def add_data_dict_record(add_data_dict_form, db=None):
+    """
+    新增数据字典条目
+    :param add_data_dict_form 新增条目信息
+    :param db 数据库连接
+    """
     db = get_db(db)
     if add_data_dict_form["fullLabel"] != "":
         add_data_dict_record_by_full_label(add_data_dict_form["dictCode"], add_data_dict_form["fullLabel"], db)
@@ -55,7 +62,6 @@ def add_data_dict_record_by_full_label(dict_code, label, db):
     :param db: 和数据库的连接
     """
     data_dict_records = label.split("-")
-    print("---------------")
     parent_code = None
     for i in range(len(data_dict_records)):
         code = add_data_dict_record_by_node(dict_code, i+1, parent_code, data_dict_records[i], db)
@@ -65,8 +71,12 @@ def add_data_dict_record_by_full_label(dict_code, label, db):
 def add_data_dict_record_by_node(dict_code, level, parent_code, name, db):
     """
     通过层级信息，上级层级编码 来添加字典项目
+    :param dict_code: 该数据字典的代码
+    :param level: 节点所在层级
+    :param parent_code: 节点父级节点的编码
+    :param name: 新增节点名
+    :param db: 和数据库的连接
     """
-
     # 先尝试查找，看看是否已经存在这一项
     condition_dict = {
         "dictCode=": dict_code,
@@ -84,9 +94,7 @@ def add_data_dict_record_by_node(dict_code, level, parent_code, name, db):
 
         # valid就将这一条进行添加
         fields = {
-            # "fid": dict_code + parent_code  + cast_int_to_string(result[0]["childrenLength"], 3),
             "dictCode": dict_code,
-            # "code": cast_int_to_string(result[0]["childrenLength"], 3),
             "level": level,
             "parentCode": parent_code,
             "name": name,
@@ -97,7 +105,6 @@ def add_data_dict_record_by_node(dict_code, level, parent_code, name, db):
 
         # 生成code, 通过父级节点的childrenLength来知道已经有了多少个节点，所以正常的话编号从这个的length+1
         new_code =  determine_code_dict.get(dict_code)(level, parent_result[0]["childrenLength"]+1, name, db)
-        print(f"new code is {new_code}")
         fields["code"] = int(str(fields["parentCode"]) + str(new_code)) if fields["parentCode"] is not None else int("1"+str(new_code))
         fields["fid"] = str(fields["dictCode"]) + str(fields["code"])
         try:
@@ -114,12 +121,24 @@ def add_data_dict_record_by_node(dict_code, level, parent_code, name, db):
         return result[0]["code"]
 
 def determine_problem_attribution_code(level, sibling_length, name, db):
+    """
+    生成问题归属的编码
+    :param level 层级
+    :param sibling_length 父级节点已有多少子节点
+    """
     if level == 1:
         return cast_int_to_string(sibling_length, 2)
     elif level == 2:
         return cast_int_to_string(sibling_length, 3)
 
 def determine_problem_type_code(level, sibling_length, name, db):
+    """
+    生成问题分类的编码,第一层级编码长度为2，第二层级编码长度为3，第三层级编码通过005字典确认
+    :param level 层级
+    :param sibling_length 父级节点已有多少子节点
+    :param name 如果是第三层级，代表问题因素的名称
+    :param db 数据库连接
+    """
     if level == 1:
         return cast_int_to_string(sibling_length, 2)
     elif level == 2:
@@ -135,14 +154,29 @@ def determine_problem_type_code(level, sibling_length, name, db):
             return cast_int_to_string(result, 4)
 
 def determine_product_type_code(level, sibling_length, name, db):
+    """
+    生成产品类型的编码
+    :param level 层级
+    :param sibling_length 父级节点已有多少子节点
+    """
     if level == 1:
         return cast_int_to_string(sibling_length, 2)
 
 def determine_problem_function_code(level, sibling_length, name, db):
+    """
+    生成出错功能的编码
+    :param level 层级
+    :param sibling_length 父级节点已有多少子节点
+    """
     if level == 1:
         return cast_int_to_string(sibling_length, 2)
 
 def determine_problem_factor_code(level, sibling_length, name, db):
+    """
+    生成问题因素的编码, 第一层级编码长度为2，第二层级编码长度为2
+    :param level 层级
+    :param sibling_length 父级节点已有多少子节点
+    """
     if level == 1:
         return cast_int_to_string(sibling_length, 2)
     elif level == 2:
@@ -156,114 +190,11 @@ determine_code_dict = {
     "005": determine_problem_factor_code,
 }
 
-
-
-def group_add_data_dict(file_path, filename):
-    error_msg = ""
-
-    # 只允许xlsx, xls 文件
-    file_extension = filename.split('.')[-1]
-    if file_extension == 'xlsx' or file_extension == 'xls': 
-        dataframe = pd.read_excel(io=file_path, header=0)
-    else:
-        error_msg = f"文件{filename}不是可接受的文件类型, 需要为 xlsx, xls 或 csv。"
-
-
-    # 对文件进行读取, 因为pandas读excel,会默认将空的格子读成NaN,将读出来的col里面为NaN的值去除
-    error_attribution = [x for x in dataframe["问题归属"] if pd.isna(x)==False]
-
-    error_type = [x for x in dataframe["问题分类"] if pd.isna(x)==False]
-
-    product_type = [x for x in dataframe["产品类型"] if pd.isna(x)==False]
-    insert_data = update_product_type_data_dict(product_type)
-
-    # 转成dataframe，列名为字典编码，条目编码，层级，父级条目编码，条目名，启用时间， 关闭时间, 是否启用
-    insert_dataframe = pd.DataFrame(insert_data,columns=['fid', 'dictCode', 'code', 'level', 'parentCode', 'name', 'enableTime', 'disableTime', 'enable'])
-
-    db =mysql_base.Db()
-    result = db.bench_save(table_name, insert_dataframe)
-
-
-def delete_data_dict(dict):
-    return
-
-
-def update_error_attribution_data_dict(error_attribution_new):
-    print(error_attribution_new)
-    dict_code = "001"
-    error_attribution_old = get_data_dict_by_code(dict_code)
-    for item in error_attribution_new:
-        attribution_party_new = item.split('-')
-
-    return
-
-
-def update_error_type_data_dict(error_type_new):
-    print(error_type_new)
-    dict_code = "002"
-    error_type_old = get_data_dict_by_code(dict_code)
-    print(error_type_old)
-
-    is_empty = len(error_type_old) == 0
-    update_data = []
-    insert_data = []
-
-    for new_item in error_type_new:
-        error_function_new = new_item.split('-')
-        error_function_new_col_1 = error_function_new[0]
-        error_function_new_col_2 = error_function_new[1]
-        error_function_new_col_3 = error_function_new[2]
-
-        parent_code = None
-
-        for old_item in error_type_old:
-            if old_item["level"] == 1 and error_function_new_col_1 == old_item["name"] :
-                # 找到匹配的第一个选项
-                parent_code = old_item["code"]
-                print("更新")
-                break
-        # 没有匹配到，说明以前没有这个条目，新增
-        print("新增")
-
-    return
-
-
-def update_product_type_data_dict(product_type_new):
-    print(product_type_new)
-    dict_code = "004"
-    product_type_old = get_data_dict_by_code(dict_code)
-    print(product_type_old)
-    
-    is_empty = len(product_type_old) == 0
-    is_insert = True
-    # 需要注入或者更新的数据， 格式为 字典编码，条目编码，层级，父级条目编码，条目名，启用时间， 关闭时间, 是否启用
-    insert_data = []
-
-    fid = 10041001
-
-    for new_item in product_type_new:
-        if not is_empty:
-            for old_item in product_type_old:
-                if new_item == old_item["name"]:
-                    #  因为productType只有一层，name匹配到了就说明是原来数据库就存在的, 
-                    # 那么只用找到那一条，将enable变成1,将endtime清空
-                    insert_data.append([old_item['fid'], dict_code, old_item["code"], old_item["level"], old_item["parentCode"], new_item, datetime.date.today(), None, 1])
-                    is_insert = False
-                    break
-        if is_insert:
-            # 没有找到，需要新增
-            insert_data.append([fid, dict_code, "001", 1, None, new_item, datetime.date.today(), None, 1])
-            fid = fid + 1
-        is_insert = True       
-
-    return insert_data
-
-
-
-
 def encode_data_item(item, dict_code):
     """
     将传入的数据字典条目在指定的数据字典查询编码， 查询成功返回编码。
+    :param item 数据字典条目完整标签
+    :param dict_code 所在数据字典的编码
     """
     item_cols = item.split("-")
     db =mysql_base.Db()
@@ -285,6 +216,8 @@ def encode_data_item(item, dict_code):
 def decode_data_item(item_code, dict_code):
     """
     传入条目编码, 查询对应的路径
+    :param item_code 条目编码
+    :param dict_code 所在数据字典编码
     """
     item = ""
     db =mysql_base.Db()
@@ -318,6 +251,10 @@ def encode_single_item(item, dict_code):
 
 
 def get_data_dict_by_code(dict_code):
+    """
+    查询某个数据字典的所有条目
+    :param dict_code 数据字典编号
+    """
     db =mysql_base.Db()
     condition_dict = {"dictCode=": dict_code, "level!=":0}
     data_dict_old = db.select(["*"], table_name, condition_dict, "")
@@ -325,6 +262,7 @@ def get_data_dict_by_code(dict_code):
 
 def get_all_data_dict(db=None):
     """
+    查询所有数据字典信息
     :return 一个包含了数据字典的dictCode 和 name 的列表
     """
     db = get_db(db)
@@ -414,6 +352,12 @@ def get_data_dict_record_full_label_for_work_record(db=None):
     return data
 
 def get_error_function_dict_records(cols, system_label, db=None):
+    """
+    获取出错功能字典的条目
+    :param cols 字段
+    :param system_label 是哪个平台的出错功能, 行业为1，票夹为2
+    :param db 数据库连接
+    """
     db=get_db(db)
     condition_dict = {
         # error_function是dict 004代表的是问题功能的那个数据字典
@@ -423,8 +367,6 @@ def get_error_function_dict_records(cols, system_label, db=None):
     }
     function_list = db.select(cols, "work_record_data_dict", condition_dict, "")
     return function_list
-
-
 
 
 def get_db(db):

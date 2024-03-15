@@ -18,7 +18,8 @@ export function columnWidth(key) {
         5: 85,
         6: 110,
         8: 135,
-        10: 130,
+        10: 140,
+        12: 160,
     }
     let width = widthDict[key.length]
     return width === undefined ? 100 : width

@@ -97,7 +97,6 @@ export default {
 
   methods: {
 
-
     /**
      * 最开始页面加载的时候，默认查询前10条数据显示在表格上
      */
@@ -161,7 +160,7 @@ export default {
      * @param {*} form 
      */
     onSubmit(operation, form) {
-      console.log("tthhis form : ", operation, form)
+      console.log("this form : ", operation, form)
 
       // 如果是查看详情
       if (operation === "view") {
@@ -204,7 +203,7 @@ export default {
     /**
      * 子组件的table里面的每行的查看修改删除操作的触发
      * @param {*} operation view, edit, delete
-     * @param {*} recordInfoData 
+     * @param {*} recordInfoData 工单信息
      */
     onHandleSingleRecordOperation(operation, recordInfoData, rowIndex) {
       console.log("父组件: ", operation, recordInfoData);
@@ -287,9 +286,11 @@ export default {
       this.$nextTick(() => { that.scrollToTop(); })
     },
 
-    // 滚动到容器顶部
+    /**
+     * 滚动到容器顶部
+     */
     scrollToTop() {
-      const container = document.getElementById('AssistSubmit'); // 替换成你的容器ID
+      const container = document.getElementById('AssistSubmit'); 
       if (container) {
         container.scrollTop = 0;
       }

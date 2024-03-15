@@ -13,11 +13,12 @@ def analysis_saas_upgrade_problem_type(request):
     """
 
     if request.method == 'GET':
-        begin_date = request.GET.get('beginData', default='2023-01-01')
-        end_date = request.GET.get('endData', default='2023-12-31')
+        begin_date = request.GET.get('beginData')
+        end_date = request.GET.get('endData')
+        system_label = request.GET.get('systemLabel', default=None)
 
         try:
-            data = upgrade_summary_service.get_upgrade_error_type_summary(begin_date, end_date, "saas_v4")
+            data = upgrade_summary_service.get_upgrade_error_type_summary(begin_date, end_date, system_label)
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': e.msg})
         return JsonResponse(status=200, data={'data': data}, json_dumps_params={'ensure_ascii': False})
@@ -78,22 +79,6 @@ def analysis_saas_version_problem_by_resource_pool(request):
         except EfficiServiceException as e:
             return JsonResponse(status=e.status, data={'message': e.msg})
 
-        return JsonResponse(status=200, data={'data': data}, json_dumps_params={'ensure_ascii': False})
-    else:
-        return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
-
-def analysis_ticket_folder_upgrade_problem_type(request):
-    """
-    分析票夹的升级数据和所属升级分类的对比
-    """
-
-    if request.method == 'GET':
-        begin_date = request.GET.get('beginData', default='2023-01-01')
-        end_date = request.GET.get('endData', default='2023-12-31')
-        try:
-            data = upgrade_summary_service.get_upgrade_error_type_summary(begin_date, end_date, "电子票夹")
-        except EfficiServiceException as e:
-            return JsonResponse(status=e.status, data={'message': e.msg})
         return JsonResponse(status=200, data={'data': data}, json_dumps_params={'ensure_ascii': False})
     else:
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})

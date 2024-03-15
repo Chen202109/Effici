@@ -1,4 +1,6 @@
 # sql
+
+# 查询workrecord表，不把字段名直接返回，起别名
 work_record_col_alias_map = {
     # "fid":"fid",
     "belong" : "problemAttribution",
@@ -51,6 +53,7 @@ work_record_col_chinese_alias_map = {
     "资源池" : "resourcepool",
 }
 
+# 数据字典的编号映射
 data_dict_code_map = {
     "error_attribution": "001",
     "error_type" : "002",
@@ -59,6 +62,7 @@ data_dict_code_map = {
     "error_type_factor" : "005",
 }
 
+# 该项目用的数据库的表的中文名与表名映射
 table_chinese_alias_map = {
     "2023工单记录": "workrecords_2023",
     "2024工单记录" : "workrecords_2024",
@@ -70,9 +74,10 @@ table_chinese_alias_map = {
     "数据字典" : "work_record_data_dict"
 }
 
-# error function
+# 出错功能
 work_record_error_function_list = ["开票功能","核销功能","收缴业务","通知交互","报表功能","数据同步","票据管理","license重置","单位开通","增值服务","打印功能","安全漏洞","反算功能"]
 
+# 微服务与出错功能的映射
 saas_service_function_map = {
     'saas-invoice-ebill-server' : '开票功能',
     'saas-billcollection-server': '报表功能',
@@ -80,6 +85,7 @@ saas_service_function_map = {
     'saas-finance-adapter-server': '核销功能',
 }
 
+# 出错功能与微服务的映射
 saas_function_service_map = {
     "开票功能" : ['saas-invoice-ebill-server', 'saas-invoice-pbill-server', 'saas-industry-server', 'saas-signature-core-server', 'saas-billcollection-server'],
     "收缴业务" : ['saas-paybook-directpaybook-server','saas-paybook-remitpaybook-server'],
@@ -97,17 +103,19 @@ saas_function_service_map = {
 }
 
 
-# map
+# 中国的省份以及直辖市
 china_province_list = ['北京','天津','上海','重庆','河北','山西','辽宁','吉林', '云南', '新疆', '广西', '甘肃', '内蒙古', '陕西', '西藏', 
                        '四川', '宁夏', '黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','海南', '贵州', '青海', 
                        '台湾', '香港', '澳门']
 
+# 资源池与省份的映射
 source_pool_province_map = {
     '01资源池' : ["中央", "宁夏", "贵州", "四川", "山西", "新疆", "福建", "北京"],
     '03资源池' : ["广西", "内蒙古", "湖北", "云南", "陕西", "天津", "广东", "深圳"],
     '04资源池' : ["甘肃", "青岛", "海南", "黑龙江", "辽宁", "西藏", "重庆", "吉林", "山东"],
 }
 
+# 省份与资源池的映射
 province_source_pool_map = {
     "中央" : "01资源池",
     "宁夏" : "01资源池",
