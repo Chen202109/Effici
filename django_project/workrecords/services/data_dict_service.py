@@ -48,33 +48,35 @@ def add_data_dict_record(add_data_dict_form, db=None):
     """
     db = get_db(db)
     if add_data_dict_form["fullLabel"] != "":
-        add_data_dict_record_by_full_label(add_data_dict_form["dictCode"], add_data_dict_form["fullLabel"], db)
+        add_data_dict_record_by_full_label(add_data_dict_form["dictCode"], add_data_dict_form["fullLabel"], add_data_dict_form["systemLabel"], db)
     else:
         parent_node = None if add_data_dict_form["parentCode"]=="" else add_data_dict_form["parentCode"]
-        add_data_dict_record_by_node(add_data_dict_form["dictCode"], int(add_data_dict_form["level"]), parent_node, add_data_dict_form["name"],  db)
+        add_data_dict_record_by_node(add_data_dict_form["dictCode"], int(add_data_dict_form["level"]), parent_node, add_data_dict_form["name"], add_data_dict_form["systemLabel"], db)
     return
 
-def add_data_dict_record_by_full_label(dict_code, label, db):
+def add_data_dict_record_by_full_label(dict_code, label, system_label, db):
     """
     通过完整标签如 基础信息-开票点管理-程序bug 来添加字典项目
     :param dict_code: 该数据字典的代码
     :param label: 完整的数据字典层级标签
+    :param system_label 系统标识，1为行业2为票夹
     :param db: 和数据库的连接
     """
     data_dict_records = label.split("-")
     parent_code = None
     for i in range(len(data_dict_records)):
-        code = add_data_dict_record_by_node(dict_code, i+1, parent_code, data_dict_records[i], db)
+        code = add_data_dict_record_by_node(dict_code, i+1, parent_code, data_dict_records[i], system_label, db)
         parent_code = code
     return parent_code
 
-def add_data_dict_record_by_node(dict_code, level, parent_code, name, db):
+def add_data_dict_record_by_node(dict_code, level, parent_code, name, system_label, db):
     """
     通过层级信息，上级层级编码 来添加字典项目
     :param dict_code: 该数据字典的代码
     :param level: 节点所在层级
     :param parent_code: 节点父级节点的编码
     :param name: 新增节点名
+    :param system_label 系统标识，1为行业2为票夹
     :param db: 和数据库的连接
     """
     # 先尝试查找，看看是否已经存在这一项
@@ -102,6 +104,10 @@ def add_data_dict_record_by_node(dict_code, level, parent_code, name, db):
             "enable": 1,
             "childrenLength": 0
         }
+
+        # 如果是出错功能字典，添加系统标签的值,此值暂且只在出错功能字典有意义。
+        if dict_code==constant.data_dict_code_map["error_function"]:
+            fields["systemLabel"] = system_label
 
         # 生成code, 通过父级节点的childrenLength来知道已经有了多少个节点，所以正常的话编号从这个的length+1
         new_code =  determine_code_dict.get(dict_code)(level, parent_result[0]["childrenLength"]+1, name, db)

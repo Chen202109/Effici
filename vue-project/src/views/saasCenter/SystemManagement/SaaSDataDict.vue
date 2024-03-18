@@ -66,6 +66,9 @@
                     <el-form-item label="字典项目标签" prop="fullLabel" ref="addDataDictDetailFormFullLabel">
                         <el-input v-model="addDataDictDetailForm.fullLabel" autocomplete="off"></el-input>
                     </el-form-item>
+                    <el-form-item label="字典项目系统" prop="systemLabel" ref="addDataDictDetailFormSystemLabel">
+                        <el-input v-model="addDataDictDetailForm.systemLabel" autocomplete="off" placeholder="1代表行业, 2代表票夹, 为出错功能字典辨识"></el-input>
+                    </el-form-item>
                     <el-form-item label="字典项目层级" prop="level" ref="addDataDictDetailFormLevel">
                         <el-input v-model="addDataDictDetailForm.level" autocomplete="off"></el-input>
                     </el-form-item>
@@ -148,6 +151,7 @@ export default {
             showAddDataDictDetailDialog: false,
             addDataDictDetailForm: {
                 fullLabel: '', //添加整个层级时候使用的
+                systemLabel: '', //标识系统是哪个。1代表行业，2代表票夹。
                 level: '', //添加单个层级时候使用，该单项的层级
                 parentCode: '', //添加单个层级时候使用，该单项的父级节点名称
                 name: '', //添加单个层级时候使用，该单项的名称
@@ -165,6 +169,7 @@ export default {
                 name: [
                     { required: true, message: '请输入新增数据字典项目层级', trigger: 'blur', validator: validateLabel}
                 ],
+                systemLabel:[],
             },
         };
     },
