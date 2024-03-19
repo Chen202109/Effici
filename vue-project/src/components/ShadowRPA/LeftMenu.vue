@@ -1,8 +1,8 @@
 <template>
   <!-- el-menu 在加入 router 后，el-menu-item 中index="new"就会进行网页跳转 -->
   <div style="height: 100%;">
-    <el-container style="height: 100%;">
-      <el-aside style="width: 220px">
+    <el-container style="height: 100%; ">
+      <el-aside style="width: 220px;">
 		    <!-- <el-menu :default-active="$route.path" class="el-menu-vertical-demo" router> -->
         <el-menu :default-active="$route.path" router class="el-menu-vertical-demo">
           <el-submenu index="2">
@@ -32,6 +32,7 @@
 
               <el-menu-item index="/TicketFolderAnalysisData">电子票夹受理数据分析</el-menu-item>
               <el-menu-item index="/TicketFolderAnalysisCountryData">电子票夹省份数据统计</el-menu-item>
+              <el-menu-item index="/TicketFolderCustomerServiceRobot">票夹智能客服数据统计</el-menu-item>
             </el-menu-item-group>
           </el-submenu>
         </el-menu>

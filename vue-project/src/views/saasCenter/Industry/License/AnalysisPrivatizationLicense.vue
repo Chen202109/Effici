@@ -39,7 +39,7 @@
       methods: {
         
         /**
-         * // 转换数据格式以适配el-table
+         * 转换数据格式以适配el-table
          * @param {*} licenseData 
          */
         formatRegisterTableData(licenseRegisterData) {

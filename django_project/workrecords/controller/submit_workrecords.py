@@ -46,6 +46,9 @@ def work_record(request):
         return JsonResponse(status=200, data={}, json_dumps_params={'ensure_ascii': False})
 
 def work_record_group_add(request):
+    """
+    通过文件批量新增工单记录接口
+    """
     if request.method == 'POST':
         error_msg=[]
 
@@ -131,6 +134,9 @@ def work_record_group_add(request):
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要POST请求。"})
 
 def work_record_update(request):
+    """
+    更新工单记录接口
+    """
     if request.method == 'POST':
         work_record_detail_form = json.loads(request.body)
 
@@ -151,10 +157,13 @@ def work_record_update(request):
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要POST请求。"})
 
 def work_record_delete(request):
+    """
+    工单删除接口
+    """
     if request.method == 'POST':
         work_record_detail_form = json.loads(request.body)
 
-        # 查询fid，暂且未加解密
+        # 查询fid，暂且未加解密, 所以也没有解密步骤
         fid = work_record_detail_form["fid"]
         try:
             work_record_service.delete_work_record(fid, work_record_detail_form)

@@ -6,11 +6,15 @@ from workrecords.exception.service.MyInvalidInputException import MyInvalidInput
 def get_work_record_detail(search_filter, curr_page, curr_page_size):
     """
     获取搜索条件下的工单的详细信息，分页搜索
+    :param search_filter 搜索的筛选信息
+    :param curr_page 当前页面
+    :param curr_page_size 当前页面的size
     """
     # 工单搜索条件
     db = mysql_base.Db()
     table_name = "workrecords_2024" if search_filter["beginData"] >= "2024-01-01" else "workrecords_2023"
     condition_dict = translate_search_filter(search_filter)
+    # 改成数据库的字段名并加上fid字段
     fields = cat_all_work_record_table_cols_alias()
     fields.append("fid")
     results = db.select(fields, table_name, condition_dict,f" ORDER BY createtime limit {str((curr_page - 1) * curr_page_size)}, {curr_page_size}")
@@ -27,8 +31,10 @@ def get_work_record_detail(search_filter, curr_page, curr_page_size):
     return results
 
 def get_work_record_count(search_filter):
-
-    # 获取符合搜索的工单的总数
+    """
+    获取符合搜索的工单的总数
+    :param search_filter 搜索条件表单
+    """
     if not search_filter['requestTotal']:
         return -1
     else:
@@ -40,6 +46,11 @@ def get_work_record_count(search_filter):
         return total_work_record_amount
 
 def add_work_record(work_record_id, work_record_data):
+    """
+    新增工单记录
+    :param work_record_data 工单数据
+    :param work_record_id 工单fid
+    """
     if work_record_data["registerDate"] >= "2024-01-01":
         # 对问题归属，问题分类等进行编码
         if work_record_data["problemAttribution"] != "":
@@ -62,6 +73,11 @@ def add_work_record(work_record_id, work_record_data):
     db.insert_copy(table_name, fieldDict)
 
 def update_work_record(work_record_id, work_record_data):
+    """
+    更新工单数据
+    :param work_record_data 工单数据
+    :param work_record_id 工单fid
+    """
     if work_record_data["registerDate"] >= "2024-01-01":
         # 对问题归属，问题分类等进行编码
         if work_record_data["problemAttribution"] != "":
@@ -84,6 +100,11 @@ def update_work_record(work_record_id, work_record_data):
     db.update(table_name, fieldDict, {"fid=": work_record_id})
 
 def delete_work_record(work_record_id, work_record_data):
+    """
+    删除工单数据
+    :param work_record_data 工单数据
+    :param work_record_id 工单fid
+    """
     db = mysql_base.Db()
     table_name = "workrecords_2024" if work_record_data["registerDate"] >= "2024-01-01" else "workrecords_2023"
     db.delete(table_name, {"fid=": work_record_id})
@@ -197,6 +218,16 @@ def translate_search_filter(search_filter):
 
 
 def get_work_record_single_column_summary(begin_date, end_date, col_name, db=None, conditions=None, x_alias="x", y_alias="y"):
+    """
+    查询工单表的某个字段信息的分类与数量统计。
+    :param begin_date 起始日期
+    :param end_date 终止日期
+    :param col_name 字段名
+    :param db 数据库连接
+    :param conditions 除开起始与终止日期之外的筛选条件
+    :param x_alias 查询结果的该字段的别名，默认为x
+    :param y_alias 查询结果的该数量统计的别名，默认为y
+    """
     db = get_db(db)
     table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
     condition_dict = {
@@ -208,6 +239,14 @@ def get_work_record_single_column_summary(begin_date, end_date, col_name, db=Non
     return saas_version_data
 
 def get_work_record_distinct_version(begin_date, end_date, db=None, conditions=None, x_alias="x"):
+    """
+    获取筛选条件内工单的所有版本号。
+    :param begin_date 起始日期
+    :param end_date 终止日期
+    :param db 数据库连接
+    :param conditions 除开起始与终止日期之外的筛选条件
+    :param x_alias 查询结果的该字段的别名，默认为x
+    """
     db = get_db(db)
     table_name = "workrecords_2024" if begin_date >= "2024-01-01" else "workrecords_2023"
     condition_dict = {
@@ -215,7 +254,7 @@ def get_work_record_distinct_version(begin_date, end_date, db=None, conditions=N
         "createtime<=": end_date,
     }
     if conditions is not None: condition_dict.update(conditions)
-    saas_version_data = db.select(["DISTINCT softversion as x"], table_name, condition_dict, " ORDER BY softversion ")
+    saas_version_data = db.select([f"DISTINCT softversion as {x_alias}"], table_name, condition_dict, " ORDER BY softversion ")
     return saas_version_data
 
 

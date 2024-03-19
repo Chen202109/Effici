@@ -6,6 +6,9 @@ from django.http import JsonResponse
 
 
 def data_dict_management_init(request):
+    """
+    获取所有数据字典的字典信息，以及首个数据字典的所有数据
+    """
     if request.method == 'GET':
         data_dict_list = data_dict_service.get_all_data_dict()
         data_dict_first = data_dict_service.get_data_dict_by_code(data_dict_list[0]["dictCode"]) if len(data_dict_list) > 0 else {}
@@ -18,6 +21,9 @@ def data_dict_management_init(request):
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
 def get_data_dict_detail(request):
+    """
+    获取某个数据字典的所有条目信息的接口
+    """
     if request.method == 'GET':
         data_dict = data_dict_service.get_data_dict_by_code(request.GET.get('dictCode'))
         try:
@@ -28,6 +34,9 @@ def get_data_dict_detail(request):
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
 def add_data_dict(request):
+    """
+    新增数据字典接口
+    """
     if request.method == 'POST':
         add_data_dict_form = json.loads(request.body)
         try:
@@ -39,6 +48,9 @@ def add_data_dict(request):
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要POST请求。"})
 
 def add_data_dict_record(request):
+    """
+    新增数据字典条目的接口。
+    """
     if request.method == 'POST':
         add_data_dict_form = json.loads(request.body)
         try:

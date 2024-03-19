@@ -1,6 +1,5 @@
 from workrecords.exception.service.MyInvalidInputException import MyInvalidInputException
 from mydata import mysql_base
-import pandas as pd
 import datetime
 
 from workrecords.utils.type_casting_utils import cast_int_to_string
@@ -16,8 +15,9 @@ def add_data_dict(dict_name, db=None):
     """
     db = get_db(db)
 
+    # 查看当前已有几个数据字典，编号已经到了多少，那新增字典的编号就是这个数量+1
     current_amount = get_data_dict_amount(db)
-    dict_code = str("00" + str(current_amount + 1))[-3:]
+    dict_code = cast_int_to_string(current_amount + 1,3)
 
     # 新增数据字典，level为0， fid和dictCode一致
     fields = {
@@ -33,6 +33,7 @@ def add_data_dict(dict_name, db=None):
     }
 
     try:
+        # 往数据库新增数据字典，并将根节点的子节点数量+1
         db.insert_copy(table_name, fields)
         db.update(table_name, {"childrenLength" : current_amount+1}, {"level=" : -1})
     except Exception as e:
@@ -42,7 +43,7 @@ def add_data_dict(dict_name, db=None):
 
 def add_data_dict_record(add_data_dict_form, db=None):
     """
-    新增数据字典条目
+    新增数据字典条目，若该条目已有，则不会有变动，不会抛出异常。
     :param add_data_dict_form 新增条目信息
     :param db 数据库连接
     """
@@ -64,6 +65,7 @@ def add_data_dict_record_by_full_label(dict_code, label, system_label, db):
     """
     data_dict_records = label.split("-")
     parent_code = None
+    # 将完整标签拆分为一个个节点，以节点方式进行新增
     for i in range(len(data_dict_records)):
         code = add_data_dict_record_by_node(dict_code, i+1, parent_code, data_dict_records[i], system_label, db)
         parent_code = code
@@ -229,9 +231,7 @@ def decode_data_item(item_code, dict_code):
     db =mysql_base.Db()
     parent_code = item_code
     while parent_code is not None:
-        condition_dict = {}
-        condition_dict["dictCode="] = dict_code
-        condition_dict["code="] = parent_code
+        condition_dict = {"dictCode=": dict_code, "code=": parent_code}
         node = db.select(["name", "parentCode"], table_name, condition_dict, "")
         print(f"node is {node}")
         if isinstance(node, tuple):

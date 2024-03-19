@@ -424,10 +424,10 @@ export default {
 </script>
 
 
-<style>
+<style scoped>
 .saasAnalysisTitle {
   color: #3398DB;
-  font-size: 18;
+  font-size: 18px;
   margin: 5px 10px 5px 0;
 }
 

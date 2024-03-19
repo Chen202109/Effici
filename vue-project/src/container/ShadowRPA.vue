@@ -1,7 +1,7 @@
 <template>
   <el-container>
     <!-- aside左侧 -->
-    <el-aside style="width: 220px">
+    <el-aside style="width: 220px; overflow-y: auto;" >
       <template>
         <LeftMenu></LeftMenu>
       </template>
@@ -143,16 +143,20 @@ export default {
 
 
 <style>
-/* 加入使tab-pane可以固定高度或者出现滚动 */
-/* calc()计算的意思，vh是指CSS中相对长度单位，表示相对视口高度（Viewport Height），1vh = 1% 乘 视口高度 */
-/* calc()这里不能用100% */
-/* 最后overflow-y: auto; 意思是 溢出时出现滚动条*/
+/**
+加入使tab-pane可以固定高度或者出现滚动
+calc()计算的意思，vh是指CSS中相对长度单位，表示相对视口高度（Viewport Height），1vh = 1% 乘 视口高度 
+最后overflow-y: auto; 意思是 溢出时出现滚动条
+ */
 .el-tab-pane {
-  height: calc(100vh - 190px);
+  /* height减去170，header占60，浏览器头占70，container上下padding占40 */
+  height: calc(100vh - 170px);
   overflow-y: auto;
 }
 
 .main-el-tab-pane{
     padding-right: 0px;
 }
+
+
 </style>

@@ -25,6 +25,7 @@ import AnalysisLargeProblemData from "@/views/saasCenter/Industry/PrivatizationL
 
 import TicketFolderAnalysisData from "@/views/saasCenter/TicketFolder/WorkRecordReport/AnalysisData.vue"
 import TicketFolderAnalysisCountryData from "@/views/saasCenter/TicketFolder/WorkRecordSummary/AnalysisCountryData.vue"
+import TicketFolderCustomerServiceRobot from "@/views/saasCenter/TicketFolder/CustomerServiceRobot/AnalysisRobot.vue"
 
 Vue.use(Router)
 
@@ -60,7 +61,9 @@ export default new Router({
             { path: '/saasDataDict', component: SaaSDataDict, meta: {keepAlive: true, comp: SaaSDataDict, name: 'SaaSDataDict', title:"数据字典"}},
 
             { path: '/TicketFolderAnalysisData', component: TicketFolderAnalysisData, meta: {keepAlive: true, comp: TicketFolderAnalysisData, name: 'TicketFolderAnalysisData', title:"电子票夹受理数据分析"}},
-            { path: '/TicketFolderAnalysisCountryData', component: TicketFolderAnalysisCountryData, meta: {keepAlive: true, comp: TicketFolderAnalysisCountryData, name: 'TicketFolderAnalysisCountryData', title:"电子票夹省份数据统计"}}
+            { path: '/TicketFolderAnalysisCountryData', component: TicketFolderAnalysisCountryData, meta: {keepAlive: true, comp: TicketFolderAnalysisCountryData, name: 'TicketFolderAnalysisCountryData', title:"电子票夹省份数据统计"}},
+            { path: '/TicketFolderCustomerServiceRobot', component: TicketFolderCustomerServiceRobot, meta: {keepAlive: true, comp: TicketFolderCustomerServiceRobot, name: 'TicketFolderCustomerServiceRobot', title:"票夹智能客服数据统计"}}
+
           ]
         },
         { path: '/CMC/ew', name: '新页面', component: New, },

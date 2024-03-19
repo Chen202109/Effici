@@ -103,7 +103,6 @@ def get_saas_upgrade_resource_pool_summary(begin_date, end_date, resource_pool, 
 
 
 def get_upgrade_error_type_summary(begin_date, end_date, system_label=None, db=None):
-    print(f"dddddd {system_label}, ddddddddd type: {type(system_label)}")
     resourcepool_sql = ""
     system_name = ""
     if system_label == "1":

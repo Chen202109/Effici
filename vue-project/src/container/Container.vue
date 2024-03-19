@@ -17,13 +17,10 @@
   
   <!-- 中间分两部分，左侧和main -->
     <el-main style='background-color: #45C0FF'>
-		<template>
-			<!-- <router-link to="/jira">Jira</router-link> -->
-			<!-- <router-view/> -->
-			<!-- <Main></Main> -->
-			<router-view></router-view>
-		</template>
-	</el-main>
+      <template>
+        <router-view></router-view>
+      </template>
+    </el-main>
  
 </el-container>
 </template>
@@ -44,7 +41,7 @@ export default {
 
 <style scoped>
   .el-row {
-	height: 100%;
+	  height: 100%;
     margin-bottom: 20px;
     &:last-child {
       margin-bottom: 0;
