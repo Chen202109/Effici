@@ -1,9 +1,10 @@
 from django.urls import path
+from django.urls import include
 
 from workrecords.controller import views
 from workrecords.controller import system_functions
 from workrecords.controller import submit_workrecords
-from workrecords.controller import workrecord_summary, upgrade_record_summary
+from workrecords.controller import workrecord_summary
 
 urlpatterns = [
 
@@ -17,10 +18,6 @@ urlpatterns = [
     path('work_record_group_add', submit_workrecords.work_record_group_add),
     path('work_record_update', submit_workrecords.work_record_update),
     path('work_record_delete', submit_workrecords.work_record_delete),
-
-    path('analysis_saas_upgrade_problem_type',upgrade_record_summary.analysis_saas_upgrade_problem_type),
-    path('analysis_saas_service_upgrade_trend',upgrade_record_summary.analysis_saas_service_upgrade_trend),
-    path('analysis_saas_version_problem_by_resource_pool',upgrade_record_summary.analysis_saas_version_problem_by_resource_pool),
 
     path('analysis_saas_privatization_license_register_province',views.analysis_saas_privatization_license_register_province),
 
@@ -51,4 +48,7 @@ urlpatterns = [
     path('analysis_saas_problem_by_province_agency', workrecord_summary.analysis_saas_problem_by_province_agency),
     path('analysis_saas_problem_by_month', workrecord_summary.analysis_saas_problem_by_month),
     path('analysis_version_by_function', workrecord_summary.analysis_version_by_function),
+
+    path('upgrade/',include('workrecords.url.upgrade_urls')),
+    path('ticket_folder/',include('workrecords.url.ticket_folder_urls')),
 ]

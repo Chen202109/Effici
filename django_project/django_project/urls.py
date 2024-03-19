@@ -23,5 +23,5 @@ urlpatterns = [
 #添加路由记录#例如凡是 url 以 jira/  开头的，
 #都根据 jira.urls 里面的 子路由表进行路由
     path('CMC/jira/',include('jira.urls')),
-    path('CMC/workrecords/',include('workrecords.urls')),
+    path('CMC/workrecords/',include('workrecords.url.urls')),
 ]
