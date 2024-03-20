@@ -334,7 +334,7 @@ export default {
      */
     async searchSaasUpgradeProblemTypeTable(searchValue) {
       this.$http.get(
-        '/api/CMC/workrecords/upgrade/analysis_saas_upgrade_problem_type?beginData=' +
+        '/api/CMC/workrecords/upgrade/analysis_upgrade_problem_type?beginData=' +
         searchValue['beginData'] +
         '&endData=' +
         searchValue['endData'] +
@@ -356,7 +356,7 @@ export default {
      */
     async searchSaaSServiceUpgradeTrend(searchValue) {
       this.$http.get(
-          '/api/CMC/workrecords/upgrade/analysis_saas_service_upgrade_trend?beginData=' +
+          '/api/CMC/workrecords/upgrade/analysis_service_upgrade_trend?beginData=' +
           searchValue['beginData'] +
           '&endData=' +
           searchValue['endData'] +
@@ -380,7 +380,7 @@ export default {
      */
     async searchSaaSVersionUpgradeTrendByResoucePool(searchValue) {
       this.$http.get(
-          '/api/CMC/workrecords/upgrade/analysis_saas_version_problem_by_resource_pool?beginData=' +
+          '/api/CMC/workrecords/upgrade/analysis_version_problem_by_resource_pool?beginData=' +
           searchValue['beginData'] +
           '&endData=' +
           searchValue['endData'] +
@@ -405,7 +405,7 @@ export default {
      */
      async searchTicketFolderUpgradeProblemTypeTable(searchValue) {
       this.$http.get(
-        '/api/CMC/workrecords/upgrade/analysis_saas_upgrade_problem_type?beginData=' +
+        '/api/CMC/workrecords/upgrade/analysis_upgrade_problem_type?beginData=' +
         searchValue['beginData'] +
         '&endData=' +
         searchValue['endData'] +

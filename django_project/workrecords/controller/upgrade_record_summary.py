@@ -7,7 +7,7 @@ from workrecords.services import work_record_service
 from workrecords.services.work_record_summary_service import get_work_record_resource_pool_error_function_summary
 
 
-def analysis_saas_upgrade_problem_type(request):
+def analysis_upgrade_problem_type(request):
     """
     分析升级数据和所属问题分类的对比
     """
@@ -26,7 +26,7 @@ def analysis_saas_upgrade_problem_type(request):
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
 
-def analysis_saas_service_upgrade_trend(request):
+def analysis_service_upgrade_trend(request):
     if request.method == 'GET':
         begin_date = request.GET.get('beginData', default='2023-01-01')
         end_date = request.GET.get('endData', default='2023-12-31')
@@ -49,7 +49,7 @@ def analysis_saas_service_upgrade_trend(request):
         return JsonResponse(status=405, data={'message': "请求方法错误, 需要GET请求。"})
 
 
-def analysis_saas_version_problem_by_resource_pool(request):
+def analysis_version_problem_by_resource_pool(request):
     """
     分析版本信息和bug的趋势对比。
     """

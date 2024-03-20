@@ -2,17 +2,10 @@ from django.urls import path
 from django.urls import include
 
 from workrecords.controller import views
-from workrecords.controller import system_functions
 from workrecords.controller import submit_workrecords
 from workrecords.controller import workrecord_summary
 
 urlpatterns = [
-
-    path('data_dict_management_init', system_functions.data_dict_management_init),
-    path('get_data_dict_detail', system_functions.get_data_dict_detail),
-    path('add_data_dict', system_functions.add_data_dict),
-    path('add_data_dict_record', system_functions.add_data_dict_record),
-    path('get_required_data_dict_record_for_work_record', system_functions.get_required_data_dict_record_for_work_record),
 
     path('work_record', submit_workrecords.work_record),
     path('work_record_group_add', submit_workrecords.work_record_group_add),
@@ -49,6 +42,7 @@ urlpatterns = [
     path('analysis_saas_problem_by_month', workrecord_summary.analysis_saas_problem_by_month),
     path('analysis_version_by_function', workrecord_summary.analysis_version_by_function),
 
+    path('system/',include('workrecords.url.system_management_urls')),
     path('upgrade/',include('workrecords.url.upgrade_urls')),
     path('ticket_folder/',include('workrecords.url.ticket_folder_urls')),
 ]

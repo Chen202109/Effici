@@ -191,7 +191,7 @@ export default {
          */
         init() {
             this.$http.get(
-                '/api/CMC/workrecords/data_dict_management_init'
+                '/api/CMC/workrecords/system/data_dict_management_init'
             ).then(response => {
                 if (response.status === 200) {
                     this.dataDictList = []
@@ -235,7 +235,7 @@ export default {
         handleNodeClick(data) {
             console.log("click at: ",data);
             this.$http.get(
-                '/api/CMC/workrecords/get_data_dict_detail?dictCode=' + data.label.split("-")[0]
+                '/api/CMC/workrecords/system/get_data_dict_detail?dictCode=' + data.label.split("-")[0]
             ).then(response => {
                 if (response.status === 200) {
                     this.currentDataDictDetail = response.data.dataDict
@@ -279,7 +279,7 @@ export default {
             this.$refs["addDataDictForm"].validate((valid) => {
                 if (valid) {
                     this.$http.post(
-                        '/api/CMC/workrecords/add_data_dict',
+                        '/api/CMC/workrecords/system/add_data_dict',
                         this.addDataDictForm
                     ).then(response => {
                         this.dataDictList.push(response.data.dataDict)
@@ -305,7 +305,7 @@ export default {
                     var form = Object.assign({}, this.addDataDictDetailForm);
                     form["dictCode"] = this.currentDataDictCode
                     this.$http.post(
-                        '/api/CMC/workrecords/add_data_dict_record',
+                        '/api/CMC/workrecords/system/add_data_dict_record',
                         form
                     ).then(response => {
                         this.$message.success("添加成功")

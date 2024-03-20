@@ -142,6 +142,74 @@ export function updatePieChartBasic(currDocument, chartData, chartTitle, chartEl
 }
 
 /**
+ * @param currDocument 页面的document对象
+ * @param {Object} chartData 需要传入的图表数据
+ * @param {Object} chartTitle 图表标题
+ * @param {Object} chartElementId 图表元素id
+ * @description 当查询之后，数据更新，更新折线图。
+ */
+export function updateLineChartBasic(currDocument, chartData, chartTitle, chartElementId) {
+    // 对option的基础设置
+    let option = {
+        title: {
+            top: '1%',
+            left: '5%',
+            text: chartTitle,
+            left: 'left'
+        },
+
+        legend: {
+            top: '8%',
+        },
+        tooltip: {
+            trigger: 'axis',
+        },
+        grid: {
+            top: '23%',
+            bottom: '20%',
+            left: '5%',
+            right: '5%',
+        },
+        xAxis: {
+            name: '时间',
+            nameLocation: 'middle',
+            nameGap: 25,
+            nameTextStyle: {
+                fontSize: 16,
+            },
+            type: 'category',
+            data: chartData[0].seriesData.map(item => item.x),
+        },
+        yAxis: {
+            name: '数量',
+            nameLocation: 'middle',
+            nameGap: 40,
+            nameTextStyle: {
+                fontSize: 16,
+            },
+            type: 'value',
+        },
+        series: [],
+    };
+
+    // 设置series
+    for (let i = 0; i < chartData.length; i++) {
+        let series_1 = {
+            name: chartData[i].seriesName,
+            type: 'line',
+            stack: 'Total',
+            data: chartData[i].seriesData.map(item => item.y),
+        }
+        option.series.push(series_1)
+    }
+
+    let chart = echarts.getInstanceByDom(currDocument.getElementById(chartElementId))
+    chart && chart.setOption(option, true)
+
+    console.log("updated " + chartElementId + " echart : ", chart)
+}
+
+/**
  * 将柱状图的数组信息循环添加进入柱状图的series中
  * @param {barChartData} barChartData 后端返回的包含柱状图所有信息的一个数组
  * @param {option} option 柱状图的option

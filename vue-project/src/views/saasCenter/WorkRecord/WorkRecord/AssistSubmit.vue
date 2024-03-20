@@ -102,7 +102,7 @@ export default {
      */
     searchBasicInfo() {
       this.$http.get(
-        '/api/CMC/workrecords/get_required_data_dict_record_for_work_record'
+        '/api/CMC/workrecords/system/get_required_data_dict_record_for_work_record'
       ).then(response => {
         if (response.status == 200) {
           this.productTypeOptions = response.data.productTypeOptions;
