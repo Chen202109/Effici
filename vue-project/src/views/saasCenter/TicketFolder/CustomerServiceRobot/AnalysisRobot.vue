@@ -27,13 +27,19 @@
                 :style="{ width: getPageWidth + 'px', height: '400px' }">
             </div>
         </div>
+
+        <div style="height: 20px;"></div>
+
+        <!-- 命中问题分类柱状图图 -->
+        <div class="robotMatchedQueryTypeSummaryBarChart" id="robotMatchedQueryTypeSummaryBarChart" :style="{ width: getPageWidth + 'px', height: '400px' }">
+        </div>
     </div>
 </template>
 
 
 <script>
 import { getMainPageWidth } from '@/utils/layoutUtil'
-import { updateLineChartBasic } from '@/utils/echartBasic'
+import { updateLineChartBasic, updateBarChartBasic } from '@/utils/echartBasic'
 import { castFloatToPercent } from '@/utils/typeCast'
 let echarts = require("echarts/lib/echarts");
 
@@ -47,6 +53,7 @@ export default {
             // 图表数据
             robotSummaryDashBoardData: [],
             robotSummaryLineChartData: [],
+            robotMatchedQueryTypeSummaryBarChartData: [],
         }
     },
 
@@ -71,6 +78,7 @@ export default {
             // 客服机器人数据汇总折线图的init
             echarts.init(document.getElementById('robotAnswerAmountSummaryLineChart'))
             echarts.init(document.getElementById('robotAnswerIndicatorSummaryLineChart'))
+            echarts.init(document.getElementById('robotMatchedQueryTypeSummaryBarChart'))
         },
 
         /**
@@ -87,14 +95,15 @@ export default {
                 searchValue[(i == 0) ? "beginData" : "endData"] = year + "-" + month + "-" + day;
             } //结束for，完成日期的拼接
 
-            this.searchTicketFolderCustomerServiceRobotSummary(searchValue)
+            this.searchRobotSummary(searchValue)
+            this.searchRobotMatchedQueryTypeSummary(searchValue)
         },
 
         /**
          * @param {Object} searchValue 搜索参数的字典
          * @description 对票夹机器人汇总数据的后端数据请求
          */
-        async searchTicketFolderCustomerServiceRobotSummary(searchValue) {
+        async searchRobotSummary(searchValue) {
             this.$http.get(
                 '/api/CMC/workrecords/ticket_folder/analysis_customer_service_robot_summary?beginData=' +
                 searchValue['beginData'] +
@@ -140,6 +149,27 @@ export default {
                 updateLineChartBasic(document, amountData, "票夹客服数据汇总(消息数/会话数)", "robotAnswerAmountSummaryLineChart")
                 updateLineChartBasic(document, indicatorData, "票夹客服数据汇总(精确度/召回率)", "robotAnswerIndicatorSummaryLineChart")
 
+            }).catch((error) => {
+                console.log(error)
+                console.log(error.response.data.message)
+                this.$message.error(error.response.data.message)
+            })
+        },
+
+        /**
+         * @param {Object} searchValue 搜索参数的字典
+         * @description 对票夹机器人命中问答分类统计数据的后端数据请求
+         */
+         async searchRobotMatchedQueryTypeSummary(searchValue) {
+            this.$http.get(
+                '/api/CMC/workrecords/ticket_folder/analysis_customer_service_robot_matched_query_type_summary?beginData=' +
+                searchValue['beginData'] +
+                '&endData=' +
+                searchValue['endData']
+            ).then(response => {
+                this.robotMatchedQueryTypeSummaryBarChartData = response.data.data
+                updateBarChartBasic(document, this.robotMatchedQueryTypeSummaryBarChartData, "命中问答分类统计", "category", false, true, 'robotMatchedQueryTypeSummaryBarChart')
+                console.log('update local robotMatchedQueryTypeSummaryBarChartData data: ', this.robotMatchedQueryTypeSummaryBarChartData)
             }).catch((error) => {
                 console.log(error)
                 console.log(error.response.data.message)

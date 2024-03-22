@@ -15,6 +15,22 @@ def get_customer_service_robot_summary(begin_date, end_date, db=None):
     data = db.select(["date","sessionAmount","msgAmount","precision1","recall"], "ticket_folder_customer", condition_dict, " ORDER BY date ")
     return data
 
+def get_customer_service_robot_matched_query_type_summary(begin_date, end_date, db=None):
+    """
+    查询筛选范围时间内的票夹客服机器人的命中问答分类的次数
+    :param begin_date 起始日期
+    :param end_date 终止日期
+    :param db 数据库连接
+    """
+    db = get_db(db)
+    condition_dict = {
+        "date>=": begin_date,
+        "date<=": end_date,
+    }
+    data = db.select(["name as x", "SUM(count) as y"], "ticket_folder_robot_query_type", condition_dict, " GROUP BY x")
+    return data
+
+
 def get_db(db):
     if db is None:
         db = mysql_base.Db()

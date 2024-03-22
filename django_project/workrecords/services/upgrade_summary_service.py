@@ -103,14 +103,27 @@ def get_saas_upgrade_resource_pool_summary(begin_date, end_date, resource_pool, 
 
 
 def get_upgrade_error_type_summary(begin_date, end_date, system_label=None, db=None):
-    resourcepool_sql = ""
+    """
+    获取robot的消息量，会话量等数据。
+    :param begin_date: 起始日期
+    :param end_date: 终止日期
+    :param system_label 系统标识，1代表行业，2代表票夹
+    :param db 数据库连接
+    """
+
+    # 构建资源池的查找信息。构建字符串如： AND (1=2 OR resourcepool="01资源池" OR ... )
+    resourcepool_sql = 'AND ( 1=2 '
+    for item in constant.source_pool_system_map[system_label]:
+        resourcepool_sql += f' OR resourcepool="{item}"'
+    resourcepool_sql += ')'
+
     system_name = ""
     if system_label == "1":
         system_name = "saas_v3/v4"
-        resourcepool_sql = 'AND resourcepool!="电子票夹" '
     elif system_label == "2":
         system_name="电子票夹"
-        resourcepool_sql = ' AND resourcepool="电子票夹" '
+    else:
+        resourcepool_sql = ""
 
     data = []
     db = get_db(db)
